@@ -1,0 +1,25 @@
+{
+  "name": "@lib/math",
+  "scripts": {
+    "build": "tsc"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./add/*": {
+      "types": "./src/add.ts",
+      "default": "./dist/add.js"
+    },
+    "./subtract/*": {
+      "types": "./src/subtract.ts",
+      "default": "./dist/subtract.js"
+    }
+  },
+  "dependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "typescript": "5.9.2"
+  }
+}
