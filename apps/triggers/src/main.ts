@@ -1,9 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const globalPrefix = 'v1';
+  app.setGlobalPrefix(globalPrefix);
+  app.enableCors();
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
+  
   const config = new DocumentBuilder()
     .setTitle('Rahat Triggers')
     .setDescription('The Rahat Triggers API description')
@@ -14,10 +28,10 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
 
-  console.log(
-    `Swagger is running on port http://localhost:${process.env.PORT ?? 3000}/api`,
-  );
+  console.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);
+  console.log(`📚 Swagger documentation is available at: http://localhost:${port}/api`);
 }
 bootstrap();
