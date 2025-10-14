@@ -1,27 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import {  PrismaClient } from '@lib/database';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class SourceDataService {
   constructor(
-    private readonly prisma: PrismaClient,
+    private readonly prisma: PrismaService,
   ) {}
 
   async create() {
-    const user = await this.prisma.user.create({
-      data: {
-        email: 'test@test.com',
-        name: 'Test User',
-      }
-    })
-
-    console.log(`User created: ${user.id}`);
-
-    return user;
+    return '"This action adds a new sourceDatum';
   }
 
   findAll() {
-    this.prisma.user.findMany();
+    return this.prisma;
   }
 
   findOne(id: number) {

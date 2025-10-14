@@ -1,15 +1,13 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { SourceDataService } from './source-data.service';
-import { CreateSourceDatumDto } from './dto/create-source-datum.dto';
-import { UpdateSourceDatumDto } from './dto/update-source-datum.dto';
 
 @Controller('source-data')
 export class SourceDataController {
   constructor(private readonly sourceDataService: SourceDataService) {}
 
   @Post()
-  create(@Body() createSourceDatumDto: CreateSourceDatumDto) {
-    return this.sourceDataService.create(createSourceDatumDto);
+  create() {
+    return this.sourceDataService.create();
   }
 
   @Get()
@@ -23,8 +21,8 @@ export class SourceDataController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSourceDatumDto: UpdateSourceDatumDto) {
-    return this.sourceDataService.update(+id, updateSourceDatumDto);
+  update(@Param('id') id: string) {
+    return this.sourceDataService.update(+id);
   }
 
   @Delete(':id')
