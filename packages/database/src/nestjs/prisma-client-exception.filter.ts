@@ -1,113 +1,124 @@
-import { ArgumentsHost, Catch, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, Catch, HttpStatus, Logger } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import { Response } from 'express';
 import { Prisma } from '../../generated/prisma';
 
+export interface PrismaErrorResponse {
+  statusCode: number;
+  message: string;
+  error: string;
+  details?: any;
+}
 
-export type CatchResult = { userErrors: any[] } | void;
 /**
- *
- * {@link PrismaClientExceptionFilter} handling {@link Prisma.PrismaClientKnownRequestError} exceptions.
- *
- * Error codes definition for Prisma Client (Query Engine)
- * https://www.prisma.io/docs/reference/api-reference/error-reference#prisma-client-query-engine
+ * Global exception filter for Prisma Client errors
+ * 
+ * Handles common Prisma errors and converts them to appropriate HTTP responses
+ * Error codes reference: https://www.prisma.io/docs/reference/api-reference/error-reference#prisma-client-query-engine
  */
-@Catch(Prisma.PrismaClientKnownRequestError)
+@Catch(Prisma.PrismaClientKnownRequestError, Prisma.PrismaClientUnknownRequestError, Prisma.PrismaClientValidationError)
 export class PrismaClientExceptionFilter extends BaseExceptionFilter {
-  catch(exception: any, host: ArgumentsHost): CatchResult {
+  private readonly logger = new Logger(PrismaClientExceptionFilter.name);
+
+  catch(exception: Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError | Prisma.PrismaClientValidationError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest();
 
-    console.log(exception);
+    // Log the exception with context
+    this.logger.error(
+      `Prisma error occurred: ${exception.message} | Code: ${(exception as any).code} | Method: ${request.method} | URL: ${request.url} `
+    );
+
+    if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      this.handleKnownRequestError(exception, response);
+    } else if (exception instanceof Prisma.PrismaClientUnknownRequestError) {
+      this.handleUnknownRequestError(exception, response);
+    } else if (exception instanceof Prisma.PrismaClientValidationError) {
+      this.handleValidationError(exception, response);
+    } else {
+      this.handleGenericError(exception, response);
+    }
+  }
+
+  private handleKnownRequestError(exception: Prisma.PrismaClientKnownRequestError, response: Response): void {
 
     switch (exception.code) {
       case 'P2000':
-        this.catchValueTooLong(exception, response);
+        this.sendErrorResponse(response, HttpStatus.BAD_REQUEST, 'Value too long', 'The provided value is too long for the field', exception);
+        break;
+      case 'P2001':
+        this.sendErrorResponse(response, HttpStatus.BAD_REQUEST, 'Record not found', 'The record searched for in the where condition does not exist', exception);
         break;
       case 'P2002':
-        this.catchUniqueConstraint(exception, response);
+        this.sendErrorResponse(response, HttpStatus.CONFLICT, 'Unique constraint violation', this.extractUniqueConstraintError(exception), exception);
+        break;
+      case 'P2003':
+        this.sendErrorResponse(response, HttpStatus.BAD_REQUEST, 'Foreign key constraint violation', 'Foreign key constraint failed on the field', exception);
+        break;
+      case 'P2004':
+        this.sendErrorResponse(response, HttpStatus.BAD_REQUEST, 'Constraint violation', 'A constraint failed on the database', exception);
         break;
       case 'P2025':
-        this.catchNotFound(exception, response);
+        this.sendErrorResponse(response, HttpStatus.NOT_FOUND, 'Record not found', 'An operation failed because it depends on one or more records that were required but not found', exception);
+        break;
+      case 'P2034':
+        this.sendErrorResponse(response, HttpStatus.CONFLICT, 'Transaction conflict', 'Transaction failed due to a write conflict or a deadlock', exception);
         break;
       default:
-        this.unhandledException(exception, response);
+        this.sendErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, 'Database error', this.cleanUpException(exception), exception);
         break;
     }
   }
 
-  /**
-   * Catches P2000 error code
-   * https://www.prisma.io/docs/reference/api-reference/error-reference#p2000
-   *
-   * @param exception P2000
-   * @param response 400 Bad Request
-   */
-  catchValueTooLong(
-    exception: Prisma.PrismaClientKnownRequestError,
-    response: Response,
-  ) {
-    const status = HttpStatus.BAD_REQUEST;
-    response.status(status).json({
-      statusCode: status,
-      message: this.cleanUpException(exception),
-    });
+  private handleUnknownRequestError(exception: Prisma.PrismaClientUnknownRequestError, response: Response): void {
+    this.sendErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, 'Unknown database error', 'An unknown error occurred while processing the database request', exception);
   }
 
-  /**
-   * Catches P2002 error code
-   * https://www.prisma.io/docs/reference/api-reference/error-reference#p2002
-   *
-   * @param exception P2002
-   * @param response 409 Conflict
-   */
-  catchUniqueConstraint(
-    exception: Prisma.PrismaClientKnownRequestError,
-    response: Response,
-  ) {
-    const status = HttpStatus.CONFLICT;
-    response.status(status).json({
-      statusCode: status,
-      message: this.cleanUpException(exception),
-    });
+  private handleValidationError(exception: Prisma.PrismaClientValidationError, response: Response): void {
+    this.sendErrorResponse(response, HttpStatus.BAD_REQUEST, 'Validation error', 'Invalid data provided to the database query', exception);
   }
 
-  /**
-   * Catches P2025 error code
-   * https://www.prisma.io/docs/reference/api-reference/error-reference#p2025
-   *
-   * @param exception P2025
-   * @param response 404 Not Found
-   */
-  catchNotFound(
-    exception: Prisma.PrismaClientKnownRequestError,
-    response: Response,
-  ) {
-    const status = HttpStatus.NOT_FOUND;
-    response.status(status).json({
-      statusCode: status,
-      message: this.cleanUpException(exception),
-    });
+  private handleGenericError(exception: any, response: Response): void {
+    this.sendErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, 'Internal server error', 'An unexpected error occurred', exception);
   }
 
-  unhandledException(
-    exception: Prisma.PrismaClientKnownRequestError,
-    response: Response,
-  ) {
-    const status = HttpStatus.INTERNAL_SERVER_ERROR;
-    response.status(status).json({
-      statusCode: status,
-      message: this.cleanUpException(exception),
-    });
+  private sendErrorResponse(response: Response, statusCode: number, error: string, message: string, exception: any): void {
+    const errorResponse: PrismaErrorResponse = {
+      statusCode,
+      message,
+      error,
+      ...(process.env.NODE_ENV === 'development' && {
+        details: {
+          code: exception.code,
+          clientVersion: exception.clientVersion,
+          meta: exception.meta,
+        }
+      })
+    };
+
+    response.status(statusCode).json(errorResponse);
   }
 
+  private extractUniqueConstraintError(exception: Prisma.PrismaClientKnownRequestError): string {
+    if (exception.meta?.target) {
+      const fields = Array.isArray(exception.meta.target) ? exception.meta.target.join(', ') : exception.meta.target;
+      return `A record with the same ${fields} already exists`;
+    }
+    return 'A record with the same unique field already exists';
+  }
+
+
   /**
-   *
-   * @param exception
-   * @returns replace line breaks with empty string
+   * Clean up exception message for user-friendly display
+   * @param exception - The exception to clean up
+   * @returns Cleaned exception message
    */
-  cleanUpException(exception: Error): string {
-    return exception.message.replace(/\n/g, '');
+  private cleanUpException(exception: Error): string {
+    return exception.message
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
 }

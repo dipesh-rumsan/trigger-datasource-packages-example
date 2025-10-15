@@ -22,8 +22,18 @@ export class SourceDataService {
     return this.prismaService.user.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} sourceDatum`;
+  async testPrismaError() {
+    // This will trigger a P2025 error (Record not found)
+    return this.prismaService.user.update({
+      where: { id: 99999 }, // Non-existent ID
+      data: { name: 'Updated Name' },
+    });
+  }
+
+  async findOne(id: number) {
+    return this.prismaService.user.findUnique({
+      where: { id },
+    });
   }
 
   update(id: number) {
