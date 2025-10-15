@@ -12,9 +12,6 @@ importers:
         specifier: ^1.12.2
         version: 1.12.2
     devDependencies:
-      '@lib/math':
-        specifier: workspace:*
-        version: link:packages/math
       '@workspace/eslint-config':
         specifier: workspace:*
         version: link:packages/eslint-config
@@ -36,9 +33,6 @@ importers:
       '@lib/database':
         specifier: workspace:*
         version: link:../../packages/database
-      '@lib/math':
-        specifier: workspace:*
-        version: link:../../packages/math
       '@nestjs/common':
         specifier: ^11.0.1
         version: 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -242,18 +236,6 @@ importers:
       typescript-eslint:
         specifier: ^8.15.0
         version: 8.46.0(eslint@9.37.0)(typescript@5.9.2)
-
-  packages/math:
-    dependencies:
-      '@workspace/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
-      '@workspace/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      typescript:
-        specifier: 5.9.2
-        version: 5.9.2
 
   packages/typescript-config: {}
 

@@ -1,6 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { add } from "@lib/math";
 
 @Controller()
 export class AppController {
@@ -10,7 +9,7 @@ export class AppController {
   getHello(): { message: string; result: number } {
     return {
       message: 'Hello from Rahat Triggers API!',
-      result: add(1, 2)
+      result: 1 + 2
     };
   }
 
