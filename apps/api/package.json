@@ -1,8 +1,8 @@
 {
-  "name": "triggers",
+  "name": "api",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Nestjs API Seed",
+  "author": "Dipesh Kumar Sah",
   "private": true,
   "license": "UNLICENSED",
   "module": "commonjs",

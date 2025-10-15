@@ -1,135 +1,170 @@
-# Turborepo starter
+# Nest API
 
-This Turborepo starter is maintained by the Turborepo core team.
+A monorepo containing the Nestjs Seed system built with NestJS and Turborepo. This project provides a scalable architecture for handling data triggers and database operations.
 
-## Using this example
+## Project Structure
 
-Run the following command:
+This monorepo contains the following applications and packages:
 
-```sh
-npx create-turbo@latest
+### Applications
+
+- **api** - Main Seed NestJS application
+
+### Packages
+
+- **@lib/database** - Shared database package with Prisma integration and NestJS modules
+- **@workspace/eslint-config** - Shared ESLint configurations
+- **@workspace/typescript-config** - Shared TypeScript configurations
+
+## Prerequisites
+
+Before running this project, make sure you have the following installed:
+
+- Node.js (version 18 or higher)
+- pnpm (recommended package manager)
+- PostgreSQL database
+
+## Getting Started
+
+1. **Clone the repository**
+   ```bash
+   git clone git@github.com:dipesh-rumsan/turbo-setup.git
+   cd turbo-setup
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Set up environment variables**
+   
+   Copy the environment example files and configure them:
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   ```
+   
+   Update the database configuration in the `.env` file. See the `.env.example` file for required variables.
+
+4. **Set up the database**
+   ```bash
+   # Generate Prisma client
+   pnpm --filter @lib/database db:generate
+   
+   # Run database migrations
+   pnpm --filter @lib/database db:migrate
+   ```
+
+5. **Build all packages**
+   ```bash
+   pnpm build
+   ```
+
+6. **Start the development server**
+   ```bash
+   pnpm dev
+   ```
+
+The triggers application will be available at `http://localhost:8000/v1` with Swagger documentation at `http://localhost:8000/swagger`.
+
+## Development Commands
+
+### Building
+
+```bash
+# Build all packages and apps
+pnpm build
+
+# Build specific package
+pnpm --filter @lib/database build
+pnpm --filter triggers build
 ```
 
-## What's inside?
+### Development
 
-This Turborepo includes the following packages/apps:
+```bash
+# Start all apps in development mode
+pnpm dev
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+# Start specific app
+pnpm --filter api dev
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### Database Operations
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+```bash
+# Generate Prisma client
+pnpm --filter @lib/database db:generate
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+# Run migrations
+pnpm --filter @lib/database db:migrate
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+# Deploy migrations (production)
+pnpm --filter @lib/database db:deploy
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### Testing
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+```bash
+# Run tests for all packages
+pnpm test
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+# Run tests for specific package
+pnpm --filter api test
 ```
 
-### Remote Caching
+## Architecture
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+The project follows a modular architecture with shared packages:
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+- **Database Layer**: Centralized database operations using Prisma ORM
+- **API Layer**: RESTful APIs built with NestJS
+- **Shared Utilities**: Common functionality across packages
+- **Configuration**: Centralized ESLint and TypeScript configurations
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+## Key Features
 
-```
-cd my-turborepo
+- **Type Safety**: Full TypeScript support across all packages
+- **Database Integration**: Prisma ORM with PostgreSQL
+- **Exception Handling**: Comprehensive error handling for database operations
+- **API Documentation**: Auto-generated Swagger documentation
+- **Logging**: Structured logging with Winston
+- **Development Tools**: Hot reload, debugging support, and comprehensive tooling
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+## Package Dependencies
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
+The packages have the following dependency relationships:
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+- `api` app depends on `@lib/database`
+- `@lib/database` is a standalone package that can be used by multiple applications
+- Configuration packages are shared across all applications
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+## Troubleshooting
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
+### Database Connection Issues
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+If you encounter database connection problems:
 
-## Useful Links
+1. Verify your database is running
+2. Check the environment variables in your `.env` file
+3. Ensure the database URL format is correct
+4. Run database migrations if needed
 
-Learn more about the power of Turborepo:
+### Build Issues
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+If builds fail:
+
+1. Clear node_modules and reinstall: `pnpm clean` or `rm -rf node_modules && pnpm install`
+2. Clear Turborepo cache: `pnpm turbo clean`
+3. Rebuild all packages: `pnpm build`
+
+### Port Conflicts
+
+If the default port (3000) is in use:
+
+1. Update the `PORT` environment variable in your `.env` file
+2. Restart the development server
+
+## License
+
+This project is licensed under the MIT License.
