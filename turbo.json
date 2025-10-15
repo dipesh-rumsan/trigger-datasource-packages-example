@@ -29,6 +29,9 @@
     },
     "db:deploy": {
       "cache": false
+    },
+    "db:format": {
+      "cache": false
     }
   }
 }

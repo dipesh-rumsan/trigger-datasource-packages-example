@@ -6,10 +6,11 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && cp -r generated dist/",
-    "db:generate": "prisma generate",
-    "db:generate:prod": "prisma generate --no-engine",
-    "db:migrate": "prisma migrate dev --skip-generate",
-    "db:deploy": "prisma migrate deploy"
+    "db:generate": "prisma generate --schema=./prisma/schema",
+    "db:generate:prod": "prisma generate  --schema=./prisma/schema --no-engine",
+    "db:migrate": "prisma migrate dev --schema=./prisma/schema --skip-generate",
+    "db:deploy": "prisma migrate deploy --schema=./prisma/schema",
+    "format": "npx prisma format --schema=./prisma/schema"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
