@@ -1,0 +1,42 @@
+enum SourceType {
+  RAINFALL
+  WATER_LEVEL
+}
+
+enum DataSource {
+  DHM
+  GLOFAS
+  MANUAL
+  DAILY_MONITORING
+  GFH
+}
+
+model Source {
+  id         Int          @id @default(autoincrement())
+  uuid       String       @unique @default(uuid())
+  source     DataSource[]
+  riverBasin String       @unique
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime?    @updatedAt()
+
+  SourcesData     SourcesData[]
+  Phase           Phase[]
+
+  @@map("tbl_sources")
+}
+
+model SourcesData {
+  id Int @id @default(autoincrement())
+
+  type     SourceType
+  sourceId Int
+  source   Source     @relation(fields: [sourceId], references: [id])
+  dataSource DataSource? 
+
+  info Json @db.JsonB()
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt()
+
+  @@map("tbl_sources_data")
+}

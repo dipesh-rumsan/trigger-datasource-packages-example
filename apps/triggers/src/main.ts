@@ -1,12 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './all-exceptions.filter';
+import { PrismaClientExceptionFilter } from '@lib/database';
+import { WinstonModule } from 'nest-winston';
+import { loggerInstance } from './helpers/wiston.logger';
 
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+      logger: WinstonModule.createLogger({
+        instance: loggerInstance,
+      }),
+  });
 
   const globalPrefix = 'v1';
   app.setGlobalPrefix(globalPrefix);
@@ -19,7 +26,10 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalFilters(
+    new AllExceptionsFilter(),
+    new PrismaClientExceptionFilter(),
+  );
   
   const config = new DocumentBuilder()
     .setTitle('Rahat Triggers')
@@ -30,12 +40,14 @@ async function bootstrap() {
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('api', app, documentFactory);
+  SwaggerModule.setup('swagger', app, documentFactory);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
-  console.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);
-  console.log(`📚 Swagger documentation is available at: http://localhost:${port}/api`);
+  Logger.warn(
+    `Application is running on: http://localhost:${port}/${globalPrefix}`,
+  );
+  Logger.warn(`Swagger UI: http://localhost:${port}/swagger`);
 }
 bootstrap();
