@@ -1,31 +1,25 @@
-import { Prisma } from '@lib/database';
+import { PrismaService, Prisma } from '@lib/database';
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class SourceDataService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService
   ) {}
 
   async create() {
-    const post: Prisma.PostCreateInput = {
-      title: 'Hello World',
-      content: 'This is a test post',
-      published: true,
-      author: {
-        connect: { id: 1 },
-      },
+    const user: Prisma.UserCreateInput = {
+      email: 'test@test.com',
+      name: 'Test User',
     };
-    return this.prisma.post.create({ data: post });
+
+    return this.prismaService.user.create({
+      data: user,
+    });
   }
 
-  findAll() {
-    return this.prisma.post.findMany({
-      include: {
-        author: true,
-      },
-    });
+  async findAll() {
+    return this.prismaService.user.findMany();
   }
 
   findOne(id: number) {
