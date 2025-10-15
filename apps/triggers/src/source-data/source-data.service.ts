@@ -1,3 +1,4 @@
+import { Prisma } from '@lib/database';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -8,11 +9,23 @@ export class SourceDataService {
   ) {}
 
   async create() {
-    return '"This action adds a new sourceDatum';
+    const post: Prisma.PostCreateInput = {
+      title: 'Hello World',
+      content: 'This is a test post',
+      published: true,
+      author: {
+        connect: { id: 1 },
+      },
+    };
+    return this.prisma.post.create({ data: post });
   }
 
   findAll() {
-    return this.prisma;
+    return this.prisma.post.findMany({
+      include: {
+        author: true,
+      },
+    });
   }
 
   findOne(id: number) {

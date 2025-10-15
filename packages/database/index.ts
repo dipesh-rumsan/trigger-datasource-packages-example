@@ -1,4 +1,4 @@
 export { prisma } from "./src/client";
-export * from "./generated/prisma";
+export { PrismaClient, Prisma } from "./generated/prisma";
 
 
