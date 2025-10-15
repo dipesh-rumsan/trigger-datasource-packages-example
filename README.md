@@ -1,4 +1,4 @@
-# Nest API
+# NestJS, Prisma Monorepo Seed
 
 A monorepo containing the Nestjs Seed system built with NestJS and Turborepo. This project provides a scalable architecture for handling data triggers and database operations.
 
