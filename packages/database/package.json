@@ -2,9 +2,8 @@
   "name": "@lib/database",
   "private": true,
   "version": "0.0.1",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && cp -r generated dist/",
     "db:generate": "prisma generate",
@@ -20,7 +19,16 @@
     "typescript": "5.9.2"
   },
   "devDependencies": {
-    "@types/node": "^22.10.7"
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.7",
+    "express": "^5.1.0",
+    "tsup": "^8.5.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/core": "^11.0.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
   },
   "exports": {
     ".": "./dist/index.js"
