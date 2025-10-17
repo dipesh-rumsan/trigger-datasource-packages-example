@@ -22,7 +22,7 @@ import {
 import { DhmService } from './dhm.service';
 import { GfhService } from './gfh.service';
 import { GlofasService } from './glofas.service';
-import { DhmAdapter, DhmFetchParams } from '@lib/dhm-adapter';
+import { DhmWaterLevelAdapter, DhmFetchParams } from '@lib/dhm-adapter';
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 @Injectable()
@@ -34,13 +34,14 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
     private readonly httpService: HttpService,
     private readonly gfhService: GfhService,
     private readonly glofasService: GlofasService,
-    private readonly dhmAdapter: DhmAdapter,
+    private readonly dhmWaterLevelAdapter: DhmWaterLevelAdapter,
   ) {}
   onApplicationBootstrap() {
     // this.syncRiverWaterData();
     // this.syncRainfallData();
     // this.synchronizeGlofas();
     // this.syncGlobalFloodHub();
+    // Note: init() is called automatically via OnModuleInit - no need to call manually
     this.fetchDhmData();
   }
 
@@ -52,7 +53,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
       endDate: new Date('2025-12-31').toISOString().split('T')[0],
     };
 
-    const result = await this.dhmAdapter.execute(params);
+    const result = await this.dhmWaterLevelAdapter.execute(params);
     console.log('result', result);
   }
 

@@ -7,7 +7,7 @@ import {
   DhmNormalizedItem,
   DhmSourceDataTypeEnum,
   DhmFetchResponse,
-} from "./types/dhm-observation.type";
+} from "../types/dhm-observation.type";
 import {
   Indicator,
   Result,
@@ -15,19 +15,57 @@ import {
   ObservationAdapter,
   Err,
   chainAsync,
+  tryCatchAsync,
+  isOk,
 } from "@lib/core";
-import { buildQueryParams, scrapeDataFromHtml } from "../utils";
+import { buildQueryParams, scrapeDataFromHtml } from "../../utils";
+import { PrismaService } from "@lib/database";
 
 @Injectable()
-export class DhmAdapter extends ObservationAdapter<DhmFetchParams> {
+export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
   private readonly dhmUrl =
     "https://dhm.gov.np/site/getRiverWatchBySeriesId_Single";
 
-  private readonly logger = new Logger(DhmAdapter.name);
+  private readonly logger = new Logger(DhmWaterLevelAdapter.name);
 
-  constructor(@Inject(HttpService) httpService: HttpService) {
+  private sourceUrls = {};
+
+  constructor(
+    @Inject(HttpService) httpService: HttpService,
+    private readonly db: PrismaService
+  ) {
     super(httpService);
-    this.logger.log(`Initializing DhmAdapter`);
+    this.logger.log(
+      `Constructor called - PrismaService is ${this.db ? "injected ✓" : "NOT injected ✗"}`
+    );
+  }
+
+  async init() {
+    this.logger.log(
+      `init() called via OnModuleInit - PrismaService is ${this.db ? "available ✓" : "NOT available ✗"}`
+    );
+
+    const result = await tryCatchAsync(async () => {
+      const settings = await this.db.setting.findFirst({
+        where: {
+          name: "DATASOURCE",
+        },
+      });
+
+      if (!settings) {
+        this.logger.warn("DATASOURCE setting not found");
+        return Ok(null);
+      }
+
+      this.logger.log(`Successfully loaded DATASOURCE settings from database`);
+      return Ok(settings);
+    });
+
+    if (isOk(result)) {
+      this.logger.log("Initialization completed successfully");
+    } else {
+      this.logger.error("Initialization failed", result.error);
+    }
   }
 
   /**

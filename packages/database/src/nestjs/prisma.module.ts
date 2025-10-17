@@ -20,7 +20,7 @@ export class PrismaModule {
    * Priority: DATABASE_URL > individual DB_* variables
    */
   static forRootWithConfig(
-    options: Omit<PrismaModuleOptions, "prismaServiceOptions"> = {},
+    options: Omit<PrismaModuleOptions, "prismaServiceOptions"> = {}
   ): DynamicModule {
     return {
       global: options.isGlobal,
@@ -34,7 +34,9 @@ export class PrismaModule {
           },
           inject: [ConfigService],
         },
+        PrismaService,
       ],
+      exports: [PrismaService],
     };
   }
 
@@ -53,22 +55,22 @@ export class PrismaModule {
       const dbPort = configService.get("DB_PORT", "5432");
       const dbUser = configService.get(
         "DB_USERNAME",
-        configService.get("DB_USER", "postgres"),
+        configService.get("DB_USER", "postgres")
       );
       const dbPassword = configService.get("DB_PASSWORD", "postgres");
       const dbName = configService.get(
         "DB_NAME",
-        configService.get("DB_DATABASE", "postgres"),
+        configService.get("DB_DATABASE", "postgres")
       );
 
       databaseUrl = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}?schema=public`;
       this.logger.log(
-        "Constructed DATABASE_URL from individual environment variables",
+        "Constructed DATABASE_URL from individual environment variables"
       );
     }
 
     this.logger.debug(
-      `Database URL: ${databaseUrl.replace(/\/\/[^:]+:[^@]+@/, "//***:***@")}`,
+      `Database URL: ${databaseUrl.replace(/\/\/[^:]+:[^@]+@/, "//***:***@")}`
     ); // Log with masked credentials
 
     return {
@@ -106,7 +108,7 @@ export class PrismaModule {
   }
 
   private static createAsyncProviders(
-    options: PrismaModuleAsyncOptions,
+    options: PrismaModuleAsyncOptions
   ): Provider[] {
     if (options.useExisting || options.useFactory) {
       return this.createAsyncOptionsProvider(options);
@@ -125,7 +127,7 @@ export class PrismaModule {
   }
 
   private static createAsyncOptionsProvider(
-    options: PrismaModuleAsyncOptions,
+    options: PrismaModuleAsyncOptions
   ): Provider[] {
     if (options.useFactory) {
       return [

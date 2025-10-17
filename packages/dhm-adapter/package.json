@@ -20,7 +20,7 @@
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "jest": "^27.0.6",
-    "typescript": "^4.5.4"
+    "typescript": "5.9.2"
   },
   "exports": {
     ".": "./dist/index.js"

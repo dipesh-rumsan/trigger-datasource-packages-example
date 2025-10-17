@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SourceDataModule } from './source-data/source-data.module';
 import { PrismaModule } from '@lib/database';
+import { DhmModule } from '@lib/dhm-adapter';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 
@@ -17,6 +18,7 @@ import { HttpModule } from '@nestjs/axios';
     HttpModule.register({
       global: true,
     }),
+    DhmModule.forRoot(), // Register globally in AppModule
     SourceDataModule,
   ],
   controllers: [AppController],

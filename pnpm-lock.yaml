@@ -201,8 +201,8 @@ importers:
         specifier: ^27.0.6
         version: 27.5.1
       typescript:
-        specifier: ^4.5.4
-        version: 4.9.5
+        specifier: 5.9.2
+        version: 5.9.2
 
   packages/database:
     dependencies:
@@ -284,8 +284,8 @@ importers:
         specifier: ^27.0.6
         version: 27.5.1
       typescript:
-        specifier: ^4.5.4
-        version: 4.9.5
+        specifier: 5.9.2
+        version: 5.9.2
 
   packages/eslint-config:
     devDependencies:
@@ -9540,12 +9540,6 @@ packages:
       typescript: 5.9.2
     transitivePeerDependencies:
       - supports-color
-    dev: true
-
-  /typescript@4.9.5:
-    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
-    engines: {node: '>=4.2.0'}
-    hasBin: true
     dev: true
 
   /typescript@5.8.3:
