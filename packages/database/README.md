@@ -37,7 +37,7 @@ src/
 This package is part of the monorepo and is automatically available to other packages. To use it in your NestJS application:
 
 ```typescript
-import { PrismaModule, PrismaService } from '@lib/database';
+import { PrismaModule, PrismaService } from "@lib/database";
 ```
 
 ## Usage
@@ -48,9 +48,9 @@ The simplest way to use the database package in your NestJS application:
 
 ```typescript
 // app.module.ts
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@lib/database';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { PrismaModule } from "@lib/database";
 
 @Module({
   imports: [
@@ -71,8 +71,8 @@ Inject the PrismaService into your services:
 
 ```typescript
 // your.service.ts
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@lib/database';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@lib/database";
 
 @Injectable()
 export class YourService {
@@ -94,7 +94,7 @@ For more control over the Prisma configuration:
 
 ```typescript
 // app.module.ts
-import { PrismaModule } from '@lib/database';
+import { PrismaModule } from "@lib/database";
 
 @Module({
   imports: [
@@ -105,7 +105,7 @@ import { PrismaModule } from '@lib/database';
         prismaOptions: {
           datasources: {
             db: {
-              url: configService.get('DATABASE_URL'),
+              url: configService.get("DATABASE_URL"),
             },
           },
         },
@@ -175,13 +175,13 @@ The exception filter can be registered globally in your application:
 
 ```typescript
 // main.ts
-import { PrismaClientExceptionFilter } from '@lib/database';
+import { PrismaClientExceptionFilter } from "@lib/database";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   app.useGlobalFilters(new PrismaClientExceptionFilter());
-  
+
   await app.listen(3000);
 }
 ```
@@ -240,12 +240,14 @@ The package includes comprehensive logging:
 ## Dependencies
 
 ### Runtime Dependencies
+
 - **@prisma/client**: Prisma ORM client
 - **prisma**: Prisma CLI and schema tools
 - **@nestjs/common**: NestJS core functionality
 - **@nestjs/config**: Configuration management
 
 ### Peer Dependencies
+
 - **@nestjs/core**: NestJS application core
 - **reflect-metadata**: Metadata reflection
 - **rxjs**: Reactive extensions

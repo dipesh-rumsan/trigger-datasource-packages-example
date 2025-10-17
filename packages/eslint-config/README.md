@@ -31,6 +31,7 @@ The eslint-config package centralizes linting rules and configurations to ensure
 The base configuration provides fundamental linting rules for JavaScript and TypeScript projects.
 
 **Usage:**
+
 ```json
 {
   "extends": ["@workspace/eslint-config/base"]
@@ -38,6 +39,7 @@ The base configuration provides fundamental linting rules for JavaScript and Typ
 ```
 
 **Features:**
+
 - Core ESLint rules
 - TypeScript support
 - Import/export rules
@@ -49,6 +51,7 @@ The base configuration provides fundamental linting rules for JavaScript and Typ
 Specialized configuration for NestJS applications with framework-specific rules.
 
 **Usage:**
+
 ```json
 {
   "extends": ["@workspace/eslint-config/nestjs"]
@@ -56,6 +59,7 @@ Specialized configuration for NestJS applications with framework-specific rules.
 ```
 
 **Features:**
+
 - All base configuration rules
 - NestJS-specific patterns
 - Decorator usage rules
@@ -67,6 +71,7 @@ Specialized configuration for NestJS applications with framework-specific rules.
 Configuration that integrates ESLint with Prettier for code formatting.
 
 **Usage:**
+
 ```json
 {
   "extends": [
@@ -77,6 +82,7 @@ Configuration that integrates ESLint with Prettier for code formatting.
 ```
 
 **Features:**
+
 - Disables conflicting ESLint rules
 - Enables Prettier formatting
 - Maintains code quality checks
@@ -238,6 +244,7 @@ Create `.vscode/settings.json`:
 ### Other IDEs
 
 Most modern IDEs support ESLint integration. Configure your IDE to:
+
 - Use the project's ESLint configuration
 - Enable auto-fix on save
 - Show linting errors inline

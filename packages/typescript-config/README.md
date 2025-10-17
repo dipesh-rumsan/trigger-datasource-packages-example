@@ -30,6 +30,7 @@ The typescript-config package centralizes TypeScript compiler configurations to 
 The base configuration provides fundamental TypeScript compiler options suitable for most projects.
 
 **Usage:**
+
 ```json
 {
   "extends": "@workspace/typescript-config/base.json"
@@ -37,6 +38,7 @@ The base configuration provides fundamental TypeScript compiler options suitable
 ```
 
 **Key Features:**
+
 - Strict type checking enabled
 - Modern ES2020 target
 - CommonJS module system
@@ -49,6 +51,7 @@ The base configuration provides fundamental TypeScript compiler options suitable
 Specialized configuration optimized for NestJS applications with framework-specific settings.
 
 **Usage:**
+
 ```json
 {
   "extends": "@workspace/typescript-config/nestjs.json"
@@ -56,6 +59,7 @@ Specialized configuration optimized for NestJS applications with framework-speci
 ```
 
 **Key Features:**
+
 - All base configuration options
 - Experimental decorators enabled
 - Emit decorator metadata
@@ -316,10 +320,7 @@ For large monorepos, use project references:
 ```json
 {
   "extends": "@workspace/typescript-config/base.json",
-  "references": [
-    { "path": "../database" },
-    { "path": "../math" }
-  ]
+  "references": [{ "path": "../database" }, { "path": "../math" }]
 }
 ```
 

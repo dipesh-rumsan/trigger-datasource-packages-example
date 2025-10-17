@@ -23,7 +23,10 @@ export class SourceDataController {
 
   @Get('test-error')
   @ApiOperation({ summary: 'Test Prisma exception handling' })
-  @ApiResponse({ status: 404, description: 'Demonstrates Prisma error handling' })
+  @ApiResponse({
+    status: 404,
+    description: 'Demonstrates Prisma error handling',
+  })
   testPrismaError() {
     return this.sourceDataService.testPrismaError();
   }

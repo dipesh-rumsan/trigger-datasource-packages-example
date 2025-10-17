@@ -3,9 +3,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class SourceDataService {
-  constructor(
-    private readonly prismaService: PrismaService
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async create() {
     const user: Prisma.UserCreateInput = {

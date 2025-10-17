@@ -1,0 +1,25 @@
+export type IndicatorType =
+  | 'water_level_m'
+  | 'discharge_m3s'
+  | 'rainfall_mm'
+  | 'prob_flood';
+
+export type LocationType =
+  | { type: 'STATION'; seriesId: string }
+  | { type: 'BASIN'; basinId: string }
+  | { type: 'POINT'; lat: number; lon: number };
+
+export interface Indicator<T = any> {
+  kind: 'OBSERVATION' | 'FORECAST';
+  indicator: IndicatorType;
+  value: number;
+  history?: T[];
+  units: string;
+  issuedAt: string;
+  location: LocationType;
+  source: {
+    key: string;
+    metadata?: Record<string, unknown>;
+  };
+  confidence?: number;
+}

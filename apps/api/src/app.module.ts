@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { SourceDataModule } from './source-data/source-data.module';
 import { PrismaModule } from '@lib/database';
 import { ConfigModule } from '@nestjs/config';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -12,6 +13,9 @@ import { ConfigModule } from '@nestjs/config';
     }),
     PrismaModule.forRootWithConfig({
       isGlobal: true,
+    }),
+    HttpModule.register({
+      global: true,
     }),
     SourceDataModule,
   ],

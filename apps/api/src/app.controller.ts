@@ -9,7 +9,7 @@ export class AppController {
   getHello(): { message: string; result: number } {
     return {
       message: 'Hello from Rahat Triggers API!',
-      result: 1 + 2
+      result: 1 + 2,
     };
   }
 
@@ -17,7 +17,7 @@ export class AppController {
   getHealth(): { status: string; timestamp: string } {
     return {
       status: 'OK',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 }

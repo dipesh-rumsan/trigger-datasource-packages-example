@@ -7,12 +7,11 @@ import { PrismaClientExceptionFilter } from '@lib/database';
 import { WinstonModule } from 'nest-winston';
 import { loggerInstance } from './helpers/wiston.logger';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-      logger: WinstonModule.createLogger({
-        instance: loggerInstance,
-      }),
+    logger: WinstonModule.createLogger({
+      instance: loggerInstance,
+    }),
   });
 
   const globalPrefix = 'v1';
@@ -30,7 +29,7 @@ async function bootstrap() {
     new AllExceptionsFilter(),
     new PrismaClientExceptionFilter(),
   );
-  
+
   const config = new DocumentBuilder()
     .setTitle('Rahat Triggers')
     .setDescription('The Rahat Triggers API description')

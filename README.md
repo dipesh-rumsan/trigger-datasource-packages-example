@@ -27,35 +27,40 @@ Before running this project, make sure you have the following installed:
 ## Getting Started
 
 1. **Clone the repository**
+
    ```bash
    git clone git@github.com:dipesh-rumsan/turbo-setup.git
    cd turbo-setup
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
 3. **Set up environment variables**
-   
+
    Copy the environment example files and configure them:
+
    ```bash
    cp apps/api/.env.example apps/api/.env
    ```
-   
+
    Update the database configuration in the `.env` file. See the `.env.example` file for required variables.
 
 4. **Set up the database**
+
    ```bash
    # Generate Prisma client
    pnpm --filter @lib/database db:generate
-   
+
    # Run database migrations
    pnpm --filter @lib/database db:migrate
    ```
 
 5. **Build all packages**
+
    ```bash
    pnpm build
    ```

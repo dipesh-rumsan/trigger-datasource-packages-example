@@ -93,6 +93,7 @@ pnpm format
 The application provides the following main endpoints:
 
 ### Health Check
+
 - `GET /v1` - Basic health check endpoint
 - `GET /v1/health` - Detailed health status
 
