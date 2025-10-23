@@ -1,6 +1,7 @@
 import { Module, DynamicModule } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { DhmWaterLevelAdapter, DhmRainfallAdapter } from "./adapters";
+import { SettingsModule, SettingsService } from "@lib/core";
 
 const adapters = [DhmRainfallAdapter, DhmWaterLevelAdapter];
 
@@ -15,8 +16,8 @@ export class DhmModule {
     return {
       global: true,
       module: DhmModule,
-      imports: [HttpModule],
-      providers: [...adapters],
+      imports: [HttpModule, SettingsModule],
+      providers: [...adapters, SettingsService],
       exports: [...adapters],
     };
   }
@@ -28,7 +29,7 @@ export class DhmModule {
   static forFeature(): DynamicModule {
     return {
       module: DhmModule,
-      imports: [],
+      imports: [SettingsModule],
       providers: [...adapters],
       exports: [...adapters],
     };

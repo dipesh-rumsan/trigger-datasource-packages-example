@@ -17,9 +17,11 @@ import {
   chainAsync,
   tryCatchAsync,
   isOk,
+  DataSourceValue,
 } from "@lib/core";
 import { buildQueryParams, scrapeDataFromHtml } from "../../utils";
-import { PrismaService } from "@lib/database";
+import { DataSource, PrismaService } from "@lib/database";
+import { SettingsService } from "@lib/core";
 
 @Injectable()
 export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
@@ -32,38 +34,34 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
 
   constructor(
     @Inject(HttpService) httpService: HttpService,
-    private readonly db: PrismaService
+    @Inject(PrismaService) private readonly db: PrismaService,
+    @Inject(SettingsService) private readonly settingsService: SettingsService
   ) {
     super(httpService);
-    this.logger.log(
-      `Constructor called - PrismaService is ${this.db ? "injected ✓" : "NOT injected ✗"}`
-    );
   }
 
   async init() {
-    this.logger.log(
-      `init() called via OnModuleInit - PrismaService is ${this.db ? "available ✓" : "NOT available ✗"}`
-    );
-
-    const result = await tryCatchAsync(async () => {
-      const settings = await this.db.setting.findFirst({
-        where: {
-          name: "DATASOURCE",
-        },
-      });
+    const result = await tryCatchAsync<DataSourceValue | null>(async () => {
+      const settings =
+        await this.settingsService.get<DataSourceValue>("DATASOURCE");
 
       if (!settings) {
         this.logger.warn("DATASOURCE setting not found");
-        return Ok(null);
+        return null;
       }
 
-      this.logger.log(`Successfully loaded DATASOURCE settings from database`);
-      return Ok(settings);
+      this.logger.log(
+        `Successfully loaded DATASOURCE settings from SettingsService`
+      );
+      return settings;
     });
 
     if (isOk(result)) {
+      const dhmSettings = result.data![DataSource.DHM];
       this.logger.log("Initialization completed successfully");
+      console.log("DHM Settings is: ", dhmSettings);
     } else {
+      console.log("DHM Settings load failed: ", result.error);
       this.logger.error("Initialization failed", result.error);
     }
   }
