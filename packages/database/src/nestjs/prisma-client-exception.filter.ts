@@ -1,7 +1,7 @@
-import { ArgumentsHost, Catch, HttpStatus, Logger } from "@nestjs/common";
-import { BaseExceptionFilter } from "@nestjs/core";
-import { Response } from "express";
-import { Prisma } from "../../generated/prisma";
+import { ArgumentsHost, Catch, HttpStatus, Logger } from '@nestjs/common';
+import { BaseExceptionFilter } from '@nestjs/core';
+import { Response } from 'express';
+import { Prisma } from '../../generated/prisma';
 
 export interface PrismaErrorResponse {
   statusCode: number;
@@ -56,66 +56,66 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     response: Response,
   ): void {
     switch (exception.code) {
-      case "P2000":
+      case 'P2000':
         this.sendErrorResponse(
           response,
           HttpStatus.BAD_REQUEST,
-          "Value too long",
-          "The provided value is too long for the field",
+          'Value too long',
+          'The provided value is too long for the field',
           exception,
         );
         break;
-      case "P2001":
+      case 'P2001':
         this.sendErrorResponse(
           response,
           HttpStatus.BAD_REQUEST,
-          "Record not found",
-          "The record searched for in the where condition does not exist",
+          'Record not found',
+          'The record searched for in the where condition does not exist',
           exception,
         );
         break;
-      case "P2002":
+      case 'P2002':
         this.sendErrorResponse(
           response,
           HttpStatus.CONFLICT,
-          "Unique constraint violation",
+          'Unique constraint violation',
           this.extractUniqueConstraintError(exception),
           exception,
         );
         break;
-      case "P2003":
+      case 'P2003':
         this.sendErrorResponse(
           response,
           HttpStatus.BAD_REQUEST,
-          "Foreign key constraint violation",
-          "Foreign key constraint failed on the field",
+          'Foreign key constraint violation',
+          'Foreign key constraint failed on the field',
           exception,
         );
         break;
-      case "P2004":
+      case 'P2004':
         this.sendErrorResponse(
           response,
           HttpStatus.BAD_REQUEST,
-          "Constraint violation",
-          "A constraint failed on the database",
+          'Constraint violation',
+          'A constraint failed on the database',
           exception,
         );
         break;
-      case "P2025":
+      case 'P2025':
         this.sendErrorResponse(
           response,
           HttpStatus.NOT_FOUND,
-          "Record not found",
-          "An operation failed because it depends on one or more records that were required but not found",
+          'Record not found',
+          'An operation failed because it depends on one or more records that were required but not found',
           exception,
         );
         break;
-      case "P2034":
+      case 'P2034':
         this.sendErrorResponse(
           response,
           HttpStatus.CONFLICT,
-          "Transaction conflict",
-          "Transaction failed due to a write conflict or a deadlock",
+          'Transaction conflict',
+          'Transaction failed due to a write conflict or a deadlock',
           exception,
         );
         break;
@@ -123,7 +123,7 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
         this.sendErrorResponse(
           response,
           HttpStatus.INTERNAL_SERVER_ERROR,
-          "Database error",
+          'Database error',
           this.cleanUpException(exception),
           exception,
         );
@@ -138,8 +138,8 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     this.sendErrorResponse(
       response,
       HttpStatus.INTERNAL_SERVER_ERROR,
-      "Unknown database error",
-      "An unknown error occurred while processing the database request",
+      'Unknown database error',
+      'An unknown error occurred while processing the database request',
       exception,
     );
   }
@@ -151,8 +151,8 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     this.sendErrorResponse(
       response,
       HttpStatus.BAD_REQUEST,
-      "Validation error",
-      "Invalid data provided to the database query",
+      'Validation error',
+      'Invalid data provided to the database query',
       exception,
     );
   }
@@ -161,8 +161,8 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     this.sendErrorResponse(
       response,
       HttpStatus.INTERNAL_SERVER_ERROR,
-      "Internal server error",
-      "An unexpected error occurred",
+      'Internal server error',
+      'An unexpected error occurred',
       exception,
     );
   }
@@ -178,7 +178,7 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
       statusCode,
       message,
       error,
-      ...(process.env.NODE_ENV === "development" && {
+      ...(process.env.NODE_ENV === 'development' && {
         details: {
           code: exception.code,
           clientVersion: exception.clientVersion,
@@ -195,11 +195,11 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
   ): string {
     if (exception.meta?.target) {
       const fields = Array.isArray(exception.meta.target)
-        ? exception.meta.target.join(", ")
+        ? exception.meta.target.join(', ')
         : exception.meta.target;
       return `A record with the same ${fields} already exists`;
     }
-    return "A record with the same unique field already exists";
+    return 'A record with the same unique field already exists';
   }
 
   /**
@@ -208,6 +208,6 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
    * @returns Cleaned exception message
    */
   private cleanUpException(exception: Error): string {
-    return exception.message.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+    return exception.message.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
   }
 }

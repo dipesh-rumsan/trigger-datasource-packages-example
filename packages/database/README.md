@@ -30,6 +30,14 @@ src/
     ├── prisma-client-exception.filter.ts  # Exception filter
     └── interfaces/
         └── prisma-module-options.interface.ts  # Type definitions
+
+prisma/
+├── schema/                      # Prisma schema files
+├── seeds/                       # Database seed files
+└── seed-db.sh                   # Seed runner script
+
+scripts/
+└── build.js                     # Custom build script
 ```
 
 ## Installation
@@ -37,7 +45,7 @@ src/
 This package is part of the monorepo and is automatically available to other packages. To use it in your NestJS application:
 
 ```typescript
-import { PrismaModule, PrismaService } from "@lib/database";
+import { PrismaModule, PrismaService } from '@lib/database';
 ```
 
 ## Usage
@@ -48,9 +56,9 @@ The simplest way to use the database package in your NestJS application:
 
 ```typescript
 // app.module.ts
-import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import { PrismaModule } from "@lib/database";
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from '@lib/database';
 
 @Module({
   imports: [
@@ -71,8 +79,8 @@ Inject the PrismaService into your services:
 
 ```typescript
 // your.service.ts
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "@lib/database";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@lib/database';
 
 @Injectable()
 export class YourService {
@@ -94,7 +102,7 @@ For more control over the Prisma configuration:
 
 ```typescript
 // app.module.ts
-import { PrismaModule } from "@lib/database";
+import { PrismaModule } from '@lib/database';
 
 @Module({
   imports: [
@@ -105,7 +113,7 @@ import { PrismaModule } from "@lib/database";
         prismaOptions: {
           datasources: {
             db: {
-              url: configService.get("DATABASE_URL"),
+              url: configService.get('DATABASE_URL'),
             },
           },
         },
@@ -175,7 +183,7 @@ The exception filter can be registered globally in your application:
 
 ```typescript
 // main.ts
-import { PrismaClientExceptionFilter } from "@lib/database";
+import { PrismaClientExceptionFilter } from '@lib/database';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -202,7 +210,96 @@ pnpm db:deploy
 
 # Generate client without engine (production)
 pnpm db:generate:prod
+
+# Seed database from source
+pnpm db:seed
+
+# Seed database from dist (after build)
+pnpm db:seed:dist
 ```
+
+### Database Seeding
+
+The package includes a seeding system to populate the database with initial data:
+
+#### Seed Files Location
+
+- **Source**: `prisma/seeds/*.ts` - TypeScript seed files
+- **After Build**: `dist/prisma/seeds/*.ts` - Copied to dist directory
+
+#### Seed File Structure
+
+Each seed file should:
+
+1. Import Prisma client from `../../generated/prisma`
+2. Import types from `../../index` (package types)
+3. Execute async operations with proper error handling
+4. Disconnect Prisma client in finally block
+
+Example seed file:
+
+```typescript
+import { PrismaClient } from '../../generated/prisma';
+
+const prisma = new PrismaClient();
+
+const main = async () => {
+  await prisma.yourModel.create({
+    data: {
+      /* your data */
+    },
+  });
+};
+
+main()
+  .catch((error) => {
+    console.error('Error during seeding:', error);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+```
+
+#### Running Seeds
+
+**From source (development):**
+
+```bash
+pnpm db:seed
+# or directly
+./prisma/seed-db.sh
+```
+
+**From dist (production/after build):**
+
+```bash
+pnpm db:seed:dist
+# or directly
+./dist/prisma/seed-db.sh
+```
+
+#### Build Process
+
+The build process uses a dedicated build script (`scripts/build.js`) that automatically:
+
+1. Compiles TypeScript source to JavaScript
+2. Copies Prisma generated client to `dist/generated/`
+3. Copies seed files to `dist/prisma/seeds/` (as TypeScript)
+4. Copies seed script to `dist/prisma/seed-db.sh`
+5. Sets executable permissions on the seed script
+
+The build script provides clear visual feedback for each step and ensures all dependencies are properly copied.
+
+The import paths in seed files work correctly from both locations:
+
+- From `prisma/seeds/`: `../../generated/prisma` → `generated/prisma`
+- From `dist/prisma/seeds/`: `../../generated/prisma` → `dist/generated/prisma`
+
+#### Adding New Seeds
+
+1. Create a new `.ts` file in `prisma/seeds/`
+2. Use the seed file structure shown above
+3. The `seed-db.sh` script will automatically run all `.ts` files in the seeds directory
 
 ### Schema Management
 
