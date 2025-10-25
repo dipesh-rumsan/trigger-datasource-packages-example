@@ -2,7 +2,8 @@ import axios from "axios";
 
 export interface DhmObservation {
   data: DhmNormalizedItem[];
-  seriesId: string;
+  seriesId: number;
+  location?: string;
 }
 
 export interface DhmFetchResponse extends Omit<DhmObservation, "data"> {

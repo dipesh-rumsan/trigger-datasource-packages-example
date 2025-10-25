@@ -43,7 +43,7 @@ const main = async () => {
     await prisma.setting.create({
       data: {
         name: config.name,
-        value: JSON.stringify(config.value),
+        value: config.value,
         isPrivate: config.isPrivate,
         dataType: 'OBJECT',
         requiredFields: [],
@@ -54,7 +54,7 @@ const main = async () => {
     await prisma.setting.create({
       data: {
         name: config.name,
-        value: JSON.stringify(config.value),
+        value: config.value,
         isPrivate: config.isPrivate,
         dataType: 'OBJECT',
         requiredFields: [],

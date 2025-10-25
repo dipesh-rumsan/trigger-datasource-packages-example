@@ -1,4 +1,9 @@
-import { PrismaClient, DataSource, SourceType } from '../../generated/prisma';
+import {
+  PrismaClient,
+  Prisma,
+  DataSource,
+  SourceType,
+} from '../../generated/prisma';
 import { DataSourceType } from '../../index';
 
 const prisma = new PrismaClient();
@@ -81,7 +86,7 @@ const main = async () => {
     await prisma.setting.create({
       data: {
         name: config.name,
-        value: JSON.stringify(config.value),
+        value: config.value as unknown as Prisma.InputJsonValue,
         isPrivate: config.isPrivate,
         dataType: 'OBJECT',
         requiredFields: [],
@@ -92,7 +97,7 @@ const main = async () => {
     await prisma.setting.create({
       data: {
         name: config.name,
-        value: JSON.stringify(config.value),
+        value: config.value as unknown as Prisma.InputJsonValue,
         isPrivate: config.isPrivate,
         dataType: 'OBJECT',
         requiredFields: [],

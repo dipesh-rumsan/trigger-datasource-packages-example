@@ -1,14 +1,14 @@
 import { GfhStationDetails } from './gfh-station.type';
 import { DataSource, SourceType } from '../../../index';
 
-export interface GlofasStationInfo {
+export type GlofasStationInfo = {
   LOCATION: string;
   I: string;
   J: string;
   URL: string;
   BBOX: string;
   TIMESTRING: string;
-}
+};
 
 export type RainfallWaterLevelConfig = {
   [SourceType.RAINFALL]: {

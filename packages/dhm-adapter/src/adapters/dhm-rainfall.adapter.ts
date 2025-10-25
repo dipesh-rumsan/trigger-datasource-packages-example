@@ -15,9 +15,15 @@ import {
   ObservationAdapter,
   Err,
   chainAsync,
+  SettingsService,
 } from "@lib/core";
 import { buildQueryParams, scrapeDataFromHtml } from "../../utils";
-import { PrismaService } from "@lib/database";
+import {
+  DataSource,
+  SourceType,
+  PrismaService,
+  RainfallWaterLevelConfig,
+} from "@lib/database";
 
 @Injectable()
 export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
@@ -26,45 +32,19 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
   private readonly logger = new Logger(DhmRainfallAdapter.name);
 
-  private sourceUrls = {};
-
   constructor(
     @Inject(HttpService) httpService: HttpService,
-    private readonly db: PrismaService
+    @Inject(SettingsService) settingsService: SettingsService,
+    @Inject(PrismaService) private readonly db: PrismaService
   ) {
-    super(httpService);
-    this.logger.log(
-      `Constructor called - PrismaService is ${this.db ? "injected ✓" : "NOT injected ✗"}`
-    );
+    super(httpService, settingsService, {
+      dataSource: DataSource.DHM,
+      sourceType: SourceType.RAINFALL,
+    });
   }
 
   async init() {
-    return;
-    this.logger.log(
-      `init() called via OnModuleInit - PrismaService is ${this.db ? "available ✓" : "NOT available ✗"}`
-    );
-
-    try {
-      const settings = await this.db.setting.findFirst({
-        where: {
-          name: "DATASOURCE",
-        },
-      });
-
-      if (!settings) {
-        this.logger.warn("DATASOURCE setting not found");
-      } else {
-        this.logger.log(
-          `Successfully loaded DATASOURCE settings from database`
-        );
-      }
-
-      this.logger.log("Initialization completed successfully");
-    } catch (error) {
-      console.log("error", error);
-      this.logger.error("Initialization failed", error);
-      throw error;
-    }
+    this.logger.log("DhmRainfallAdapter initialization");
   }
 
   /**
@@ -76,20 +56,31 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
         `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`
       );
 
+      const config: RainfallWaterLevelConfig["RAINFALL"][] = this.getConfig();
+      const baseUrl = this.getUrl();
+
+      if (!baseUrl) {
+        this.logger.error("DHM RAINFALL URL is not configured");
+        return Err("DHM RAINFALL URL is not configured");
+      }
+
       const htmlPages: DhmFetchResponse[] = await Promise.all(
-        params.seriesIds.map(async (seriesId) => {
-          const queryParams = buildQueryParams(+seriesId);
+        config.flatMap((cfg) => {
+          return cfg.SERIESID.map(async (seriesId) => {
+            const queryParams = buildQueryParams(+seriesId);
 
-          const form = new FormData();
+            const form = new FormData();
 
-          form.append("date", queryParams.date_from || "");
-          form.append("period", DhmSourceDataTypeEnum.POINT.toString());
-          form.append("seriesid", seriesId);
+            form.append("date", queryParams.date_from || "");
+            form.append("period", DhmSourceDataTypeEnum.POINT.toString());
+            form.append("seriesid", seriesId.toString());
 
-          return {
-            data: await this.httpService.axiosRef.post(this.dhmUrl, form),
-            seriesId,
-          };
+            return {
+              data: await this.httpService.axiosRef.post(baseUrl, form),
+              location: cfg.LOCATION,
+              seriesId,
+            };
+          });
         })
       );
 

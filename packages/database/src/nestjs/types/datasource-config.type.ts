@@ -1,18 +1,18 @@
 import { DataSource, SourceType } from '../../../index';
 
-type Config = {
+export type URLConfig = {
   URL: string;
 };
 
 export type DataSourceDHMConfig = {
-  [SourceType.RAINFALL]: Config;
-  [SourceType.WATER_LEVEL]: Config;
+  [SourceType.RAINFALL]: URLConfig;
+  [SourceType.WATER_LEVEL]: URLConfig;
 };
 
 export type DataSourceConfigValue = {
   [DataSource.DHM]: DataSourceDHMConfig;
-  [DataSource.GLOFAS]: Config;
-  [DataSource.GFH]?: Config;
+  [DataSource.GLOFAS]: URLConfig;
+  [DataSource.GFH]?: URLConfig;
 };
 
 export type DataSourceConfigType = {

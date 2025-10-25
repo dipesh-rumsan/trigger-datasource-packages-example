@@ -15,12 +15,14 @@ import {
   ObservationAdapter,
   Err,
   chainAsync,
-  tryCatchAsync,
-  isOk,
-  DataSourceValue,
 } from "@lib/core";
 import { buildQueryParams, scrapeDataFromHtml } from "../../utils";
-import { DataSource, PrismaService } from "@lib/database";
+import {
+  DataSource,
+  SourceType,
+  PrismaService,
+  RainfallWaterLevelConfig,
+} from "@lib/database";
 import { SettingsService } from "@lib/core";
 
 @Injectable()
@@ -30,40 +32,19 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
 
   private readonly logger = new Logger(DhmWaterLevelAdapter.name);
 
-  private sourceUrls = {};
-
   constructor(
     @Inject(HttpService) httpService: HttpService,
     @Inject(PrismaService) private readonly db: PrismaService,
-    @Inject(SettingsService) private readonly settingsService: SettingsService
+    @Inject(SettingsService) settingsService: SettingsService
   ) {
-    super(httpService);
+    super(httpService, settingsService, {
+      dataSource: DataSource.DHM,
+      sourceType: SourceType.WATER_LEVEL,
+    });
   }
 
   async init() {
-    const result = await tryCatchAsync<DataSourceValue | null>(async () => {
-      const settings =
-        await this.settingsService.get<DataSourceValue>("DATASOURCE");
-
-      if (!settings) {
-        this.logger.warn("DATASOURCE setting not found");
-        return null;
-      }
-
-      this.logger.log(
-        `Successfully loaded DATASOURCE settings from SettingsService`
-      );
-      return settings;
-    });
-
-    if (isOk(result)) {
-      const dhmSettings = result.data![DataSource.DHM];
-      this.logger.log("Initialization completed successfully");
-      console.log("DHM Settings is: ", dhmSettings);
-    } else {
-      console.log("DHM Settings load failed: ", result.error);
-      this.logger.error("Initialization failed", result.error);
-    }
+    this.logger.log("DhmWaterLevelAdapter initialization");
   }
 
   /**
@@ -75,25 +56,39 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
         `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`
       );
 
+      const baseUrl = this.getUrl();
+
+      const config: RainfallWaterLevelConfig["WATER_LEVEL"][] =
+        this.getConfig();
+
+      if (!baseUrl) {
+        this.logger.error("DHM Water Level URL is not configured");
+        return Err("DHM Water Level URL is not configured");
+      }
+
       const htmlPages: DhmFetchResponse[] = await Promise.all(
-        params.seriesIds.map(async (seriesId) => {
-          const queryParams = buildQueryParams(+seriesId);
+        config.flatMap((cfg) => {
+          return cfg.SERIESID.map(async (seriesId) => {
+            const queryParams = buildQueryParams(seriesId);
 
-          const form = new FormData();
+            const form = new FormData();
 
-          form.append("date", queryParams.date_from || "");
-          form.append("period", DhmSourceDataTypeEnum.POINT.toString());
-          form.append("seriesid", seriesId);
+            form.append("date", queryParams.date_from || "");
+            form.append("period", DhmSourceDataTypeEnum.POINT.toString());
+            form.append("seriesid", seriesId.toString());
 
-          return {
-            data: await this.httpService.axiosRef.post(this.dhmUrl, form),
-            seriesId,
-          };
+            return {
+              data: await this.httpService.axiosRef.post(baseUrl, form),
+              seriesId,
+              location: cfg.LOCATION,
+            };
+          });
         })
       );
 
       return Ok(htmlPages);
     } catch (error) {
+      console.log(error);
       this.logger.error("Failed to fetch DHM data", error);
       return Err("Failed to fetch DHM observations", error);
     }
@@ -147,8 +142,9 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
           kind: "OBSERVATION" as const,
           issuedAt: new Date().toISOString(),
           location: {
-            type: "STATION" as const,
+            type: "BASIN" as const,
             seriesId: obs.seriesId,
+            basinId: obs.location!,
           },
           source: {
             key: "DHM",

@@ -5,8 +5,8 @@ export type IndicatorType =
   | 'prob_flood';
 
 export type LocationType =
-  | { type: 'STATION'; seriesId: string }
-  | { type: 'BASIN'; basinId: string }
+  | { type: 'STATION'; seriesId: number }
+  | { type: 'BASIN'; basinId: string; seriesId: number }
   | { type: 'POINT'; lat: number; lon: number };
 
 export interface Indicator<T = any> {

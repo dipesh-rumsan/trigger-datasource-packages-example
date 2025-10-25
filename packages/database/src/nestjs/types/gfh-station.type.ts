@@ -113,10 +113,10 @@ interface Location {
   longitude: number;
 }
 
-export interface GfhStationDetails {
+export type GfhStationDetails = {
   RIVER_BASIN: string;
   STATION_LOCATIONS_DETAILS: StationLoacationDetails[];
-}
+};
 
 export interface StationLoacationDetails {
   LATITUDE: number;
