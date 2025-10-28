@@ -27,9 +27,6 @@ import { SettingsService } from "@lib/core";
 
 @Injectable()
 export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
-  private readonly dhmUrl =
-    "https://dhm.gov.np/site/getRiverWatchBySeriesId_Single";
-
   private readonly logger = new Logger(DhmWaterLevelAdapter.name);
 
   constructor(
