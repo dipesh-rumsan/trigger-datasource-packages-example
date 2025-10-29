@@ -6,7 +6,8 @@ import { PrismaModule } from '@lib/database';
 import { DhmModule } from '@lib/dhm-adapter';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
-import { SettingsModule, SettingsService } from '@lib/core';
+import { SettingsModule } from '@lib/core';
+import { GlofasModule } from '@lib/glofas-adapter';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { SettingsModule, SettingsService } from '@lib/core';
     HttpModule.register({
       global: true,
     }),
-    DhmModule.forRoot(), // Register globally in AppModule
+    DhmModule.forRoot(),
+    GlofasModule.forRoot(),
     SourceDataModule,
     SettingsModule,
   ],

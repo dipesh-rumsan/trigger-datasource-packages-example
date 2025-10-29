@@ -25,6 +25,7 @@
   "dependencies": {
     "@lib/database": "workspace:*",
     "@lib/dhm-adapter": "workspace:*",
+    "@lib/glofas-adapter": "workspace:*",
     "@lib/core": "workspace:*",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.1",

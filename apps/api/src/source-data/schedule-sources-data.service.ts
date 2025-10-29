@@ -27,6 +27,7 @@ import {
   DhmFetchParams,
   DhmRainfallAdapter,
 } from '@lib/dhm-adapter';
+import { GlofasAdapter } from '@lib/glofas-adapter';
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 @Injectable()
@@ -39,7 +40,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
     private readonly gfhService: GfhService,
     private readonly glofasService: GlofasService,
     private readonly dhmWaterLevelAdapter: DhmWaterLevelAdapter,
-    private readonly dhmRainfallAdapter: DhmRainfallAdapter,
+    private readonly glofasAdapter: GlofasAdapter,
   ) {}
   onApplicationBootstrap() {
     // this.syncRiverWaterData();
@@ -62,6 +63,9 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
     // const rainfallResult = await this.dhmRainfallAdapter.execute(params);
     console.log('water level result', result);
     // console.log('rainfall result', rainfallResult);
+
+    const glofasResult = await this.glofasAdapter.execute();
+    console.log('glofas result', glofasResult);
   }
 
   // run every 15 minutes

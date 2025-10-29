@@ -42,6 +42,9 @@ importers:
       '@lib/dhm-adapter':
         specifier: workspace:*
         version: link:../../packages/dhm-adapter
+      '@lib/glofas-adapter':
+        specifier: workspace:*
+        version: link:../../packages/glofas-adapter
       '@nestjs/axios':
         specifier: ^4.0.1
         version: 4.0.1(@nestjs/common@11.1.6)(axios@1.12.2)(rxjs@7.8.2)
@@ -334,6 +337,43 @@ importers:
       typescript-eslint:
         specifier: ^8.15.0
         version: 8.46.0(eslint@9.37.0)(typescript@5.9.2)
+
+  packages/glofas-adapter:
+    dependencies:
+      '@lib/core':
+        specifier: workspace:*
+        version: link:../core
+      '@lib/database':
+        specifier: workspace:*
+        version: link:../database
+      '@nestjs/axios':
+        specifier: ^4.0.1
+        version: 4.0.1(@nestjs/common@11.1.6)(axios@1.12.2)(rxjs@7.8.2)
+      '@nestjs/common':
+        specifier: ^11.0.1
+        version: 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      axios:
+        specifier: ^1.12.2
+        version: 1.12.2
+      cheerio:
+        specifier: ^1.1.2
+        version: 1.1.2
+    devDependencies:
+      '@types/jest':
+        specifier: ^27.0.2
+        version: 27.5.2
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      jest:
+        specifier: ^27.0.6
+        version: 27.5.1
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
 
   packages/typescript-config: {}
 

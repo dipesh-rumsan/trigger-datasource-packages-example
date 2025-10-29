@@ -6,14 +6,14 @@ export type IndicatorType =
 
 export type LocationType =
   | { type: 'STATION'; seriesId: number }
-  | { type: 'BASIN'; basinId: string; seriesId: number }
+  | { type: 'BASIN'; basinId: string; seriesId?: number }
   | { type: 'POINT'; lat: number; lon: number };
 
 export interface Indicator<T = any> {
   kind: 'OBSERVATION' | 'FORECAST';
   indicator: IndicatorType;
   value: number;
-  history?: T[];
+  info?: T[];
   units: string;
   issuedAt: string;
   location: LocationType;

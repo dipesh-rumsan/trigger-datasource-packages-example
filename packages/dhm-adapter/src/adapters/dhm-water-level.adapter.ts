@@ -101,6 +101,7 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
       for (const {
         data: { data: rawData },
         seriesId,
+        location,
       } of rawDatas) {
         const data = scrapeDataFromHtml(rawData.data.table);
 
@@ -116,6 +117,7 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
         observations.push({
           data: normalizedData,
           seriesId,
+          location,
         });
       }
 
@@ -147,7 +149,7 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
             key: "DHM",
             metadata: { originalUnit: "m" },
           },
-          history: obs.data,
+          info: obs.data,
         };
 
         const results: Indicator[] = [];
