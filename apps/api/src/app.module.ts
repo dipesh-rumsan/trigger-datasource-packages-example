@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { SettingsModule } from '@lib/core';
 import { GlofasModule } from '@lib/glofas-adapter';
+import { TriggersModule } from './triggers/trigger.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { GlofasModule } from '@lib/glofas-adapter';
     DhmModule.forRoot(),
     GlofasModule.forRoot(),
     SourceDataModule,
+    TriggersModule,
     SettingsModule,
   ],
   controllers: [AppController],

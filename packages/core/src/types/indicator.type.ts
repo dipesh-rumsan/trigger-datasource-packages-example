@@ -1,7 +1,7 @@
 export type IndicatorType =
   | 'water_level_m'
   | 'discharge_m3s'
-  | 'rainfall_mm'
+  | 'rainfall_mm' // 3
   | 'prob_flood';
 
 export type LocationType =

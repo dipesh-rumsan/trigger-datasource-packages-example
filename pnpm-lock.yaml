@@ -81,6 +81,9 @@ importers:
       class-validator:
         specifier: ^0.14.2
         version: 0.14.2
+      expr-eval:
+        specifier: ^2.0.2
+        version: 2.0.2
       luxon:
         specifier: ^3.7.2
         version: 3.7.2
@@ -5536,6 +5539,10 @@ packages:
       jest-message-util: 29.7.0
       jest-util: 29.7.0
     dev: true
+
+  /expr-eval@2.0.2:
+    resolution: {integrity: sha512-4EMSHGOPSwAfBiibw3ndnP0AvjDWLsMvGOvWEZ2F96IGk0bIVdjQisOHxReSkE13mHcfbuCiXw+G4y0zv6N8Eg==}
+    dev: false
 
   /express@5.1.0:
     resolution: {integrity: sha512-DT9ck5YIRU+8GYzzU5kT3eHGA5iL+1Zd0EutOmTE9Dtk+Tvuzd23VBU+ec7HPNSTxXYO55gPV/hq4pSBJDjFpA==}

@@ -25,8 +25,8 @@ model Phase {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt()
 
-  source   Source     @relation(fields: [riverBasin], references: [riverBasin])
-  Trigger  Trigger[]
+  source  Source    @relation(fields: [riverBasin], references: [riverBasin])
+  Trigger Trigger[]
 
   @@unique([riverBasin, activeYear, name])
   @@map("tbl_phases")
