@@ -1,0 +1,14 @@
+services:
+  api:
+    container_name: api
+    image: triggers:latest-1
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    restart: always
+    env_file:
+      - ./apps/api/.env
+    # command: >
+    #   sh -c "npx prisma migrate deploy"
+    ports:
+      - 3003:8000
