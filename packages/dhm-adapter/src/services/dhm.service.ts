@@ -1,11 +1,9 @@
+import { DataSource, PrismaService, SourceType } from "@lib/database";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import {
-  DataSource,
-  PrismaService,
   RainfallStationData,
   RiverStationData,
-  SourceType,
-} from "@lib/database";
-import { Inject, Injectable, Logger } from "@nestjs/common";
+} from "types/dhm-observation.type";
 
 @Injectable()
 export class DhmService {

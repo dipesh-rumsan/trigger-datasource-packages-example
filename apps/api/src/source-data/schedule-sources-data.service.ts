@@ -6,10 +6,11 @@ import {
   DhmFetchParams,
   DhmRainfallAdapter,
   DhmService,
+  RiverStationData,
 } from '@lib/dhm-adapter';
 import { GlofasAdapter, GlofasServices } from '@lib/glofas-adapter';
 import { Indicator, isErr } from '@lib/core';
-import { RiverStationData, SourceType } from '@lib/database';
+import { SourceType } from '@lib/database';
 
 @Injectable()
 export class ScheduleSourcesDataService implements OnApplicationBootstrap {
