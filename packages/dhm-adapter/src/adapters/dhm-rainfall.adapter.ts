@@ -24,6 +24,7 @@ import {
   PrismaService,
   RainfallWaterLevelConfig,
 } from "@lib/database";
+import { AxiosError } from "axios";
 
 @Injectable()
 export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {

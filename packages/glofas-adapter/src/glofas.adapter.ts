@@ -104,10 +104,16 @@ export class GlofasAdapter extends ObservationAdapter {
         location,
       } of rawDatas) {
         const reportingPoints = rawData?.content['Reporting Points'].point;
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const { dateString } = getFormattedDate(yesterdayDate);
         const glofasData = parseGlofasData(reportingPoints);
 
         observations.push({
-          data: glofasData,
+          data: {
+            ...glofasData,
+            forecastDate: dateString,
+          },
           location,
         });
       }

@@ -177,7 +177,9 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
    * Main pipeline execution - chains fetch → aggregate → transform
    * Using functional composition - no if-else needed!
    */
-  async execute(params: DhmFetchParams): Promise<Result<Indicator[]>> {
+  async execute(
+    params: DhmFetchParams
+  ): Promise<Result<Indicator<{ value: number; datetime: string }>[]>> {
     return chainAsync(this.fetch(params), (rawData: DhmFetchResponse[]) =>
       chainAsync(this.aggregate(rawData), (observations: DhmObservation[]) =>
         this.transform(observations)

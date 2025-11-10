@@ -8,3 +8,33 @@ export interface GlofasObservation {
 export interface GlofasFetchResponse extends Omit<GlofasObservation, 'data'> {
   data: axios.AxiosResponse<any, any, {}>;
 }
+
+type PointForecast = {
+  header: string;
+  data: string;
+};
+
+export interface GlofasDataObject {
+  pointForecastData: {
+    forecastDate: PointForecast;
+    maxProbability: PointForecast;
+    alertLevel: PointForecast;
+    maxProbabilityStep: PointForecast;
+    dischargeTendencyImage: PointForecast;
+    peakForecasted: PointForecast;
+  };
+  hydrographImageUrl: string;
+  returnPeriodTable2yr: {
+    returnPeriodData: any[];
+    returnPeriodHeaders: string[];
+  };
+  returnPeriodTable5yr: {
+    returnPeriodData: any[];
+    returnPeriodHeaders: string[];
+  };
+  returnPeriodTable20yr: {
+    returnPeriodData: any[];
+    returnPeriodHeaders: string[];
+  };
+  forecastDate: string;
+}
