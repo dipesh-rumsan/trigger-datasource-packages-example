@@ -5,6 +5,7 @@ enum SettingDataType {
   OBJECT
 }
 
+// ++++++++++++++++++ START: @rumsan/settings +++++++++++++++++++++++++++
 model Setting {
   name           String          @id @unique
   value          Json
