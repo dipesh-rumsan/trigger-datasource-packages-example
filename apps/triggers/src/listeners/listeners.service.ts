@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 // import { BQUEUE, EVENTS } from '../constants';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { BQUEUE, EVENTS, JOBS } from 'src/constant';
 
 @Injectable()
@@ -38,7 +38,7 @@ export class ListernersService {
         removeOnFail: false,
       });
       this.logger.log(`✅ Notification job queued`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Notification emit failed:', error);
       throw error;
     }

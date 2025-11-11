@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PrismaService, DataSource, Phases } from '@lib/database';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { of } from 'rxjs';
 import { TriggerService } from './trigger.service';
 import { PhasesService } from 'src/phases/phases.service';

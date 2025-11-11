@@ -9,19 +9,41 @@
     "check-types": "turbo run check-types",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'dist' -exec rm -rf '{}' + && find . -name '.next' -exec rm -rf '{}' + && find . -name '.turbo' -exec rm -rf '{}' +"
   },
-  "devDependencies": {
-    "@workspace/eslint-config": "workspace:*",
-    "@workspace/typescript-config": "workspace:*",
-    "prettier": "^3.6.2",
-    "turbo": "^2.5.8",
-    "typescript": "5.9.2"
-  },
   "packageManager": "pnpm@8.14.1",
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "@rumsan/settings": "^0.0.108",
-    "axios": "^1.12.2"
+    "axios": "^1.12.2",
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/microservices": "^11.1.6",
+    "@nestjs/bull": "11.0.4",
+    "@nestjs/schedule": "^6.0.1",
+    "@nestjs/swagger": "^11.2.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "nest-winston": "^1.10.2",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.8",
+    "typescript": "5.9.2",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "typescript-eslint": "^8.20.0",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "globals": "^15.14.0"
   }
 }

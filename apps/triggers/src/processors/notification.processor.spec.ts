@@ -1,6 +1,6 @@
 import { NotificationProcessor } from './notification.processor';
 import { ClientProxy } from '@nestjs/microservices';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 

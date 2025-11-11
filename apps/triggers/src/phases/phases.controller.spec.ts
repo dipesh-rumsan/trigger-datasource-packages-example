@@ -9,7 +9,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '@lib/database';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { PhasesController } from './phases.controller';
 import { PhasesService } from './phases.service';
 import { TriggerService } from 'src/trigger/trigger.service';

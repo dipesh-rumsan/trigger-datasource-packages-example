@@ -18,9 +18,7 @@
     "@prisma/client": "^6.17.1",
     "@prisma/extension-accelerate": "^2.0.2",
     "@workspace/typescript-config": "workspace:*",
-    "@rumsan/prisma": "1.0.130",
-    "prisma": "^6.17.1",
-    "typescript": "5.9.2"
+    "prisma": "^6.17.1"
   },
   "devDependencies": {
     "@nestjs/config": "^4.0.2",

@@ -1,6 +1,5 @@
 import { BullModule } from '@nestjs/bull';
 import { forwardRef, Module } from '@nestjs/common';
-import { PrismaModule } from '@lib/database';
 import { BQUEUE, MS_TRIGGER_CLIENTS } from 'src/constant';
 import { PhasesController } from './phases.controller';
 import { PhasesService } from './phases.service';
@@ -10,7 +9,6 @@ import { PhasesStatsService } from './phases.stats.service';
 
 @Module({
   imports: [
-    PrismaModule,
     BullModule.registerQueue({
       name: BQUEUE.TRIGGER,
     }),

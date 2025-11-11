@@ -31,7 +31,7 @@ export class HealthCacheService {
       }
 
       await this.redis.set(key, JSON.stringify(sourceConfig));
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Failed to cache source config for ${sourceConfig.source_id}:`,
         error,
@@ -48,7 +48,7 @@ export class HealthCacheService {
     try {
       const data = await this.redis.get(key);
       return data ? JSON.parse(data) : null;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to get source config for ${sourceId}:`, error);
       return null;
     }
@@ -72,7 +72,7 @@ export class HealthCacheService {
       await this.redis.setex(key, ttl, JSON.stringify(healthData));
 
       await this.updateHealthSummary();
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to cache health data for ${sourceId}:`, error);
       throw error;
     }
@@ -109,7 +109,7 @@ export class HealthCacheService {
       const ttlMinutes = expiredThresholdMinutes * 1.2; // 20% buffer beyond EXPIRED
 
       return Math.ceil(ttlMinutes * 60); // Convert to seconds
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to calculate TTL for ${sourceId}:`, error);
       return this.TTL;
     }
@@ -124,7 +124,7 @@ export class HealthCacheService {
     try {
       const data = await this.redis.get(key);
       return data ? JSON.parse(data) : null;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to get health data for ${sourceId}:`, error);
       return null;
     }
@@ -152,7 +152,7 @@ export class HealthCacheService {
         .filter(([err, data]) => !err && data)
         .map(([, data]) => JSON.parse(data as string))
         .sort((a, b) => a.source_id.localeCompare(b.source_id));
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to get all sources health:', error);
       return [];
     }
@@ -177,7 +177,7 @@ export class HealthCacheService {
         this.TTL,
         JSON.stringify(summary),
       );
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to update health summary:', error);
     }
   }
@@ -219,7 +219,7 @@ export class HealthCacheService {
       );
 
       return summary;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to get health summary:', error);
       return {
         overall_status: 'UNHEALTHY',
@@ -257,7 +257,7 @@ export class HealthCacheService {
     try {
       await this.redis.del(key);
       await this.updateHealthSummary();
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to remove health data for ${sourceId}:`, error);
     }
   }
@@ -318,7 +318,7 @@ export class HealthCacheService {
       if (minutesAgo <= fetchIntervalMinutes) return 'VALID';
       if (minutesAgo <= staleThreshold) return 'STALE';
       return 'EXPIRED';
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to calculate validity for ${sourceId}:`, error);
       return 'EXPIRED'; // Safe default
     }

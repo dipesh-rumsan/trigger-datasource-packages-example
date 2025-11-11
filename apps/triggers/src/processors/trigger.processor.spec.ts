@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { TriggerProcessor } from './trigger.processor';
 import { PhasesService } from '../phases/phases.service';
 import { BQUEUE, JOBS } from '../constant';
@@ -47,11 +47,15 @@ describe('TriggerProcessor', () => {
         },
       } as Job;
 
-      jest.spyOn(processor as any, 'processAutomatedData').mockResolvedValue(undefined);
+      jest
+        .spyOn(processor as any, 'processAutomatedData')
+        .mockResolvedValue(undefined);
 
       await processor.processTrigger(mockJob);
 
-      expect(processor['processAutomatedData']).toHaveBeenCalledWith(mockJob.data);
+      expect(processor['processAutomatedData']).toHaveBeenCalledWith(
+        mockJob.data,
+      );
     });
 
     it('should process trigger job without source', async () => {
@@ -62,7 +66,9 @@ describe('TriggerProcessor', () => {
         },
       } as Job;
 
-      jest.spyOn(processor as any, 'processAutomatedData').mockResolvedValue(undefined);
+      jest
+        .spyOn(processor as any, 'processAutomatedData')
+        .mockResolvedValue(undefined);
 
       await processor.processTrigger(mockJob);
 
@@ -78,11 +84,15 @@ describe('TriggerProcessor', () => {
         },
       } as Job;
 
-      jest.spyOn(processor as any, 'processAutomatedData').mockResolvedValue(undefined);
+      jest
+        .spyOn(processor as any, 'processAutomatedData')
+        .mockResolvedValue(undefined);
 
       await processor.processTrigger(mockJob);
 
-      expect(processor['processAutomatedData']).toHaveBeenCalledWith(mockJob.data);
+      expect(processor['processAutomatedData']).toHaveBeenCalledWith(
+        mockJob.data,
+      );
     });
   });
 
@@ -109,13 +119,19 @@ describe('TriggerProcessor', () => {
       };
 
       mockPhasesService.getOne.mockResolvedValue(mockPhaseData);
-      jest.spyOn(processor as any, 'checkTriggerConditions').mockReturnValue(true);
+      jest
+        .spyOn(processor as any, 'checkTriggerConditions')
+        .mockReturnValue(true);
 
       await processor['processAutomatedData'](payload);
 
       expect(mockPhasesService.getOne).toHaveBeenCalledWith(payload.phaseId);
-      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(mockPhaseData.triggerRequirements);
-      expect(mockPhasesService.activatePhase).toHaveBeenCalledWith(mockPhaseData.uuid);
+      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(
+        mockPhaseData.triggerRequirements,
+      );
+      expect(mockPhasesService.activatePhase).toHaveBeenCalledWith(
+        mockPhaseData.uuid,
+      );
     });
 
     it('should process automated data but not activate phase when conditions are not met', async () => {
@@ -140,12 +156,16 @@ describe('TriggerProcessor', () => {
       };
 
       mockPhasesService.getOne.mockResolvedValue(mockPhaseData);
-      jest.spyOn(processor as any, 'checkTriggerConditions').mockReturnValue(false);
+      jest
+        .spyOn(processor as any, 'checkTriggerConditions')
+        .mockReturnValue(false);
 
       await processor['processAutomatedData'](payload);
 
       expect(mockPhasesService.getOne).toHaveBeenCalledWith(payload.phaseId);
-      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(mockPhaseData.triggerRequirements);
+      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(
+        mockPhaseData.triggerRequirements,
+      );
       expect(mockPhasesService.activatePhase).not.toHaveBeenCalled();
     });
 
@@ -171,12 +191,16 @@ describe('TriggerProcessor', () => {
       };
 
       mockPhasesService.getOne.mockResolvedValue(mockPhaseData);
-      jest.spyOn(processor as any, 'checkTriggerConditions').mockReturnValue(true);
+      jest
+        .spyOn(processor as any, 'checkTriggerConditions')
+        .mockReturnValue(true);
 
       await processor['processAutomatedData'](payload);
 
       expect(mockPhasesService.getOne).toHaveBeenCalledWith(payload.phaseId);
-      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(mockPhaseData.triggerRequirements);
+      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(
+        mockPhaseData.triggerRequirements,
+      );
     });
   });
 
@@ -202,13 +226,19 @@ describe('TriggerProcessor', () => {
       };
 
       mockPhasesService.getOne.mockResolvedValue(mockPhaseData);
-      jest.spyOn(processor as any, 'checkTriggerConditions').mockReturnValue(true);
+      jest
+        .spyOn(processor as any, 'checkTriggerConditions')
+        .mockReturnValue(true);
 
       await processor['processManualTrigger'](payload);
 
       expect(mockPhasesService.getOne).toHaveBeenCalledWith(payload.phaseId);
-      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(mockPhaseData.triggerRequirements);
-      expect(mockPhasesService.activatePhase).toHaveBeenCalledWith(mockPhaseData.uuid);
+      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(
+        mockPhaseData.triggerRequirements,
+      );
+      expect(mockPhasesService.activatePhase).toHaveBeenCalledWith(
+        mockPhaseData.uuid,
+      );
     });
 
     it('should process manual trigger but not activate phase when conditions are not met', async () => {
@@ -232,12 +262,16 @@ describe('TriggerProcessor', () => {
       };
 
       mockPhasesService.getOne.mockResolvedValue(mockPhaseData);
-      jest.spyOn(processor as any, 'checkTriggerConditions').mockReturnValue(false);
+      jest
+        .spyOn(processor as any, 'checkTriggerConditions')
+        .mockReturnValue(false);
 
       await processor['processManualTrigger'](payload);
 
       expect(mockPhasesService.getOne).toHaveBeenCalledWith(payload.phaseId);
-      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(mockPhaseData.triggerRequirements);
+      expect(processor['checkTriggerConditions']).toHaveBeenCalledWith(
+        mockPhaseData.triggerRequirements,
+      );
       expect(mockPhasesService.activatePhase).not.toHaveBeenCalled();
     });
   });
@@ -395,4 +429,4 @@ describe('TriggerProcessor', () => {
       expect(typeof processor['checkTriggerConditions']).toBe('function');
     });
   });
-}); 
+});

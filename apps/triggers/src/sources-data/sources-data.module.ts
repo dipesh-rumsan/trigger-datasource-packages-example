@@ -3,7 +3,6 @@ import { SourcesDataService } from './sources-data.service';
 import { SourcesDataController } from './sources-data.controller';
 import { ScheduleSourcesDataService } from './schedule-sources-data.service';
 import { HttpModule } from '@nestjs/axios';
-import { PrismaModule } from '@lib/database';
 import { DhmService } from './dhm.service';
 import { GlofasService } from './glofas.service';
 import { ConfigService } from '@nestjs/config';
@@ -20,7 +19,6 @@ import Redis from 'ioredis';
 @Module({
   imports: [
     HttpModule,
-    PrismaModule,
     BullModule.registerQueue({
       name: BQUEUE.TRIGGER,
     }),

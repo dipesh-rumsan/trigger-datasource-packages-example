@@ -154,7 +154,7 @@ export class StatsService {
       }
 
       this.logger.log('Communication stats calculated and saved successfully.');
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error('Error while calculating communication stats', error);
     }
   }

@@ -57,9 +57,9 @@ export class GlofasServices {
           },
         });
       });
-    } catch (err) {
-      this.logger.error(`Error saving data for ${riverBasin}:`, err);
-      throw err;
+    } catch (error: any) {
+      this.logger.error(`Error saving data for ${riverBasin}:`, error);
+      throw error;
     }
   }
 }

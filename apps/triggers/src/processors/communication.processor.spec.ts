@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { CommunicationProcessor } from './communication.processor';
 import { ActivityService } from '../activity/activity.service';
 import { BQUEUE, JOBS } from '../constant';
@@ -226,7 +226,9 @@ describe('CommunicationProcessor', () => {
       const error = new Error('Communication trigger failed');
       mockActivityService.triggerCommunication.mockRejectedValue(error);
 
-      await expect(processor.processCommunicationTrigger(mockJob)).rejects.toThrow('Communication trigger failed');
+      await expect(
+        processor.processCommunicationTrigger(mockJob),
+      ).rejects.toThrow('Communication trigger failed');
 
       expect(mockActivityService.triggerCommunication).toHaveBeenCalledWith({
         communicationId: 'test-communication-id',
@@ -244,7 +246,9 @@ describe('CommunicationProcessor', () => {
         },
       } as Job;
 
-      mockActivityService.triggerCommunication.mockResolvedValue({ success: true });
+      mockActivityService.triggerCommunication.mockResolvedValue({
+        success: true,
+      });
 
       const result = await processor.processCommunicationTrigger(mockJob);
 
@@ -256,4 +260,4 @@ describe('CommunicationProcessor', () => {
       expect(result).toBeUndefined();
     });
   });
-}); 
+});

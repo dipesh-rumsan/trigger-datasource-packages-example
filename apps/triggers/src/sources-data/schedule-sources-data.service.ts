@@ -72,7 +72,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
       );
 
       await this.healthUtilsService.storeHealthResult(config, result);
-    } catch (error) {
+    } catch (error: any)  {
       await this.healthUtilsService.handleTopLevelError(
         config,
         error,
@@ -118,7 +118,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
       );
 
       await this.healthUtilsService.storeHealthResult(config, result);
-    } catch (error) {
+    } catch (error: any)  {
       await this.healthUtilsService.handleTopLevelError(
         config,
         error,
@@ -169,7 +169,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
       );
 
       await this.healthUtilsService.storeHealthResult(config, result);
-    } catch (error) {
+    } catch (error: any)  {
       await this.healthUtilsService.handleTopLevelError(
         config,
         error,
@@ -215,7 +215,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
       );
 
       await this.healthUtilsService.storeHealthResult(config, result);
-    } catch (error) {
+    } catch (error: any)  {
       await this.healthUtilsService.handleTopLevelError(
         config,
         error,

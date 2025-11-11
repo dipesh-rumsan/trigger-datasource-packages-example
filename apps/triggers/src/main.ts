@@ -22,7 +22,7 @@ async function bootstrap() {
     // app.useGlobalFilters(new RsExceptionFilter());
     app.listen();
     Logger.log(`🚀 Microservice is running on: http://localhost:${PORT}`);
-  } catch (error) {
+  } catch (error: any) {
     Logger.error(error);
   }
 }

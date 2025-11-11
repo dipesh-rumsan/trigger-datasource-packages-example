@@ -86,7 +86,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
       );
 
       return Ok(htmlPages);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error("Failed to fetch DHM data", error);
       return Err("Failed to fetch DHM observations", error);
     }
@@ -122,7 +122,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
       this.logger.log(`Aggregated ${observations.length} DHM observations`);
       return Ok(observations);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error("Failed to aggregate DHM data", error);
       return Err("Failed to parse DHM HTML data", error);
     }
@@ -165,7 +165,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
       this.logger.log(`Transformed to ${indicators.length} indicators`);
       return Ok(indicators);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error("Failed to transform DHM data", error);
       return Err("Failed to transform to indicators", error);
     }

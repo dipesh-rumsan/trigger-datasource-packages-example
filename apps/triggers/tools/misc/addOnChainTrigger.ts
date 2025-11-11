@@ -91,8 +91,8 @@ async function sendBatch(batch: AddTriggerJobDto[]) {
     console.log(
       `Posted batch of ${batch.length} triggers. Status: ${res.status} ${res.statusText}`,
     );
-  } catch (err: any) {
-    console.error('Failed to POST batch:', err?.response?.data || err.message);
+  } catch (error: any)  {
+    console.error('Failed to POST batch:', error?.response?.data || error.message);
     // You might want to rethrow or implement retry logic here.
   }
 }

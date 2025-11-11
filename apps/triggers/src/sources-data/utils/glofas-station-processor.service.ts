@@ -91,7 +91,7 @@ export class GlofasStationProcessorService {
         });
         return false;
       }
-    } catch (error) {
+    } catch (error: any)  {
       const errorMessage = error?.message || 'Unknown error';
       errors.push({
         code: 'GLOFAS_STATION_ERROR',

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DataSource, SourceType } from '@prisma/client';
+import { DataSource, SourceType } from '@lib/database';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class CreateSourcesDataDto {
   @ApiProperty({

@@ -8,7 +8,7 @@ import {
   IsEnum,
   IsString,
 } from 'class-validator';
-import { Phases, DataSource } from '@prisma/client';
+import { Phases, DataSource } from '@lib/database';
 
 export class CreatePhaseDto {
   @ApiProperty({
@@ -75,7 +75,7 @@ export class CreatePhaseDto {
   river_basin: string;
 
   @ApiProperty({
-    type: DataSource.DHM,
+    example: DataSource.DHM,
   })
   @IsEnum(DataSource)
   @IsString()

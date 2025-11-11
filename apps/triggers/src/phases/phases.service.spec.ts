@@ -8,7 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '@lib/database';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { BadRequestException } from '@nestjs/common';
 import { PhasesService } from './phases.service';
 import { TriggerService } from 'src/trigger/trigger.service';

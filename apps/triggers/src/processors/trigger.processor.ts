@@ -1,7 +1,7 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 // import { BQUEUE, DATA_SOURCES, JOBS } from '../constants';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 // import { PhasesService } from '../phases/phases.service';
 import { BQUEUE, JOBS } from 'src/constant';
 import { PhasesService } from 'src/phases/phases.service';

@@ -132,7 +132,7 @@ export class GfhService implements OnApplicationBootstrap {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (error: any)  {
       Logger.error(`API request failed for ${endpoint}: ${error}`);
       return null;
     }
@@ -238,7 +238,7 @@ export class GfhService implements OnApplicationBootstrap {
             `(${bestGauge.distance.toFixed(2)}km)`,
         );
       }
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error(
         `Error matching station ${station.STATION_ID}: ${error}`,
       );
@@ -325,7 +325,7 @@ export class GfhService implements OnApplicationBootstrap {
           all_forecasts: forecasts,
           latest_forecast: latestForecast,
         };
-      } catch (error) {
+      } catch (error: any)  {
         Logger.error(`Error processing gauge ${gaugeId}: ${error}`);
         gaugeDataCache[gaugeId] = {
           model_metadata: {},
@@ -536,9 +536,9 @@ export class GfhService implements OnApplicationBootstrap {
           });
         }
       });
-    } catch (err) {
-      this.logger.error(`Error saving data for ${riverBasin}:`, err);
-      throw err;
+    } catch (error: any)  {
+      this.logger.error(`Error saving data for ${riverBasin}:`, error);
+      throw error;
     }
   }
 }

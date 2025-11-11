@@ -29,7 +29,7 @@ export class SourceService {
         },
       );
       return paginatedData;
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error(`Error fetching sources: ${error}`, error);
       throw new RpcException(error);
     }
@@ -51,7 +51,7 @@ export class SourceService {
       }
 
       return source;
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error(
         `Error fetching source with UUID: ${dto.uuid}: ${error}`,
         error,

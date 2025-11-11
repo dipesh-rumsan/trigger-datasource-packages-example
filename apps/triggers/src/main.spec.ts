@@ -26,7 +26,7 @@ describe('Main', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockApp = {
       listen: jest.fn().mockResolvedValue(undefined),
       useGlobalFilters: jest.fn(),
@@ -48,7 +48,7 @@ describe('Main', () => {
 
   afterAll(async () => {
     // Ensure all async operations are cleaned up
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   describe('bootstrap function logic', () => {
@@ -66,13 +66,16 @@ describe('Main', () => {
       };
 
       // Act - simulate the bootstrap function
-      const app = await mockNestFactory.createMicroservice('AppModule', expectedOptions);
+      const app = await mockNestFactory.createMicroservice(
+        'AppModule',
+        expectedOptions,
+      );
       await app.listen();
 
       // Assert
       expect(mockNestFactory.createMicroservice).toHaveBeenCalledWith(
         'AppModule',
-        expectedOptions
+        expectedOptions,
       );
       expect(mockApp.listen).toHaveBeenCalled();
     });
@@ -97,7 +100,7 @@ describe('Main', () => {
       // Act - simulate the bootstrap function error handling
       try {
         await mockNestFactory.createMicroservice('AppModule', {});
-      } catch (error) {
+      } catch (error: any) {
         mockLogger.error(error);
       }
 
@@ -132,7 +135,7 @@ describe('Main', () => {
       // Assert
       expect(mockNestFactory.createMicroservice).toHaveBeenCalledWith(
         'AppModule',
-        expectedOptions
+        expectedOptions,
       );
 
       // Cleanup
@@ -173,7 +176,7 @@ describe('Main', () => {
             port: NaN,
             password: undefined,
           }),
-        })
+        }),
       );
 
       // Cleanup
@@ -184,14 +187,16 @@ describe('Main', () => {
   describe('Microservice Configuration', () => {
     it('should use REDIS transport', async () => {
       // Act - simulate the bootstrap function
-      await mockNestFactory.createMicroservice('AppModule', { transport: 'redis' });
+      await mockNestFactory.createMicroservice('AppModule', {
+        transport: 'redis',
+      });
 
       // Assert
       expect(mockNestFactory.createMicroservice).toHaveBeenCalledWith(
         'AppModule',
         expect.objectContaining({
           transport: 'redis',
-        })
+        }),
       );
     });
 
@@ -212,7 +217,7 @@ describe('Main', () => {
             retryDelay: 3000,
             retryAttempts: 50,
           }),
-        })
+        }),
       );
     });
   });
@@ -226,7 +231,7 @@ describe('Main', () => {
       // Act - simulate the bootstrap function error handling
       try {
         await mockNestFactory.createMicroservice('AppModule', {});
-      } catch (error) {
+      } catch (error: any) {
         mockLogger.error(error);
       }
 
@@ -242,7 +247,7 @@ describe('Main', () => {
       // Act - simulate the bootstrap function error handling
       try {
         await mockApp.listen();
-      } catch (error) {
+      } catch (error: any) {
         mockLogger.error(error);
       }
 
@@ -271,7 +276,7 @@ describe('Main', () => {
           const app = await mockNestFactory.createMicroservice('AppModule', {});
           await app.listen();
           mockLogger.log('Success');
-        } catch (error) {
+        } catch (error: any) {
           mockLogger.error(error);
         }
       };

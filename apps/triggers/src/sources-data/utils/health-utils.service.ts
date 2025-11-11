@@ -152,7 +152,7 @@ export class HealthUtilsService {
           successfulStations++;
         }
         return success;
-      } catch (error) {
+      } catch (error: any) {
         // Error should be handled by the processor
         return false;
       }

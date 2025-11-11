@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/swagger';
 import { PaginationDto } from 'src/common/dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { DataSource } from '@prisma/client';
+import { DataSource } from '@lib/database';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class GetTriggersDto extends PartialType(PaginationDto) {

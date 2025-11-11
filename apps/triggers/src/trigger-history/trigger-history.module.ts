@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TriggerHistoryController } from './trigger-history.controller';
 import { TriggerHistoryService } from './trigger-history.service';
-import { PrismaService } from '@lib/database';
 
 @Module({
   controllers: [TriggerHistoryController],
-  providers: [TriggerHistoryService, PrismaService],
+  providers: [TriggerHistoryService ],
   exports: [TriggerHistoryService],
 })
 export class TriggerHistoryModule {}

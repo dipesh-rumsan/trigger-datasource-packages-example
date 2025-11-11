@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { BQUEUE, JOBS } from '../constant';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { ActivityService } from '../activity/activity.service';
 import { Process, Processor } from '@nestjs/bull';
 

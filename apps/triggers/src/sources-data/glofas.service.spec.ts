@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { PrismaService } from '@lib/database';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource } from '@lib/database';
 import { GlofasService } from './glofas.service';

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ActivityStatus } from '@prisma/client';
+import { ActivityStatus } from '@lib/database';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,

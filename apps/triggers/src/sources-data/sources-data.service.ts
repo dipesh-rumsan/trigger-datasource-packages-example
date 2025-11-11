@@ -66,7 +66,7 @@ export class SourcesDataService {
           source: true,
         },
       });
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error('Error while creatiing new source data', error);
       throw new RpcException(error);
     }
@@ -88,7 +88,7 @@ export class SourcesDataService {
           perPage: perPage,
         },
       );
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error('Error while fetching source data', error);
       throw new RpcException(error);
     }
@@ -102,7 +102,7 @@ export class SourcesDataService {
           id,
         },
       });
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error(
         `Error while fetching source data with id: ${id}`,
         error,
@@ -130,7 +130,7 @@ export class SourcesDataService {
           },
         },
       });
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error('Error while updating source data info', error);
       throw new RpcException(error);
     }
@@ -158,7 +158,7 @@ export class SourcesDataService {
     this.logger.log('Fetching water levels');
     try {
       return await this.getLevels(payload, SourceType.WATER_LEVEL);
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error(`Error while getting water levels: ${error}`);
       throw new RpcException(
         `Failed to fetch water levels: '${error.message}'`,
@@ -170,7 +170,7 @@ export class SourcesDataService {
     this.logger.log('Fetching rainfall data');
     try {
       return await this.getLevels(payload, SourceType.RAINFALL);
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error(`Error while getting rainfall data: ${error}`);
       throw new RpcException('Failed to fetch rainfall data');
     }
@@ -215,8 +215,8 @@ export class SourcesDataService {
           ...stationData,
           history: normalizedData,
         });
-      } catch (Error) {
-        this.logger.error(`Error for ${location}: ${Error.message}`, Error);
+      } catch (error: any)  {
+        this.logger.error(`Error for ${location}: ${error.message}`, error);
       }
     }
 
@@ -262,9 +262,9 @@ export class SourcesDataService {
           ...stationData,
           history: normalizedData,
         });
-      } catch (Error) {
+      } catch (error: any)  {
         this.logger.error(
-          `Database error for ${location}: ${Error.message}`,
+          `Database error for ${location}: ${error.message}`,
           Error,
         );
       }
@@ -290,7 +290,7 @@ export class SourcesDataService {
       }
 
       return targettedData;
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.warn('Error fetching rainfall station:', error);
       throw error;
     }
@@ -314,7 +314,7 @@ export class SourcesDataService {
       }
 
       return targettedData;
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.warn('Error fetching river station:', error);
       throw error;
     }

@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService, DataSource, SourceType } from '@lib/database';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { DateTime } from 'luxon';
 import { BQUEUE, JOBS } from 'src/constant';
 import {
@@ -202,7 +202,7 @@ export class DhmService implements AbstractSource, OnApplicationBootstrap {
       );
       const stations = await this.getData(riverStationsURL);
       return stations.data;
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error(error);
       throw new RpcException('Failed to fetch river stations');
     }
@@ -322,9 +322,9 @@ export class DhmService implements AbstractSource, OnApplicationBootstrap {
           },
         });
       });
-    } catch (err) {
-      this.logger.error(`Error saving data for ${riverBasin}:`, err);
-      throw err;
+    } catch (error: any)  {
+      this.logger.error(`Error saving data for ${riverBasin}:`, error);
+      throw error;
     }
   }
 

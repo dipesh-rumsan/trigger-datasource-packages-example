@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { ApiProperty } from '@nestjs/swagger';
-import { DataSource, Phases } from '@prisma/client';
+import { DataSource, Phases } from '@lib/database';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { PaginationDto } from 'src/common/dto';
 
@@ -21,7 +21,7 @@ export class GetPhaseDto extends PartialType(PaginationDto) {
   riverBasin?: string;
 
   @ApiProperty({
-    type: DataSource.DHM,
+    example: DataSource.DHM,
   })
   @IsEnum(DataSource)
   @IsOptional()

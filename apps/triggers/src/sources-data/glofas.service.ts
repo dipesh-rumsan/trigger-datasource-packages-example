@@ -4,7 +4,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 // import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService, DataSource, SourceType } from '@lib/database';
 import { SettingsService } from '@rumsan/settings';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 // import { BQUEUE, EVENTS, JOBS } from '../constants';
 // import { AbstractSource } from './datasource.abstract';
 // import { GlofasDataObject, GlofasStationInfo } from './dto';
@@ -236,8 +236,8 @@ export class GlofasService implements AbstractSource, OnApplicationBootstrap {
           info: JSON.parse(JSON.stringify(payload)),
         });
       }
-    } catch (err) {
-      this.logger.error(err);
+    } catch (error: any)  {
+      this.logger.error(error);
     }
   }
 
@@ -258,7 +258,7 @@ export class GlofasService implements AbstractSource, OnApplicationBootstrap {
           createdAt: 'desc',
         },
       });
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.error(error);
       throw new RpcException(error);
     }

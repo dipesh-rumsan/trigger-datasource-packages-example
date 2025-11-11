@@ -8,11 +8,11 @@ import {
   UpdateDailyMonitoringDto,
 } from './dto';
 import { GaugeForecastDto } from './dto/list-gaugeForecast.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@lib/database';
 
 // Mock the paginator function
-jest.mock('@rumsan/prisma', () => ({
-  ...jest.requireActual('@rumsan/prisma'),
+jest.mock('@lib/database', () => ({
+  ...jest.requireActual('@lib/database'),
   paginator: jest.fn(() => jest.fn()),
 }));
 

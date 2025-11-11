@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DataSource } from '@prisma/client';
+import { DataSource } from '@lib/database';
 import {
   IsBoolean,
   IsEnum,

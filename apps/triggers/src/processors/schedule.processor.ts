@@ -1,7 +1,7 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 
-import { Job } from 'bull';
+import type { Job } from 'bull';
 // import { BQUEUE, JOBS } from '../constants';
 // import { AddTriggerStatement } from '../dto';
 // import { DhmService } from '../datasource/dhm.service';

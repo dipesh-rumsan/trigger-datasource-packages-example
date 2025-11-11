@@ -5,7 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, SourceType } from '@prisma/client';
 import { PrismaService } from '@lib/database';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { DhmService } from './dhm.service';
 import { RpcException } from '@nestjs/microservices';
 import { AddTriggerStatementDto } from './dto';

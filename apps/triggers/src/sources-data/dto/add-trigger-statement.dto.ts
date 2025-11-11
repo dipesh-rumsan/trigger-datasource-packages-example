@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DataSource } from '@prisma/client';
+import { DataSource } from '@lib/database';
 
 class ActivityDto {
   @ApiProperty({

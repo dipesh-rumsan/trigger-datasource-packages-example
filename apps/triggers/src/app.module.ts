@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { RumsanAppModule } from '@rumsan/app';
 import { CategoryModule } from './category/category.module';
-import { PrismaModule, PrismaService } from '@lib/database';
+import { PrismaModule  } from '@lib/database';
 import { PhasesModule } from './phases/phases.module';
 import { TriggerModule } from './trigger/trigger.module';
 import { ActivityModule } from './activity/activity.module';
@@ -17,15 +16,14 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ListenersModule } from './listeners/listeners.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MS_TRIGGER_CLIENTS } from './constant';
-import { SettingsModule } from '@rumsan/settings';
 import { CommsModule } from './comms/comms.module';
 import { SourceModule } from './source/source.module';
 import { TriggerHistoryModule } from './trigger-history/trigger-history.module';
 import { StatsModule } from './stats/stat.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
-    EventEmitterModule.forRoot({ maxListeners: 10, ignoreErrors: false }),
     ConfigModule.forRoot({ isGlobal: true }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -49,14 +47,18 @@ import { StatsModule } from './stats/stat.module';
         },
       },
     ]),
-    PrismaModule,
+    PrismaModule.forRootWithConfig({
+      isGlobal: true,
+    }),
+    HttpModule.register({
+      global: true,
+    }),
+    EventEmitterModule.forRoot(),
     ProcessorsModule,
-    RumsanAppModule,
     CategoryModule,
     PhasesModule,
     TriggerModule,
     ActivityModule,
-    SettingsModule,
     SourcesDataModule,
     DailyMonitoringModule,
     ScheduleModule.forRoot(),
@@ -67,6 +69,6 @@ import { StatsModule } from './stats/stat.module';
     StatsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [AppService],
 })
 export class AppModule {}

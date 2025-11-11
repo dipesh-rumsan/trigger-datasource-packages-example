@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { ScheduleProcessor } from './schedule.processor';
 import { DhmService } from '../sources-data/dhm.service';
 import { GlofasService } from '../sources-data/glofas.service';
@@ -91,7 +91,9 @@ describe('ScheduleProcessor', () => {
 
       await processor.processAddSchedule(mockJob);
 
-      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(mockJob.data);
+      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(
+        mockJob.data,
+      );
       expect(mockDhmService.criteriaCheck).not.toHaveBeenCalled();
     });
 
@@ -157,7 +159,9 @@ describe('ScheduleProcessor', () => {
 
       await processor.processAddSchedule(mockJob);
 
-      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(mockJob.data);
+      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(
+        mockJob.data,
+      );
     });
 
     it('should handle DHM data source with null triggerStatement', async () => {
@@ -195,7 +199,9 @@ describe('ScheduleProcessor', () => {
 
       await processor.processAddSchedule(mockJob);
 
-      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(mockJob.data);
+      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(
+        mockJob.data,
+      );
     });
 
     it('should handle DHM data source with empty triggerStatement', async () => {
@@ -233,7 +239,9 @@ describe('ScheduleProcessor', () => {
 
       await processor.processAddSchedule(mockJob);
 
-      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(mockJob.data);
+      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(
+        mockJob.data,
+      );
     });
 
     it('should handle DHM data source with criteriaCheck throwing error', async () => {
@@ -254,7 +262,9 @@ describe('ScheduleProcessor', () => {
       const error = new Error('DHM criteria check failed');
       mockDhmService.criteriaCheck.mockRejectedValue(error);
 
-      await expect(processor.processAddSchedule(mockJob)).rejects.toThrow('DHM criteria check failed');
+      await expect(processor.processAddSchedule(mockJob)).rejects.toThrow(
+        'DHM criteria check failed',
+      );
 
       expect(mockDhmService.criteriaCheck).toHaveBeenCalledWith(mockJob.data);
     });
@@ -277,9 +287,13 @@ describe('ScheduleProcessor', () => {
       const error = new Error('GLOFAS criteria check failed');
       mockGlofasService.criteriaCheck.mockRejectedValue(error);
 
-      await expect(processor.processAddSchedule(mockJob)).rejects.toThrow('GLOFAS criteria check failed');
+      await expect(processor.processAddSchedule(mockJob)).rejects.toThrow(
+        'GLOFAS criteria check failed',
+      );
 
-      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(mockJob.data);
+      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(
+        mockJob.data,
+      );
     });
 
     it('should handle DHM data source with criteriaCheck returning value', async () => {
@@ -323,7 +337,9 @@ describe('ScheduleProcessor', () => {
 
       await processor.processAddSchedule(mockJob);
 
-      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(mockJob.data);
+      expect(mockGlofasService.criteriaCheck).toHaveBeenCalledWith(
+        mockJob.data,
+      );
     });
   });
 
@@ -397,4 +413,4 @@ describe('ScheduleProcessor', () => {
       expect(mockGlofasService.criteriaCheck).not.toHaveBeenCalled();
     });
   });
-}); 
+});

@@ -93,7 +93,7 @@ const main = async () => {
         isReadOnly: false,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     await prisma.setting.create({
       data: {
         name: config.name,

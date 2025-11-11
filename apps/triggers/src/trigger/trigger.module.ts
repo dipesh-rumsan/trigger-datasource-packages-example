@@ -4,7 +4,6 @@ import { TriggerController } from './trigger.controller';
 import { BullModule } from '@nestjs/bull';
 import { BQUEUE, CORE_MODULE } from 'src/constant';
 import { PhasesModule } from 'src/phases/phases.module';
-import { PrismaModule } from '@lib/database';
 import { HttpModule } from '@nestjs/axios';
 import { SourcesDataModule } from 'src/sources-data/sources-data.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -22,7 +21,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         },
       },
     ]),
-    PrismaModule,
     HttpModule,
     SourcesDataModule,
     BullModule.registerQueue(

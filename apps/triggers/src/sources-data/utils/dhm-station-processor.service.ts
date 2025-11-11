@@ -103,7 +103,7 @@ export class DhmStationProcessorService {
         });
         return false;
       }
-    } catch (dbError) {
+    } catch (dbError: any) {
       const errorMessage = dbError?.response?.data?.message || dbError.message;
       errors.push({
         code: 'DHM_WATER_FETCH_ERROR',
@@ -123,10 +123,10 @@ export class DhmStationProcessorService {
           this.logger.log(`Saved fallback data for ${LOCATION}`);
           return true;
         }
-      } catch (saveError) {
+      } catch (saveError: any) {
         this.logger.error(
           `Failed to save fallback data for ${LOCATION}:`,
-          saveError.message,
+          saveError?.message,
         );
       }
 
@@ -198,7 +198,7 @@ export class DhmStationProcessorService {
         });
         return false;
       }
-    } catch (dbError) {
+    } catch (dbError: any) {
       const errorMessage = dbError?.response?.data?.message || dbError.message;
       errors.push({
         code: 'DHM_RAINFALL_FETCH_ERROR',
@@ -264,7 +264,7 @@ export class DhmStationProcessorService {
       }
 
       return targettedData;
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.warn('Error fetching rainfall station:', error);
       throw error;
     }
@@ -291,7 +291,7 @@ export class DhmStationProcessorService {
       }
 
       return targettedData;
-    } catch (error) {
+    } catch (error: any)  {
       this.logger.warn('Error fetching river station:', error);
       return null;
     }

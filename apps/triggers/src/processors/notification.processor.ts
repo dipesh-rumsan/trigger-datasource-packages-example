@@ -1,5 +1,5 @@
 import { Process, Processor } from '@nestjs/bull';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { ClientProxy } from '@nestjs/microservices';
 import { Inject, Logger } from '@nestjs/common';
 import { BQUEUE, JOBS, CORE_MODULE } from 'src/constant';
@@ -20,7 +20,7 @@ export class NotificationProcessor {
         this.client.send({ cmd: 'rahat.jobs.notification.create' }, payload),
       );
       this.logger.log(`✅ Notification delivered: ${rdata}`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `❌ Notification job failed: ${JOBS.NOTIFICATION.CREATE}`,
         error.stack,
