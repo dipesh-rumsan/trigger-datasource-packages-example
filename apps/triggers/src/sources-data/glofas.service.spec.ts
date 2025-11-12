@@ -9,7 +9,7 @@ import { AddTriggerStatementDto } from './dto';
 import { SourcesDataService } from './sources-data.service';
 import { of } from 'rxjs';
 
-jest.mock('@rumsan/settings', () => ({
+jest.mock('@lib/database', () => ({
   SettingsService: {
     get: jest.fn().mockImplementation((key) => {
       if (key === 'DATASOURCE.GLOFAS') {

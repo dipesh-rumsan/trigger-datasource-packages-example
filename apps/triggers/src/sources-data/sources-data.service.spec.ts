@@ -7,7 +7,7 @@ import { CreateSourcesDataDto, UpdateSourcesDataDto } from './dto';
 import { PaginationDto } from 'src/common/dto';
 import { GetSouceDataDto, SourceDataType } from './dto/get-source-data';
 
-jest.mock('@rumsan/settings', () => ({
+jest.mock('@lib/database', () => ({
   SettingsService: {
     get: jest.fn().mockReturnValue({
       DHM: [

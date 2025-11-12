@@ -3,16 +3,15 @@ import { HttpService } from '@nestjs/axios';
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DataSource, SourceType } from '@prisma/client';
+import { DataSource, SourceType } from '@lib/database';
 import { PrismaService } from '@lib/database';
 import type { Queue } from 'bull';
 import { DhmService } from './dhm.service';
 import { RpcException } from '@nestjs/microservices';
 import { AddTriggerStatementDto } from './dto';
 import { of } from 'rxjs';
-import { SettingsService } from '@rumsan/settings';
-
-jest.mock('@rumsan/settings', () => ({
+import { SettingsService } from '@lib/core';
+jest.mock('@lib/core', () => ({
   SettingsService: {
     get: jest.fn().mockReturnValue({
       DHM: [

@@ -6,10 +6,10 @@ import { HealthUtilsService } from './utils/health-utils.service';
 import { DhmStationProcessorService } from './utils/dhm-station-processor.service';
 import { GlofasStationProcessorService } from './utils/glofas-station-processor.service';
 import { GfhStationProcessorService } from './utils/gfh-station-processor.service';
-import { SettingsService } from '@rumsan/settings';
+import { SettingsService } from '@lib/core';
 import { DataSourceValue } from 'src/types/settings';
 
-jest.mock('@rumsan/settings', () => ({
+jest.mock('@lib/database', () => ({
   SettingsService: {
     get: jest.fn(),
   },

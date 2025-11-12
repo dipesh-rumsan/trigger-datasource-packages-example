@@ -6,7 +6,7 @@ import {
   SourceType,
   URLConfig,
 } from '@lib/database';
-import { SettingsService } from 'settings';
+import { SettingsService } from '../settings';
 
 export interface ConfigPath {
   dataSource: keyof DataSourceValue;
@@ -80,8 +80,9 @@ export abstract class ConfigurationManager {
     const result = await tryCatchAsync<DataSourceValue | null>(async () => {
       ConfigurationManager.logger.log('Fetching DATASOURCE setting...');
 
-      const settings =
-        await this.settingsService.get<DataSourceValue>('DATASOURCE');
+      const settings = (await this.settingsService.getByName(
+        'DATASOURCE',
+      )) as unknown as DataSourceValue;
 
       if (!settings) {
         ConfigurationManager.logger.error('DATASOURCE setting not found');
@@ -109,10 +110,9 @@ export abstract class ConfigurationManager {
       async () => {
         ConfigurationManager.logger.log('Fetching DATASOURCECONFIG setting...');
 
-        const settings =
-          await this.settingsService.get<DataSourceConfigValue>(
-            'DATASOURCECONFIG',
-          );
+        const settings = (await this.settingsService.getByName(
+          'DATASOURCECONFIG',
+        )) as unknown as DataSourceConfigValue;
 
         if (!settings) {
           ConfigurationManager.logger.error(

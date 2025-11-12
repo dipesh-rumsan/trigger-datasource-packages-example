@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CategoryModule } from './category/category.module';
-import { PrismaModule  } from '@lib/database';
+import { PrismaModule } from '@lib/database';
 import { PhasesModule } from './phases/phases.module';
 import { TriggerModule } from './trigger/trigger.module';
 import { ActivityModule } from './activity/activity.module';
@@ -25,6 +25,9 @@ import { HttpModule } from '@nestjs/axios';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot({
+      global: true,
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -53,7 +56,6 @@ import { HttpModule } from '@nestjs/axios';
     HttpModule.register({
       global: true,
     }),
-    EventEmitterModule.forRoot(),
     ProcessorsModule,
     CategoryModule,
     PhasesModule,

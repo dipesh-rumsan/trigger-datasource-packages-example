@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 // import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService, DataSource, SourceType } from '@lib/database';
-import { SettingsService } from '@rumsan/settings';
+import { SettingsService } from '@lib/core';
 import type { Queue } from 'bull';
 // import { BQUEUE, EVENTS, JOBS } from '../constants';
 // import { AbstractSource } from './datasource.abstract';
@@ -236,7 +236,7 @@ export class GlofasService implements AbstractSource, OnApplicationBootstrap {
           info: JSON.parse(JSON.stringify(payload)),
         });
       }
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
     }
   }
@@ -258,7 +258,7 @@ export class GlofasService implements AbstractSource, OnApplicationBootstrap {
           createdAt: 'desc',
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error);
     }
