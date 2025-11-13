@@ -264,7 +264,7 @@ export class DhmStationProcessorService {
       }
 
       return targettedData;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.warn('Error fetching rainfall station:', error);
       throw error;
     }
@@ -291,7 +291,7 @@ export class DhmStationProcessorService {
       }
 
       return targettedData;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.warn('Error fetching river station:', error);
       return null;
     }

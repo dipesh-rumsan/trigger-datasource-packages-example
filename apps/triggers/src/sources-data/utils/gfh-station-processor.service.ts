@@ -107,7 +107,7 @@ export class GfhStationProcessorService {
         });
         return false;
       }
-    } catch (error: any)  {
+    } catch (error: any) {
       const errorMessage = error?.message || 'Unknown error';
       errors.push({
         code: 'GFH_STATION_ERROR',
@@ -155,7 +155,7 @@ export class GfhStationProcessorService {
       }
 
       return gauges;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error fetching gauges:', error.message);
       throw error;
     }

@@ -92,7 +92,7 @@ export class PhasesService {
           requiredOptionalTriggers,
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while creatiing new Phase', error);
       throw new RpcException(error);
     }
@@ -213,7 +213,7 @@ export class PhasesService {
         totalOptionalTriggers,
         totalOptionalTriggersTriggered,
       };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.warn('Error while generating phase triggers stats', error);
       throw new RpcException(error);
     }
@@ -228,7 +228,7 @@ export class PhasesService {
           source: true,
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while fetching phase', error);
       throw new RpcException(error);
     }
@@ -249,7 +249,7 @@ export class PhasesService {
           },
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while updating phase', error);
       throw new RpcException(error);
     }
@@ -308,7 +308,7 @@ export class PhasesService {
       };
 
       return { ...phase, triggerRequirements };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while fetching phase', error);
       throw new RpcException(error);
     }
@@ -434,7 +434,7 @@ export class PhasesService {
           activeYear: 'desc',
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while fetching phase by source', error);
       throw new RpcException(error);
     }
@@ -582,7 +582,7 @@ export class PhasesService {
               });
 
               this.logger.log(`Disbursement for ${appId}`, stellerDistrub);
-            } catch (error: any)  {
+            } catch (error: any) {
               this.logger.error(
                 `Error during disbursement for appId ${appId}:`,
                 error,
@@ -627,7 +627,7 @@ export class PhasesService {
       }
 
       return updatedPhase;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while activating phase', error);
       return undefined;
     }
@@ -683,7 +683,7 @@ export class PhasesService {
       });
 
       return updatedPhase;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while adding triggers to phase', error);
       throw new RpcException(error);
     }
@@ -814,7 +814,7 @@ export class PhasesService {
           },
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while fetching phase by location', error);
       throw new RpcException(error);
     }

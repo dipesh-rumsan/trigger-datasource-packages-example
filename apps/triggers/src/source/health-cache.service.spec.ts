@@ -266,7 +266,9 @@ describe('HealthCacheService', () => {
   describe('setSourceHealth', () => {
     it('should set source health data successfully', async () => {
       jest.spyOn(service as any, 'calculateTTL').mockResolvedValue(1800);
-      jest.spyOn(service as any, 'calculateFetchFrequency').mockResolvedValue(15);
+      jest
+        .spyOn(service as any, 'calculateFetchFrequency')
+        .mockResolvedValue(15);
       jest
         .spyOn(service as any, 'updateHealthSummary')
         .mockResolvedValue(undefined);
@@ -284,7 +286,9 @@ describe('HealthCacheService', () => {
 
     it('should handle Redis setex errors', async () => {
       jest.spyOn(service as any, 'calculateTTL').mockResolvedValue(1800);
-      jest.spyOn(service as any, 'calculateFetchFrequency').mockResolvedValue(15);
+      jest
+        .spyOn(service as any, 'calculateFetchFrequency')
+        .mockResolvedValue(15);
       mockRedis.setex.mockRejectedValue(new Error('Redis setex failed'));
 
       await expect(

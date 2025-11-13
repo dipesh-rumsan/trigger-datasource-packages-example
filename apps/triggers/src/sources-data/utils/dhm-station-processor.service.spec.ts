@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { Logger } from '@nestjs/common';
 import { SourceType } from '@prisma/client';
-import { DhmStationProcessorService, WaterLevelStationConfig, RainfallStationConfig } from './dhm-station-processor.service';
+import {
+  DhmStationProcessorService,
+  WaterLevelStationConfig,
+  RainfallStationConfig,
+} from './dhm-station-processor.service';
 import { DhmService } from '../dhm.service';
 import { HealthError } from './health-utils.service';
 import { SourceDataTypeEnum } from 'src/types/data-source';
@@ -53,7 +57,7 @@ describe('DhmStationProcessorService', () => {
     basin: 'Test Basin',
     district: 'Test District',
     latitude: 27.7172,
-    longitude: 85.3240,
+    longitude: 85.324,
     waterLevel: 1.5,
     status: 'active',
     warning_level: '2.0',
@@ -76,7 +80,7 @@ describe('DhmStationProcessorService', () => {
     district: 'Test District',
     description: 'Test rainfall station',
     latitude: 27.7172,
-    longitude: 85.3240,
+    longitude: 85.324,
     value: 5.2,
     interval: 60,
     blink: false,
@@ -100,7 +104,9 @@ describe('DhmStationProcessorService', () => {
       ],
     }).compile();
 
-    service = module.get<DhmStationProcessorService>(DhmStationProcessorService);
+    service = module.get<DhmStationProcessorService>(
+      DhmStationProcessorService,
+    );
     dhmService = module.get<DhmService>(DhmService);
     httpService = module.get<HttpService>(HttpService);
 
@@ -110,7 +116,9 @@ describe('DhmStationProcessorService', () => {
     jest.spyOn(Logger.prototype, 'error').mockImplementation();
 
     // Mock Date.now for consistent timestamps
-    jest.spyOn(Date.prototype, 'toISOString').mockReturnValue('2023-01-01T10:05:00.000Z');
+    jest
+      .spyOn(Date.prototype, 'toISOString')
+      .mockReturnValue('2023-01-01T10:05:00.000Z');
   });
 
   afterEach(() => {
@@ -143,12 +151,20 @@ describe('DhmStationProcessorService', () => {
         { datetime: '2023-01-02T00:00:00Z', value: 1.8 },
       ];
 
-      jest.spyOn(service, 'fetchRiverStation').mockResolvedValue(mockRiverStationItem);
+      jest
+        .spyOn(service, 'fetchRiverStation')
+        .mockResolvedValue(mockRiverStationItem);
       mockDhmService.getDhmRiverWatchData.mockResolvedValue(mockRiverWatchData);
-      mockDhmService.normalizeDhmRiverAndRainfallWatchData.mockResolvedValue(mockNormalizedData);
+      mockDhmService.normalizeDhmRiverAndRainfallWatchData.mockResolvedValue(
+        mockNormalizedData,
+      );
       mockDhmService.saveDataInDhm.mockResolvedValue(true);
 
-      const result = await service.processWaterLevelStation(mockWaterLevelConfig, 123, errors);
+      const result = await service.processWaterLevelStation(
+        mockWaterLevelConfig,
+        123,
+        errors,
+      );
 
       expect(result).toBe(true);
       expect(errors).toHaveLength(0);
@@ -160,7 +176,9 @@ describe('DhmStationProcessorService', () => {
         seriesid: '123',
         location: 'Test River Location',
       });
-      expect(mockDhmService.normalizeDhmRiverAndRainfallWatchData).toHaveBeenCalledWith(mockRiverWatchData);
+      expect(
+        mockDhmService.normalizeDhmRiverAndRainfallWatchData,
+      ).toHaveBeenCalledWith(mockRiverWatchData);
       expect(mockDhmService.saveDataInDhm).toHaveBeenCalledWith(
         SourceType.WATER_LEVEL,
         'Test River Location',
@@ -169,13 +187,19 @@ describe('DhmStationProcessorService', () => {
           history: mockNormalizedData,
         },
       );
-      expect(Logger.prototype.log).toHaveBeenCalledWith('Water level data saved successfully for Test River Location');
+      expect(Logger.prototype.log).toHaveBeenCalledWith(
+        'Water level data saved successfully for Test River Location',
+      );
     });
 
     it('should handle missing station data', async () => {
       jest.spyOn(service, 'fetchRiverStation').mockResolvedValue(null);
 
-      const result = await service.processWaterLevelStation(mockWaterLevelConfig, 123, errors);
+      const result = await service.processWaterLevelStation(
+        mockWaterLevelConfig,
+        123,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(errors).toHaveLength(1);
@@ -191,9 +215,15 @@ describe('DhmStationProcessorService', () => {
 
     it('should handle missing query params', async () => {
       buildQueryParamsMock.mockReturnValue(null);
-      jest.spyOn(service, 'fetchRiverStation').mockResolvedValue(mockRiverStationItem);
+      jest
+        .spyOn(service, 'fetchRiverStation')
+        .mockResolvedValue(mockRiverStationItem);
 
-      const result = await service.processWaterLevelStation(mockWaterLevelConfig, 123, errors);
+      const result = await service.processWaterLevelStation(
+        mockWaterLevelConfig,
+        123,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(errors).toHaveLength(1);
@@ -205,12 +235,20 @@ describe('DhmStationProcessorService', () => {
     });
 
     it('should handle save failure', async () => {
-      jest.spyOn(service, 'fetchRiverStation').mockResolvedValue(mockRiverStationItem);
+      jest
+        .spyOn(service, 'fetchRiverStation')
+        .mockResolvedValue(mockRiverStationItem);
       mockDhmService.getDhmRiverWatchData.mockResolvedValue([]);
-      mockDhmService.normalizeDhmRiverAndRainfallWatchData.mockResolvedValue([]);
+      mockDhmService.normalizeDhmRiverAndRainfallWatchData.mockResolvedValue(
+        [],
+      );
       mockDhmService.saveDataInDhm.mockResolvedValue(false);
 
-      const result = await service.processWaterLevelStation(mockWaterLevelConfig, 123, errors);
+      const result = await service.processWaterLevelStation(
+        mockWaterLevelConfig,
+        123,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(errors).toHaveLength(1);
@@ -219,35 +257,54 @@ describe('DhmStationProcessorService', () => {
         message: 'Failed to save water level data for Test River Location',
         timestamp: '2023-01-01T10:05:00.000Z',
       });
-      expect(Logger.prototype.warn).toHaveBeenCalledWith('Failed to save water level data for Test River Location');
+      expect(Logger.prototype.warn).toHaveBeenCalledWith(
+        'Failed to save water level data for Test River Location',
+      );
     });
 
     it('should handle fetch error with fallback success', async () => {
-      jest.spyOn(service, 'fetchRiverStation')
+      jest
+        .spyOn(service, 'fetchRiverStation')
         .mockResolvedValueOnce(mockRiverStationItem) // First call in main try block
         .mockResolvedValueOnce(mockRiverStationItem); // Second call in fallback
-      mockDhmService.getDhmRiverWatchData.mockRejectedValue(new Error('API Error'));
+      mockDhmService.getDhmRiverWatchData.mockRejectedValue(
+        new Error('API Error'),
+      );
       mockDhmService.saveDataInDhm.mockResolvedValue(true);
 
-      const result = await service.processWaterLevelStation(mockWaterLevelConfig, 123, errors);
+      const result = await service.processWaterLevelStation(
+        mockWaterLevelConfig,
+        123,
+        errors,
+      );
 
       expect(result).toBe(true);
       expect(errors).toHaveLength(1);
       expect(errors[0]).toEqual({
         code: 'DHM_WATER_FETCH_ERROR',
-        message: 'Error fetching water level data for Test River Location: API Error',
+        message:
+          'Error fetching water level data for Test River Location: API Error',
         timestamp: '2023-01-01T10:05:00.000Z',
       });
-      expect(Logger.prototype.log).toHaveBeenCalledWith('Saved fallback data for Test River Location');
+      expect(Logger.prototype.log).toHaveBeenCalledWith(
+        'Saved fallback data for Test River Location',
+      );
     });
 
     it('should handle fetch error with fallback failure', async () => {
-      jest.spyOn(service, 'fetchRiverStation')
+      jest
+        .spyOn(service, 'fetchRiverStation')
         .mockResolvedValueOnce(mockRiverStationItem)
         .mockResolvedValueOnce(null);
-      mockDhmService.getDhmRiverWatchData.mockRejectedValue(new Error('API Error'));
+      mockDhmService.getDhmRiverWatchData.mockRejectedValue(
+        new Error('API Error'),
+      );
 
-      const result = await service.processWaterLevelStation(mockWaterLevelConfig, 123, errors);
+      const result = await service.processWaterLevelStation(
+        mockWaterLevelConfig,
+        123,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(errors).toHaveLength(1);
@@ -266,25 +323,37 @@ describe('DhmStationProcessorService', () => {
         message: 'Fallback message',
       };
 
-      jest.spyOn(service, 'fetchRiverStation')
+      jest
+        .spyOn(service, 'fetchRiverStation')
         .mockResolvedValueOnce(mockRiverStationItem) // First call in main try block
         .mockResolvedValueOnce(null); // Second call in fallback
       mockDhmService.getDhmRiverWatchData.mockRejectedValue(axiosError);
 
-      const result = await service.processWaterLevelStation(mockWaterLevelConfig, 123, errors);
+      const result = await service.processWaterLevelStation(
+        mockWaterLevelConfig,
+        123,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(errors[0].message).toContain('API response error');
     });
 
     it('should handle fallback save error', async () => {
-      jest.spyOn(service, 'fetchRiverStation')
+      jest
+        .spyOn(service, 'fetchRiverStation')
         .mockResolvedValueOnce(mockRiverStationItem)
         .mockResolvedValueOnce(mockRiverStationItem);
-      mockDhmService.getDhmRiverWatchData.mockRejectedValue(new Error('API Error'));
+      mockDhmService.getDhmRiverWatchData.mockRejectedValue(
+        new Error('API Error'),
+      );
       mockDhmService.saveDataInDhm.mockRejectedValue(new Error('Save Error'));
 
-      const result = await service.processWaterLevelStation(mockWaterLevelConfig, 123, errors);
+      const result = await service.processWaterLevelStation(
+        mockWaterLevelConfig,
+        123,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(Logger.prototype.error).toHaveBeenCalledWith(
@@ -315,12 +384,22 @@ describe('DhmStationProcessorService', () => {
         { datetime: '2023-01-02T00:00:00Z', value: 3.8 },
       ];
 
-      jest.spyOn(service, 'fetchRainfallStation').mockResolvedValue(mockRainfallStationItem);
-      mockDhmService.getDhmRainfallWatchData.mockResolvedValue(mockRainfallWatchData);
-      mockDhmService.normalizeDhmRiverAndRainfallWatchData.mockResolvedValue(mockNormalizedData);
+      jest
+        .spyOn(service, 'fetchRainfallStation')
+        .mockResolvedValue(mockRainfallStationItem);
+      mockDhmService.getDhmRainfallWatchData.mockResolvedValue(
+        mockRainfallWatchData,
+      );
+      mockDhmService.normalizeDhmRiverAndRainfallWatchData.mockResolvedValue(
+        mockNormalizedData,
+      );
       mockDhmService.saveDataInDhm.mockResolvedValue(true);
 
-      const result = await service.processRainfallStation(mockRainfallConfig, 789, errors);
+      const result = await service.processRainfallStation(
+        mockRainfallConfig,
+        789,
+        errors,
+      );
 
       expect(result).toBe(true);
       expect(errors).toHaveLength(0);
@@ -340,30 +419,45 @@ describe('DhmStationProcessorService', () => {
           history: mockNormalizedData,
         },
       );
-      expect(Logger.prototype.log).toHaveBeenCalledWith('Rainfall data saved successfully for Test Rainfall Location');
+      expect(Logger.prototype.log).toHaveBeenCalledWith(
+        'Rainfall data saved successfully for Test Rainfall Location',
+      );
     });
 
     it('should handle missing station data', async () => {
       jest.spyOn(service, 'fetchRainfallStation').mockResolvedValue(null);
 
-      const result = await service.processRainfallStation(mockRainfallConfig, 789, errors);
+      const result = await service.processRainfallStation(
+        mockRainfallConfig,
+        789,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(errors).toHaveLength(1);
       expect(errors[0]).toEqual({
         code: 'DHM_RAINFALL_MISSING_DATA',
-        message: 'Missing station data or query params for Test Rainfall Location',
+        message:
+          'Missing station data or query params for Test Rainfall Location',
         timestamp: '2023-01-01T10:05:00.000Z',
       });
     });
 
     it('should handle save failure', async () => {
-      jest.spyOn(service, 'fetchRainfallStation').mockResolvedValue(mockRainfallStationItem);
+      jest
+        .spyOn(service, 'fetchRainfallStation')
+        .mockResolvedValue(mockRainfallStationItem);
       mockDhmService.getDhmRainfallWatchData.mockResolvedValue([]);
-      mockDhmService.normalizeDhmRiverAndRainfallWatchData.mockResolvedValue([]);
+      mockDhmService.normalizeDhmRiverAndRainfallWatchData.mockResolvedValue(
+        [],
+      );
       mockDhmService.saveDataInDhm.mockResolvedValue(false);
 
-      const result = await service.processRainfallStation(mockRainfallConfig, 789, errors);
+      const result = await service.processRainfallStation(
+        mockRainfallConfig,
+        789,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(errors).toHaveLength(1);
@@ -375,16 +469,25 @@ describe('DhmStationProcessorService', () => {
     });
 
     it('should handle fetch error', async () => {
-      jest.spyOn(service, 'fetchRainfallStation').mockResolvedValue(mockRainfallStationItem);
-      mockDhmService.getDhmRainfallWatchData.mockRejectedValue(new Error('Rainfall API Error'));
+      jest
+        .spyOn(service, 'fetchRainfallStation')
+        .mockResolvedValue(mockRainfallStationItem);
+      mockDhmService.getDhmRainfallWatchData.mockRejectedValue(
+        new Error('Rainfall API Error'),
+      );
 
-      const result = await service.processRainfallStation(mockRainfallConfig, 789, errors);
+      const result = await service.processRainfallStation(
+        mockRainfallConfig,
+        789,
+        errors,
+      );
 
       expect(result).toBe(false);
       expect(errors).toHaveLength(1);
       expect(errors[0]).toEqual({
         code: 'DHM_RAINFALL_FETCH_ERROR',
-        message: 'Error fetching rainfall data for Test Rainfall Location: Rainfall API Error',
+        message:
+          'Error fetching rainfall data for Test Rainfall Location: Rainfall API Error',
         timestamp: '2023-01-01T10:05:00.000Z',
       });
       expect(Logger.prototype.error).toHaveBeenCalledWith(
@@ -503,11 +606,7 @@ describe('DhmStationProcessorService', () => {
     it('should return null when station not found', async () => {
       const mockApiResponse = {
         data: {
-          data: [
-            [
-              { series_id: 999, name: 'Other Station' },
-            ],
-          ],
+          data: [[{ series_id: 999, name: 'Other Station' }]],
         },
       };
 
@@ -516,15 +615,22 @@ describe('DhmStationProcessorService', () => {
       const result = await service.fetchRainfallStation(789);
 
       expect(result).toBeNull();
-      expect(Logger.prototype.warn).toHaveBeenCalledWith('No rainfall station found for series ID 789');
+      expect(Logger.prototype.warn).toHaveBeenCalledWith(
+        'No rainfall station found for series ID 789',
+      );
     });
 
     it('should handle API error', async () => {
       const apiError = new Error('API Error');
       mockHttpService.axiosRef.get.mockRejectedValue(apiError);
 
-      await expect(service.fetchRainfallStation(789)).rejects.toThrow('API Error');
-      expect(Logger.prototype.warn).toHaveBeenCalledWith('Error fetching rainfall station:', apiError);
+      await expect(service.fetchRainfallStation(789)).rejects.toThrow(
+        'API Error',
+      );
+      expect(Logger.prototype.warn).toHaveBeenCalledWith(
+        'Error fetching rainfall station:',
+        apiError,
+      );
     });
 
     it('should handle empty data array', async () => {
@@ -567,9 +673,7 @@ describe('DhmStationProcessorService', () => {
     it('should return null when station not found', async () => {
       const mockApiResponse = {
         data: {
-          data: [
-            { series_id: 999, name: 'Other River Station' },
-          ],
+          data: [{ series_id: 999, name: 'Other River Station' }],
         },
       };
 
@@ -578,7 +682,9 @@ describe('DhmStationProcessorService', () => {
       const result = await service.fetchRiverStation(123);
 
       expect(result).toBeNull();
-      expect(Logger.prototype.warn).toHaveBeenCalledWith('No river station found for series ID 123');
+      expect(Logger.prototype.warn).toHaveBeenCalledWith(
+        'No river station found for series ID 123',
+      );
     });
 
     it('should handle API error gracefully', async () => {
@@ -588,7 +694,10 @@ describe('DhmStationProcessorService', () => {
       const result = await service.fetchRiverStation(123);
 
       expect(result).toBeNull();
-      expect(Logger.prototype.warn).toHaveBeenCalledWith('Error fetching river station:', apiError);
+      expect(Logger.prototype.warn).toHaveBeenCalledWith(
+        'Error fetching river station:',
+        apiError,
+      );
     });
 
     it('should handle empty data array', async () => {

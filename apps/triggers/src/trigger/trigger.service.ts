@@ -88,7 +88,7 @@ export class TriggerService {
         `);
 
       return trigger;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -147,7 +147,7 @@ export class TriggerService {
         Total ${k.length} triggers added for action: ${res?.name} to stellar queue for AA ${appId}
         `);
       return k;
-    } catch (error: any)  {
+    } catch (error: any) {
       console.log(error);
       throw new RpcException(error.message);
     }
@@ -178,7 +178,7 @@ export class TriggerService {
       });
 
       return updatedTrigger;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -247,7 +247,7 @@ export class TriggerService {
         Trigger added to stellar queue with id: ${res?.name} for AA ${appId}
         `);
       return updatedTrigger;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -294,7 +294,7 @@ export class TriggerService {
           perPage: dto.perPage,
         },
       );
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -316,7 +316,7 @@ export class TriggerService {
           },
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw new RpcException(error.message);
     }
@@ -364,7 +364,7 @@ export class TriggerService {
       });
 
       return trigger;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -438,7 +438,7 @@ export class TriggerService {
       });
 
       return updatedTrigger;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -499,7 +499,7 @@ export class TriggerService {
 
       return trigger;
       return trigger;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -649,7 +649,7 @@ export class TriggerService {
       });
 
       return updatedTrigger;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -683,7 +683,7 @@ export class TriggerService {
       });
 
       return updatedTrigger;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -733,7 +733,7 @@ export class TriggerService {
       //     },
       //   },
       // });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
     }

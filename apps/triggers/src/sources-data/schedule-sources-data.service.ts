@@ -49,6 +49,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
 
     try {
       const dataSource = SettingsService.get('DATASOURCE') as DataSourceValue;
+      console.log('dataSource', dataSource);
       const dhmSettings = dataSource[DataSource.DHM];
 
       const isValid = await this.healthUtilsService.validateSettings(

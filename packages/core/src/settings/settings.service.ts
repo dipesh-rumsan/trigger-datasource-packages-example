@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
   Prisma,
   PrismaClient,
@@ -21,13 +21,17 @@ type PrismaClientType = Omit<
 >;
 
 @Injectable()
-export class SettingsService {
+export class SettingsService implements OnModuleInit {
   private static data: any = {};
   constructor(
-    @Inject(PrismaService)
-    private prisma: PrismaService,
+    @Inject(PrismaService) private prisma: PrismaService,
+    @Inject(SettingsUtilsService)
     private readonly settingsUtilsServie: SettingsUtilsService,
   ) {}
+
+  async onModuleInit() {
+    await this.load();
+  }
 
   public static get(path: string) {
     const keys = path.split('.');

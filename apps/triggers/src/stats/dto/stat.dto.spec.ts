@@ -102,15 +102,15 @@ describe('StatDto', () => {
   describe('Property Types', () => {
     it('should have correct property types', () => {
       const statDto = new StatDto();
-      
+
       // Test name property
       statDto.name = 'TEST_STAT';
       expect(typeof statDto.name).toBe('string');
-      
+
       // Test data property
       statDto.data = { count: 10 };
       expect(typeof statDto.data).toBe('object');
-      
+
       // Test optional group property
       statDto.group = 'test_group';
       expect(typeof statDto.group).toBe('string');
@@ -203,4 +203,4 @@ describe('StatDto', () => {
       expect(errors).toHaveLength(0);
     });
   });
-}); 
+});

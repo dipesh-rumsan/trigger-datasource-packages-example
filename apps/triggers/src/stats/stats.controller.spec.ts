@@ -47,10 +47,10 @@ describe('StatsController', () => {
 
     it('should call findAll with correct message pattern', () => {
       const messagePattern = { cmd: JOBS.STATS.MS_TRIGGERS_STATS };
-      
+
       // Mock console.log to avoid output during tests
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       const result = controller.findAll(mockPayload);
 
       expect(consoleSpy).toHaveBeenCalledWith('first', mockPayload);
@@ -63,9 +63,9 @@ describe('StatsController', () => {
     it('should handle empty payload', () => {
       const emptyPayload = {};
       mockStatsService.findAll.mockResolvedValue([]);
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       const result = controller.findAll(emptyPayload);
 
       expect(consoleSpy).toHaveBeenCalledWith('first', emptyPayload);
@@ -78,9 +78,9 @@ describe('StatsController', () => {
     it('should handle service errors', () => {
       const error = new Error('Service error');
       mockStatsService.findAll.mockRejectedValue(error);
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       const result = controller.findAll(mockPayload);
 
       expect(consoleSpy).toHaveBeenCalledWith('first', mockPayload);
@@ -93,9 +93,9 @@ describe('StatsController', () => {
     it('should handle null payload', () => {
       const nullPayload = null;
       mockStatsService.findAll.mockResolvedValue([]);
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       const result = controller.findAll(nullPayload);
 
       expect(consoleSpy).toHaveBeenCalledWith('first', nullPayload);
@@ -108,9 +108,9 @@ describe('StatsController', () => {
     it('should handle undefined payload', () => {
       const undefinedPayload = undefined;
       mockStatsService.findAll.mockResolvedValue([]);
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       const result = controller.findAll(undefinedPayload);
 
       expect(consoleSpy).toHaveBeenCalledWith('first', undefinedPayload);
@@ -124,10 +124,12 @@ describe('StatsController', () => {
   describe('MessagePattern decorator', () => {
     it('should have correct message pattern', () => {
       const messagePattern = { cmd: JOBS.STATS.MS_TRIGGERS_STATS };
-      
+
       // This test verifies that the controller method is decorated with the correct message pattern
       // The actual message pattern is defined in the constant file
-      expect(JOBS.STATS.MS_TRIGGERS_STATS).toBe('rahat.jobs.ms.trigggers.stats');
+      expect(JOBS.STATS.MS_TRIGGERS_STATS).toBe(
+        'rahat.jobs.ms.trigggers.stats',
+      );
     });
   });
 
@@ -137,4 +139,4 @@ describe('StatsController', () => {
       expect(statsService).toBe(mockStatsService);
     });
   });
-}); 
+});

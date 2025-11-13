@@ -32,7 +32,7 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
   constructor(
     @Inject(HttpService) httpService: HttpService,
     @Inject(PrismaService) private readonly db: PrismaService,
-    @Inject(SettingsService) settingsService: SettingsService
+    @Inject(SettingsService) settingsService: SettingsService,
   ) {
     super(httpService, settingsService, {
       dataSource: DataSource.DHM,
@@ -50,7 +50,7 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
   async fetch(params: DhmFetchParams): Promise<Result<DhmFetchResponse[]>> {
     try {
       this.logger.log(
-        `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`
+        `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`,
       );
 
       const baseUrl = this.getUrl();
@@ -80,7 +80,7 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
               location: cfg.LOCATION,
             };
           });
-        })
+        }),
       );
 
       return Ok(htmlPages);
@@ -111,7 +111,7 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
         }
 
         const normalizedData = this.normalizeDhmRiverAndRainfallWatchData(
-          data as DhmInputItem[]
+          data as DhmInputItem[],
         );
 
         observations.push({
@@ -178,17 +178,17 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
    * Using functional composition - no if-else needed!
    */
   async execute(
-    params: DhmFetchParams
+    params: DhmFetchParams,
   ): Promise<Result<Indicator<{ value: number; datetime: string }>[]>> {
     return chainAsync(this.fetch(params), (rawData: DhmFetchResponse[]) =>
       chainAsync(this.aggregate(rawData), (observations: DhmObservation[]) =>
-        this.transform(observations)
-      )
+        this.transform(observations),
+      ),
     );
   }
 
   private normalizeDhmRiverAndRainfallWatchData(
-    dataArray: DhmInputItem[]
+    dataArray: DhmInputItem[],
   ): DhmNormalizedItem[] {
     return dataArray.map((item) => {
       const base = {

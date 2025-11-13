@@ -86,4 +86,4 @@ describe('GaugeForecastDto', () => {
       expect(typeof dto.date).toBe('undefined');
     });
   });
-}); 
+});

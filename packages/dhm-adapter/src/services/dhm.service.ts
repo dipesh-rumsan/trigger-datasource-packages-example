@@ -12,7 +12,7 @@ export class DhmService {
   async saveDataInDhm(
     type: SourceType,
     riverBasin: string,
-    payload: RiverStationData | RainfallStationData
+    payload: RiverStationData | RainfallStationData,
   ): Promise<any> {
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -51,11 +51,11 @@ export class DhmService {
           }
 
           this.logger.log(
-            `Series mismatch. Creating new for: ${payloadData.name}`
+            `Series mismatch. Creating new for: ${payloadData.name}`,
           );
         } else {
           this.logger.log(
-            `No record found. Creating new for: ${payloadData.name}`
+            `No record found. Creating new for: ${payloadData.name}`,
           );
         }
 

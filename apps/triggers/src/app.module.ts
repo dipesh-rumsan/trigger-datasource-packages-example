@@ -21,6 +21,7 @@ import { SourceModule } from './source/source.module';
 import { TriggerHistoryModule } from './trigger-history/trigger-history.module';
 import { StatsModule } from './stats/stat.module';
 import { HttpModule } from '@nestjs/axios';
+import { SettingsModule } from '@lib/core';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { HttpModule } from '@nestjs/axios';
     HttpModule.register({
       global: true,
     }),
+    SettingsModule,
     ProcessorsModule,
     CategoryModule,
     PhasesModule,

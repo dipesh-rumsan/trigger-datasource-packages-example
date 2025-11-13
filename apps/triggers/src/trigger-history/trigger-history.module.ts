@@ -4,7 +4,7 @@ import { TriggerHistoryService } from './trigger-history.service';
 
 @Module({
   controllers: [TriggerHistoryController],
-  providers: [TriggerHistoryService ],
+  providers: [TriggerHistoryService],
   exports: [TriggerHistoryService],
 })
 export class TriggerHistoryModule {}

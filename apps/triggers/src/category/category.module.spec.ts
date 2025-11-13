@@ -19,10 +19,13 @@ describe('CategoryModule', () => {
   });
 
   it('should have correct module metadata', () => {
-    const controllerMetadata = Reflect.getMetadata('controllers', CategoryModule);
+    const controllerMetadata = Reflect.getMetadata(
+      'controllers',
+      CategoryModule,
+    );
     const providerMetadata = Reflect.getMetadata('providers', CategoryModule);
 
     expect(controllerMetadata).toContain(CategoryController);
     expect(providerMetadata).toContain(CategoryService);
   });
-}); 
+});

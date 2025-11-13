@@ -153,7 +153,7 @@ export class ActivityService {
       this.eventEmitter.emit(EVENTS.ACTIVITY_ADDED, { appId: appId });
 
       return newActivity;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Something went wrong while adding activity', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -336,7 +336,7 @@ export class ActivityService {
         activityCommunication,
         activityPayout,
       };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Something went wrong while fetching activity', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -409,7 +409,7 @@ export class ActivityService {
         page,
         perPage,
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(
         'Something went wrong while fetching activities',
         error,
@@ -471,7 +471,7 @@ export class ActivityService {
         page,
         perPage,
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(
         'Something went wrong while fetching activities',
         error,
@@ -533,7 +533,7 @@ export class ActivityService {
       }
 
       return paginateResult(results, page, perPage);
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(
         'Something went wrong while fetching activities having communications',
         error,
@@ -637,7 +637,7 @@ export class ActivityService {
       try {
         const { data } = await this.commsClient.session.get(sessionId);
         sessionCache.set(sessionId, data);
-      } catch (error: any)  {
+      } catch (error: any) {
         this.logger.warn(
           `Failed to fetch session status for sessionId: ${sessionId}`,
         );
@@ -721,7 +721,7 @@ export class ActivityService {
       );
 
       return response || [];
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.warn('Failed to fetch beneficiary groups', error);
       return [];
     }
@@ -745,7 +745,7 @@ export class ActivityService {
         ),
       );
       return response || [];
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.warn('Failed to fetch stakeholder groups', error);
       return [];
     }
@@ -845,7 +845,7 @@ export class ActivityService {
                   ...comm,
                   sessionStatus: data.status,
                 };
-              } catch (error: any)  {
+              } catch (error: any) {
                 this.logger.warn(
                   `Failed to fetch session status for sessionId: ${comm.sessionId}`,
                 );
@@ -888,7 +888,7 @@ export class ActivityService {
         data: enhancedData,
         meta,
       };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(
         `Error while fetching activities having communications`,
         error,
@@ -913,7 +913,7 @@ export class ActivityService {
       this.eventEmitter.emit(EVENTS.ACTIVITY_DELETED, {});
 
       return deletedActivity;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while deleting activity', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -991,7 +991,7 @@ export class ActivityService {
       }
 
       return updatedActivity;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.log('Error while updating activity status', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -1080,7 +1080,7 @@ export class ActivityService {
           updatedAt: new Date(),
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while updating activity', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -1122,7 +1122,7 @@ export class ActivityService {
         communicationDetail: selectedCommunication,
         groupName,
       };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while fetching session logs', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -1200,7 +1200,7 @@ export class ActivityService {
       }
 
       return { selectedCommunication, activity };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(
         'Error while fetching activity communication details',
         error,
@@ -1248,7 +1248,7 @@ export class ActivityService {
       }
 
       return { group, groupName };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while fetching group details', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -1288,7 +1288,7 @@ export class ActivityService {
         stats: stats.data,
         totalCommsProject,
       };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while fetching communication stats', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -1578,7 +1578,7 @@ export class ActivityService {
       });
       // Final structured output containing session broadcast stats
       return result;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while fetching group details', error);
       throw new RpcException(error);
     }

@@ -137,7 +137,7 @@ describe('StatsProcessor', () => {
   describe('Event Decorators', () => {
     it('should have correct event decorators', () => {
       const prototype = Object.getPrototypeOf(processor);
-      
+
       // Check that the methods have the correct decorators
       expect(prototype.onPhaseTriggered).toBeDefined();
       expect(prototype.onPhaseReverted).toBeDefined();
@@ -154,4 +154,4 @@ describe('StatsProcessor', () => {
       expect(typeof processor.onActivityCompleted).toBe('function');
     });
   });
-}); 
+});

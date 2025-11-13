@@ -165,4 +165,4 @@ describe('AddDailyMonitoringDto', () => {
       expect(typeof dto.uuid).toBe('undefined');
     });
   });
-}); 
+});

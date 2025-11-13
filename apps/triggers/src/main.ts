@@ -12,7 +12,7 @@ async function bootstrap() {
   setupProcessHandlers(logger);
 
   try {
-    const PORT: number = 7080;
+    const PORT: number = process.env.PORT ? Number(process.env.PORT) : 7080;
 
     logger.log('Starting microservice initialization...');
 
@@ -67,7 +67,7 @@ async function bootstrap() {
     }
 
     logger.error('Application will exit due to startup failure.');
-    process.exit(1);
+    // process.exit(1);
   }
 }
 

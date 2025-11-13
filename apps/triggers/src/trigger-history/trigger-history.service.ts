@@ -89,7 +89,7 @@ export class TriggerHistoryService {
           version: currentVersion + 1,
         };
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error creating trigger history', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -157,7 +157,7 @@ export class TriggerHistoryService {
           versions: result.map((r) => r.version),
         },
       };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error fetching trigger histories', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -176,7 +176,7 @@ export class TriggerHistoryService {
       });
 
       return res?.version;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error fetching current version', error);
       throw new RpcException(error?.message || 'Something went wrong');
     }
@@ -198,7 +198,7 @@ export class TriggerHistoryService {
           },
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw new RpcException(error.message);
     }

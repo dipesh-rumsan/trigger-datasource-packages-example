@@ -45,4 +45,4 @@ describe('GetSouceDataDto', () => {
     expect(SourceDataType.Hourly).toBe('HOURLY');
     expect(SourceDataType.Daily).toBe('DAILY');
   });
-}); 
+});

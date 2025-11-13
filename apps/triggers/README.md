@@ -1,7 +1,9 @@
 # Rahat Triggers - Anticipatory Action Platform
+
 A decentralized platform for managing anticipatory action projects to enhance community resilience against climate shocks.
 
 ## Table of Contents
+
 - [Project Overview](#project-overview)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
@@ -13,6 +15,7 @@ A decentralized platform for managing anticipatory action projects to enhance co
 - [Development Guide](#development-guide)
 
 ## Project Overview
+
 Rahat ("Relief" in Nepali) is a blockchain-based financial inclusion platform designed to empower vulnerable communities through anticipatory action (AA) projects. This trigger management system enables:
 
 - 📆 Activity Management: Plan, organize, and track AA project activities
@@ -21,6 +24,7 @@ Rahat ("Relief" in Nepali) is a blockchain-based financial inclusion platform de
 - 💸 Cash/Voucher Assistance: Manage beneficiary support programs
 
 ## Key Features
+
 - Microservices architecture with Redis-based communication
 - Real-time trigger monitoring and response system
 - Multi-agency forecasting data aggregation
@@ -29,7 +33,9 @@ Rahat ("Relief" in Nepali) is a blockchain-based financial inclusion platform de
 - Role-based access control
 
 ## Architecture
+
 **Core Components:**
+
 - **Redis Server**: Central message broker for inter-service communication
 - **NestJS Microservices**: Independently deployable services
 - **BullMQ**: Queue management for background jobs
@@ -37,17 +43,19 @@ Rahat ("Relief" in Nepali) is a blockchain-based financial inclusion platform de
 - **Event Emitter**: Cross-service event management
 
 ## Services
-| Service | Description |
-|---------|-------------|
-| Activity Management | Manages project timelines, tasks, and resource allocation |
-| Trigger Engine | Processes hazard indicators and initiates predefined responses |
-| Forecasting Integrator | Aggregates data from multiple meteorological sources |
-| Communication Hub | Handles notifications and alerts distribution |
-| Beneficiary Management | Maintains vulnerable community member records |
+
+| Service                | Description                                                    |
+| ---------------------- | -------------------------------------------------------------- |
+| Activity Management    | Manages project timelines, tasks, and resource allocation      |
+| Trigger Engine         | Processes hazard indicators and initiates predefined responses |
+| Forecasting Integrator | Aggregates data from multiple meteorological sources           |
+| Communication Hub      | Handles notifications and alerts distribution                  |
+| Beneficiary Management | Maintains vulnerable community member records                  |
 
 ## Installation
 
 ### Prerequisites
+
 - Node.js v20+
 - Redis Server 6+
 - pnpm 8+
@@ -64,6 +72,7 @@ $ cp .env.example .env
 ```
 
 ## Configuration
+
 Update `.env` file with your environment variables:
 
 ```ini
@@ -76,12 +85,14 @@ PROJECT_ID=your_project_uuid
 ## Running the App
 
 ### Development Mode
+
 ```bash
 # Start in watch mode
 $ pnpm dev
 ```
 
 ### Production Mode
+
 ```bash
 # Build project
 $ pnpm build
@@ -91,6 +102,7 @@ $ pnpm run start:prod
 ```
 
 ## Testing
+
 ```bash
 # Unit tests
 $ pnpm test
@@ -106,20 +118,20 @@ $ pnpm test:cov
 ## Development Guide
 
 ### Creating a New Service
+
 1. Generate new NestJS service:
+
 ```bash
 $ nest generate service new-service
 ```
 
 ## Contributing
+
 We welcome contributions! Please follow these steps:
+
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 
-
-4. Commit your changes (`git commit -m 'Add some amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
-
-
-
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request

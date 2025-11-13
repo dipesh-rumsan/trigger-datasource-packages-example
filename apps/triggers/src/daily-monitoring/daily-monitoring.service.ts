@@ -39,7 +39,7 @@ export class DailyMonitoringService {
           }),
         ),
       );
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException('Failed to create daily monitoring data');
     }
@@ -94,7 +94,7 @@ export class DailyMonitoringService {
       ]);
       const transformedData = this.sameGroupeKeyMergeData(results);
       return { results: transformedData };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException('Failed to fetch daily monitoring data');
     }
@@ -143,7 +143,7 @@ export class DailyMonitoringService {
 
       //   multipleData: manyData,
       // };
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException('Failed to fetch daily monitoring data');
     }
@@ -171,7 +171,7 @@ export class DailyMonitoringService {
       const groupedData =
         this.groupGaugeReadingsByDateAndStation(gaugeReadingData);
       return groupedData;
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error fetching gauge reading data:', error);
       throw new RpcException('Failed to fetch gauge reading data');
     }
@@ -313,7 +313,7 @@ export class DailyMonitoringService {
           datetime: item?.createdAt,
         };
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error fetching gauge forecast data:', error.message);
       throw new RpcException('Failed to fetch gauge forecast data');
     }
@@ -371,7 +371,7 @@ export class DailyMonitoringService {
       );
 
       return results;
-    } catch (error: any)  {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -390,7 +390,7 @@ export class DailyMonitoringService {
           isDeleted: true,
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException('Failed to delete daily monitoring data');
     }
@@ -411,7 +411,7 @@ export class DailyMonitoringService {
           isDeleted: true,
         },
       });
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error(error);
       throw new RpcException('Failed to delete daily monitoring data');
     }

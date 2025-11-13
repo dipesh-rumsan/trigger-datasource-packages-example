@@ -4,7 +4,7 @@ import { StatsService } from './stat.service';
 import { StatsController } from './stats.controller';
 
 @Module({
-  imports: [ ActivityModule],
+  imports: [ActivityModule],
   controllers: [StatsController],
   providers: [StatsService],
   exports: [StatsService],

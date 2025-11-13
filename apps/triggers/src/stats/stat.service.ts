@@ -20,7 +20,7 @@ export class StatsService {
 
   async calculatePhaseActivities() {
     const phases = await this.prisma.phase.findMany();
-    let activitiesStats = [];
+    const activitiesStats = [];
 
     for (const phase of phases) {
       const appsInPhase = await this.prisma.activity.groupBy({
@@ -154,7 +154,7 @@ export class StatsService {
       }
 
       this.logger.log('Communication stats calculated and saved successfully.');
-    } catch (error: any)  {
+    } catch (error: any) {
       this.logger.error('Error while calculating communication stats', error);
     }
   }

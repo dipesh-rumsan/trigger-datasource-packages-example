@@ -81,4 +81,4 @@ describe('GetTriggerHistoryDto', () => {
       expect(dto).toBeInstanceOf(GetTriggerHistoryDto);
     });
   });
-}); 
+});

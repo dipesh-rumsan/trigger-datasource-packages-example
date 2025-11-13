@@ -99,4 +99,4 @@ describe('ListDailyMonitoringDto', () => {
       expect(dto).toBeDefined();
     });
   });
-}); 
+});

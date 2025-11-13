@@ -13,7 +13,7 @@ describe('GetSouceDto', () => {
 
   it('should allow partial pagination properties', () => {
     const dto = new GetSouceDto();
-    
+
     // Should not throw when properties are accessed
     expect(dto).toBeDefined();
     expect(typeof dto).toBe('object');
@@ -22,14 +22,14 @@ describe('GetSouceDto', () => {
   it('should allow setting page property', () => {
     const dto = new GetSouceDto();
     dto.page = 1;
-    
+
     expect(dto.page).toBe(1);
   });
 
   it('should allow setting perPage property', () => {
     const dto = new GetSouceDto();
     dto.perPage = 10;
-    
+
     expect(dto.perPage).toBe(10);
   });
 
@@ -37,7 +37,7 @@ describe('GetSouceDto', () => {
     const dto = new GetSouceDto();
     dto.page = 2;
     dto.perPage = 20;
-    
+
     expect(dto.page).toBe(2);
     expect(dto.perPage).toBe(20);
   });
@@ -46,7 +46,7 @@ describe('GetSouceDto', () => {
     const dto = new GetSouceDto();
     dto.page = null as any;
     dto.perPage = null as any;
-    
+
     expect(dto.page).toBeNull();
     expect(dto.perPage).toBeNull();
   });
@@ -55,7 +55,7 @@ describe('GetSouceDto', () => {
     const dto = new GetSouceDto();
     dto.page = undefined;
     dto.perPage = undefined;
-    
+
     expect(dto.page).toBeUndefined();
     expect(dto.perPage).toBeUndefined();
   });
@@ -64,7 +64,7 @@ describe('GetSouceDto', () => {
     const dto = new GetSouceDto();
     dto.page = 0;
     dto.perPage = 100;
-    
+
     expect(dto.page).toBe(0);
     expect(dto.perPage).toBe(100);
   });
@@ -80,11 +80,11 @@ describe('GetSouceDto', () => {
   describe('Type Safety', () => {
     it('should maintain type safety for page property', () => {
       const dto = new GetSouceDto();
-      
+
       // Should accept number
       dto.page = 1;
       expect(typeof dto.page).toBe('number');
-      
+
       // Should accept undefined
       dto.page = undefined;
       expect(dto.page).toBeUndefined();
@@ -92,11 +92,11 @@ describe('GetSouceDto', () => {
 
     it('should maintain type safety for perPage property', () => {
       const dto = new GetSouceDto();
-      
+
       // Should accept number
       dto.perPage = 10;
       expect(typeof dto.perPage).toBe('number');
-      
+
       // Should accept undefined
       dto.perPage = undefined;
       expect(dto.perPage).toBeUndefined();
@@ -112,4 +112,4 @@ describe('GetSouceDto', () => {
       expect(typeof GetSouceDto).toBe('function');
     });
   });
-}); 
+});

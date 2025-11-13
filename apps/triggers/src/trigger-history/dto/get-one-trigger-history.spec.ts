@@ -91,18 +91,18 @@ describe('GetOneTriggerHistoryDto', () => {
 
     it('should handle different number values', () => {
       const dto = new GetOneTriggerHistoryDto();
-      
+
       dto.id = 0;
       expect(dto.id).toBe(0);
-      
+
       dto.id = 1;
       expect(dto.id).toBe(1);
-      
+
       dto.id = -1;
       expect(dto.id).toBe(-1);
-      
+
       dto.id = 999999;
       expect(dto.id).toBe(999999);
     });
   });
-}); 
+});
