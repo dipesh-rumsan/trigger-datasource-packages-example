@@ -1,7 +1,7 @@
 export function buildQueryParams(
   seriesId: number,
   from: Date | null = null,
-  to: Date | null = null
+  to: Date | null = null,
 ) {
   const currentDate = new Date().toISOString().split("T")[0];
   const endOfFrom = from ? new Date(from.setHours(23, 59, 59, 999)) : null;
@@ -48,7 +48,7 @@ export function scrapeDataFromHtml(html: string): { [key: string]: any }[] {
   const cellPattern = "<td[^>]*>(.*?)</td>\\s*";
   const tableRowRegex = new RegExp(
     `<tr[^>]*>\\s*${cellPattern.repeat(headers.length)}</tr>`,
-    "gs"
+    "gs",
   );
 
   let match: RegExpExecArray | null;

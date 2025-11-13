@@ -1,5 +1,5 @@
-import { ModuleMetadata, Type } from "@nestjs/common";
-import { Prisma } from "../../../generated/prisma";
+import { ModuleMetadata, Type } from '@nestjs/common';
+import { Prisma } from '../../../generated/prisma';
 
 export interface PrismaModuleOptions {
   /**
@@ -32,7 +32,7 @@ export interface PrismaOptionsFactory {
 }
 
 export interface PrismaModuleAsyncOptions
-  extends Pick<ModuleMetadata, "imports"> {
+  extends Pick<ModuleMetadata, 'imports'> {
   isGlobal?: boolean;
   useExisting?: Type<PrismaOptionsFactory>;
   useClass?: Type<PrismaOptionsFactory>;

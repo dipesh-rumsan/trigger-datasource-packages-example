@@ -20,6 +20,7 @@ model Source {
   updatedAt  DateTime?    @updatedAt()
 
   SourcesData     SourcesData[]
+  DailyMonitoring DailyMonitoring[]
   Phase           Phase[]
 
   @@map("tbl_sources")
@@ -28,10 +29,10 @@ model Source {
 model SourcesData {
   id Int @id @default(autoincrement())
 
-  type     SourceType
-  sourceId Int
-  source   Source     @relation(fields: [sourceId], references: [id])
-  dataSource DataSource? 
+  type       SourceType
+  sourceId   Int
+  source     Source      @relation(fields: [sourceId], references: [id])
+  dataSource DataSource?
 
   info Json @db.JsonB()
 
@@ -39,4 +40,23 @@ model SourcesData {
   updatedAt DateTime? @updatedAt()
 
   @@map("tbl_sources_data")
+}
+
+model DailyMonitoring {
+  id       Int     @id @default(autoincrement())
+  groupKey String?
+
+  dataEntryBy String
+  info        Json   @db.JsonB()
+
+  sourceId Int
+  source   Source @relation(fields: [sourceId], references: [id])
+
+  dataSource String?
+  isDeleted  Boolean   @default(false)
+  createdBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt()
+
+  @@map("tbl_daily_monitoring")
 }

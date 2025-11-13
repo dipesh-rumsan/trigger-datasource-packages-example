@@ -83,7 +83,7 @@ export async function mapAsync<T, U>(
 export function tryCatch<T>(fn: () => T): Result<T> {
   try {
     return Ok(fn());
-  } catch (error) {
+  } catch (error: any) {
     return Err(error instanceof Error ? error.message : 'Unknown error', error);
   }
 }
@@ -96,7 +96,7 @@ export async function tryCatchAsync<T>(
 ): Promise<Result<T>> {
   try {
     return Ok(await fn());
-  } catch (error) {
+  } catch (error: any) {
     return Err(error instanceof Error ? error.message : 'Unknown error', error);
   }
 }

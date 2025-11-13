@@ -1,12 +1,12 @@
-import { DynamicModule, Module, Provider, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { DynamicModule, Module, Provider, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   PrismaModuleAsyncOptions,
   PrismaModuleOptions,
   PrismaOptionsFactory,
-} from "./interfaces";
-import { PRISMA_SERVICE_OPTIONS } from "./prisma.constants";
-import { PrismaService } from "./prisma.service";
+} from './interfaces';
+import { PRISMA_SERVICE_OPTIONS } from './prisma.constants';
+import { PrismaService } from './prisma.service';
 
 @Module({
   providers: [PrismaService],
@@ -20,7 +20,7 @@ export class PrismaModule {
    * Priority: DATABASE_URL > individual DB_* variables
    */
   static forRootWithConfig(
-    options: Omit<PrismaModuleOptions, "prismaServiceOptions"> = {}
+    options: Omit<PrismaModuleOptions, 'prismaServiceOptions'> = {},
   ): DynamicModule {
     return {
       global: options.isGlobal,
@@ -45,32 +45,32 @@ export class PrismaModule {
    */
   private static createPrismaOptionsFromConfig(configService: ConfigService) {
     // Check if DATABASE_URL is directly provided
-    let databaseUrl = configService.get<string>("DATABASE_URL");
+    let databaseUrl = configService.get<string>('DATABASE_URL');
 
     if (databaseUrl) {
-      this.logger.log("Using DATABASE_URL from environment variables");
+      this.logger.log('Using DATABASE_URL from environment variables');
     } else {
       // Construct DATABASE_URL from individual components
-      const dbHost = configService.get("DB_HOST", "localhost");
-      const dbPort = configService.get("DB_PORT", "5432");
+      const dbHost = configService.get('DB_HOST', 'localhost');
+      const dbPort = configService.get('DB_PORT', '5432');
       const dbUser = configService.get(
-        "DB_USERNAME",
-        configService.get("DB_USER", "postgres")
+        'DB_USERNAME',
+        configService.get<string>('DB_USER', 'postgres'),
       );
-      const dbPassword = configService.get("DB_PASSWORD", "postgres");
+      const dbPassword = configService.get('DB_PASSWORD', 'postgres');
       const dbName = configService.get(
-        "DB_NAME",
-        configService.get("DB_DATABASE", "postgres")
+        'DB_NAME',
+        configService.get<string>('DB_DATABASE', 'postgres'),
       );
 
       databaseUrl = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}?schema=public`;
       this.logger.log(
-        "Constructed DATABASE_URL from individual environment variables"
+        'Constructed DATABASE_URL from individual environment variables',
       );
     }
 
     this.logger.debug(
-      `Database URL: ${databaseUrl.replace(/\/\/[^:]+:[^@]+@/, "//***:***@")}`
+      `Database URL: ${databaseUrl.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}`,
     ); // Log with masked credentials
 
     return {
@@ -108,7 +108,7 @@ export class PrismaModule {
   }
 
   private static createAsyncProviders(
-    options: PrismaModuleAsyncOptions
+    options: PrismaModuleAsyncOptions,
   ): Provider[] {
     if (options.useExisting || options.useFactory) {
       return this.createAsyncOptionsProvider(options);
@@ -127,7 +127,7 @@ export class PrismaModule {
   }
 
   private static createAsyncOptionsProvider(
-    options: PrismaModuleAsyncOptions
+    options: PrismaModuleAsyncOptions,
   ): Provider[] {
     if (options.useFactory) {
       return [
@@ -141,7 +141,7 @@ export class PrismaModule {
 
     const injectionToken = options.useExisting || options.useClass;
     if (!injectionToken) {
-      throw new Error("Either useExisting or useClass must be provided");
+      throw new Error('Either useExisting or useClass must be provided');
     }
 
     return [

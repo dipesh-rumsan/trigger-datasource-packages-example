@@ -65,6 +65,8 @@ export class TriggersService {
       [triggerStatement.sourceSubType]: 90,
     });
 
+    console.log('Result', result);
+
     return this.prismaService.trigger.create({
       data: {
         ...data,

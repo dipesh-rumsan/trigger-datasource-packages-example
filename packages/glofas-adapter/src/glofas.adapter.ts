@@ -85,7 +85,7 @@ export class GlofasAdapter extends ObservationAdapter {
       );
 
       return Ok(htmlPages);
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
       this.logger.error('Failed to fetch DHM data', error);
       return Err('Failed to fetch DHM observations', error);
@@ -120,7 +120,7 @@ export class GlofasAdapter extends ObservationAdapter {
 
       this.logger.log(`Aggregated ${observations.length} DHM observations`);
       return Ok(observations);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to aggregate DHM data', error);
       return Err('Failed to parse DHM HTML data', error);
     }
@@ -162,7 +162,7 @@ export class GlofasAdapter extends ObservationAdapter {
 
       this.logger.log(`Transformed to ${indicators.length} indicators`);
       return Ok(indicators);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to transform DHM data', error);
       return Err('Failed to transform to indicators', error);
     }

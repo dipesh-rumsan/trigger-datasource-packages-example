@@ -36,7 +36,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
   constructor(
     @Inject(HttpService) httpService: HttpService,
     @Inject(SettingsService) settingsService: SettingsService,
-    @Inject(PrismaService) private readonly db: PrismaService
+    @Inject(PrismaService) private readonly db: PrismaService,
   ) {
     super(httpService, settingsService, {
       dataSource: DataSource.DHM,
@@ -54,7 +54,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
   async fetch(params: DhmFetchParams): Promise<Result<DhmFetchResponse[]>> {
     try {
       this.logger.log(
-        `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`
+        `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`,
       );
 
       const config: RainfallWaterLevelConfig["RAINFALL"][] = this.getConfig();
@@ -82,11 +82,11 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
               seriesId,
             };
           });
-        })
+        }),
       );
 
       return Ok(htmlPages);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error("Failed to fetch DHM data", error);
       return Err("Failed to fetch DHM observations", error);
     }
@@ -111,7 +111,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
         }
 
         const normalizedData = this.normalizeDhmRiverAndRainfallWatchData(
-          data as DhmInputItem[]
+          data as DhmInputItem[],
         );
 
         observations.push({
@@ -122,7 +122,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
       this.logger.log(`Aggregated ${observations.length} DHM observations`);
       return Ok(observations);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error("Failed to aggregate DHM data", error);
       return Err("Failed to parse DHM HTML data", error);
     }
@@ -165,7 +165,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
       this.logger.log(`Transformed to ${indicators.length} indicators`);
       return Ok(indicators);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error("Failed to transform DHM data", error);
       return Err("Failed to transform to indicators", error);
     }
@@ -178,13 +178,13 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
   async execute(params: DhmFetchParams): Promise<Result<Indicator[]>> {
     return chainAsync(this.fetch(params), (rawData: DhmFetchResponse[]) =>
       chainAsync(this.aggregate(rawData), (observations: DhmObservation[]) =>
-        this.transform(observations)
-      )
+        this.transform(observations),
+      ),
     );
   }
 
   private normalizeDhmRiverAndRainfallWatchData(
-    dataArray: DhmInputItem[]
+    dataArray: DhmInputItem[],
   ): DhmNormalizedItem[] {
     return dataArray.map((item) => {
       const base = {

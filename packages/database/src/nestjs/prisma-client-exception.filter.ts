@@ -20,6 +20,8 @@ export interface PrismaErrorResponse {
   Prisma.PrismaClientKnownRequestError,
   Prisma.PrismaClientUnknownRequestError,
   Prisma.PrismaClientValidationError,
+  Prisma.PrismaClientInitializationError,
+  Prisma.PrismaClientRustPanicError,
 )
 export class PrismaClientExceptionFilter extends BaseExceptionFilter {
   private readonly logger = new Logger(PrismaClientExceptionFilter.name);
@@ -28,7 +30,10 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     exception:
       | Prisma.PrismaClientKnownRequestError
       | Prisma.PrismaClientUnknownRequestError
-      | Prisma.PrismaClientValidationError,
+      | Prisma.PrismaClientInitializationError
+      | Prisma.PrismaClientValidationError
+      | Prisma.PrismaClientRustPanicError,
+
     host: ArgumentsHost,
   ): void {
     const ctx = host.switchToHttp();
@@ -46,6 +51,10 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
       this.handleUnknownRequestError(exception, response);
     } else if (exception instanceof Prisma.PrismaClientValidationError) {
       this.handleValidationError(exception, response);
+    } else if (exception instanceof Prisma.PrismaClientInitializationError) {
+      this.handleInitializationError(exception, response);
+    } else if (exception instanceof Prisma.PrismaClientRustPanicError) {
+      this.handleRustPanicError(exception, response);
     } else {
       this.handleGenericError(exception, response);
     }
@@ -144,6 +153,23 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     );
   }
 
+  private handleInitializationError(
+    exception: Prisma.PrismaClientInitializationError,
+    response: Response,
+  ): void {
+    this.logger.error(
+      `Prisma initialization error occurred: ${exception.message} 
+      Code: ${(exception as any).code} `,
+    );
+    this.sendErrorResponse(
+      response,
+      HttpStatus.SERVICE_UNAVAILABLE,
+      'Service unavailable',
+      'The database connection is not available',
+      exception,
+    );
+  }
+
   private handleValidationError(
     exception: Prisma.PrismaClientValidationError,
     response: Response,
@@ -153,6 +179,20 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
       HttpStatus.BAD_REQUEST,
       'Validation error',
       'Invalid data provided to the database query',
+      exception,
+    );
+  }
+
+  private handleRustPanicError(
+    exception: Prisma.PrismaClientRustPanicError,
+    response: Response,
+  ): void {
+    this.logger.error(`Prisma Rust panic error occurred: ${exception.message}`);
+    this.sendErrorResponse(
+      response,
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      'Critical database error',
+      'A critical error occurred in the database engine',
       exception,
     );
   }
