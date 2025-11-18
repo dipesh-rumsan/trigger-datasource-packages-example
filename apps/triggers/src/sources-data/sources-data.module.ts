@@ -4,17 +4,15 @@ import { SourcesDataController } from './sources-data.controller';
 import { ScheduleSourcesDataService } from './schedule-sources-data.service';
 import { HttpModule } from '@nestjs/axios';
 import { DhmService } from './dhm.service';
+import { DhmModule, DhmService as DhmServiceLib } from '@lib/dhm-adapter';
 import { GlofasService } from './glofas.service';
 import { ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { BQUEUE } from 'src/constant';
 import { GfhService } from './gfh.service';
-import { HealthCacheService } from 'src/source/health-cache.service';
-import { HealthUtilsService } from './utils/health-utils.service';
-import { DhmStationProcessorService } from './utils/dhm-station-processor.service';
-import { GlofasStationProcessorService } from './utils/glofas-station-processor.service';
-import { GfhStationProcessorService } from './utils/gfh-station-processor.service';
 import Redis from 'ioredis';
+import { HealthMonitoringService, HealthCacheService } from '@lib/core';
+import { GlofasModule, GlofasServices } from '@lib/glofas-adapter';
 
 @Module({
   imports: [
@@ -22,6 +20,8 @@ import Redis from 'ioredis';
     BullModule.registerQueue({
       name: BQUEUE.TRIGGER,
     }),
+    DhmModule.forRoot(),
+    GlofasModule.forRoot(),
   ],
   controllers: [SourcesDataController],
   providers: [
@@ -32,10 +32,9 @@ import Redis from 'ioredis';
     GfhService,
     ConfigService,
     HealthCacheService,
-    HealthUtilsService,
-    DhmStationProcessorService,
-    GlofasStationProcessorService,
-    GfhStationProcessorService,
+    HealthMonitoringService,
+    DhmServiceLib,
+    GlofasServices,
     {
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {

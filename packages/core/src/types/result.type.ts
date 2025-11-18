@@ -1,33 +1,46 @@
+import { ExecutionContext } from './health.type';
+
 export type Result<T> =
-  | { success: true; data: T }
-  | { success: false; error: string; details?: unknown };
+  | { success: true; data: T; executionContext?: ExecutionContext }
+  | {
+      success: false;
+      error: string;
+      details?: unknown;
+      executionContext?: ExecutionContext;
+    };
 
-export function Ok<T>(data: T): Result<T> {
-  return { success: true, data };
+export function Ok<T>(
+  data: T,
+  executionContext?: ExecutionContext,
+): Result<T> {
+  return { success: true, data, executionContext };
 }
 
-export function Err<T>(error: string, details?: unknown): Result<T> {
-  return { success: false, error, details };
+export function Err<T>(
+  error: string,
+  details?: unknown,
+  executionContext?: ExecutionContext,
+): Result<T> {
+  return { success: false, error, details, executionContext };
 }
 
-// Type guard to check if Result is an error
 export function isErr<T>(
   result: Result<T>,
-): result is { success: false; error: string; details?: unknown } {
+): result is {
+  success: false;
+  error: string;
+  details?: unknown;
+  executionContext?: ExecutionContext;
+} {
   return !result.success;
 }
 
-// Type guard to check if Result is successful
 export function isOk<T>(
   result: Result<T>,
-): result is { success: true; data: T } {
+): result is { success: true; data: T; executionContext?: ExecutionContext } {
   return result.success;
 }
 
-/**
- * Railway Oriented Programming - Chain operations on Result
- * If result is Ok, applies the function. If Err, short-circuits and returns the error.
- */
 export function chain<T, U>(
   result: Result<T>,
   fn: (data: T) => Result<U>,
@@ -35,12 +48,16 @@ export function chain<T, U>(
   if (!result.success) {
     return result;
   }
-  return fn(result.data);
+  const nextResult = fn(result.data);
+  if (nextResult.success && result.executionContext) {
+    return {
+      ...nextResult,
+      executionContext: nextResult.executionContext || result.executionContext,
+    };
+  }
+  return nextResult;
 }
 
-/**
- * Async version of chain for Promise-based operations
- */
 export async function chainAsync<T, U>(
   result: Result<T> | Promise<Result<T>>,
   fn: (data: T) => Promise<Result<U>> | Result<U>,
@@ -49,22 +66,24 @@ export async function chainAsync<T, U>(
   if (!resolvedResult.success) {
     return resolvedResult;
   }
-  return fn(resolvedResult.data);
+  const nextResult = await fn(resolvedResult.data);
+  if (nextResult.success && resolvedResult.executionContext) {
+    return {
+      ...nextResult,
+      executionContext:
+        nextResult.executionContext || resolvedResult.executionContext,
+    };
+  }
+  return nextResult;
 }
 
-/**
- * Map over the data if Result is Ok, otherwise pass through the error
- */
 export function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
   if (!result.success) {
     return result;
   }
-  return Ok(fn(result.data));
+  return Ok(fn(result.data), result.executionContext);
 }
 
-/**
- * Async version of map
- */
 export async function mapAsync<T, U>(
   result: Result<T> | Promise<Result<T>>,
   fn: (data: T) => Promise<U> | U,
@@ -74,7 +93,7 @@ export async function mapAsync<T, U>(
     return resolvedResult;
   }
   const mappedData = await fn(resolvedResult.data);
-  return Ok(mappedData);
+  return Ok(mappedData, resolvedResult.executionContext);
 }
 
 /**

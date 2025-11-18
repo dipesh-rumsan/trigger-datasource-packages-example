@@ -15,12 +15,13 @@ import {
   ObservationAdapter,
   Err,
   chainAsync,
+  HealthMonitoringService,
+  AdapterHealthConfig,
 } from "@lib/core";
 import { buildQueryParams, scrapeDataFromHtml } from "../../utils";
 import {
   DataSource,
   SourceType,
-  PrismaService,
   RainfallWaterLevelConfig,
 } from "@lib/database";
 import { SettingsService } from "@lib/core";
@@ -31,26 +32,46 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
 
   constructor(
     @Inject(HttpService) httpService: HttpService,
-    @Inject(PrismaService) private readonly db: PrismaService,
-    @Inject(SettingsService) settingsService: SettingsService,
+    @Inject(HealthMonitoringService)
+    healthService: HealthMonitoringService,
+    @Inject(SettingsService) settingsService: SettingsService
   ) {
     super(httpService, settingsService, {
       dataSource: DataSource.DHM,
       sourceType: SourceType.WATER_LEVEL,
     });
+    this.setHealthService(healthService);
+  }
+
+  getAdapterId(): string {
+    return "DHM:WATER_LEVEL";
   }
 
   async init() {
     this.logger.log("DhmWaterLevelAdapter initialization");
+    const payload: AdapterHealthConfig = {
+      adapterId: this.getAdapterId(),
+      name: "DHM Water Level API",
+      dataSource: DataSource.DHM,
+      sourceType: SourceType.WATER_LEVEL,
+      sourceUrl: this.getUrl() || "",
+      fetchIntervalMinutes: 15,
+      staleThresholdMultiplier: 1.5,
+    };
+
+    this.registerHealthConfig(payload);
   }
 
   /**
    * Fetch raw HTML/data from DHM website
    */
   async fetch(params: DhmFetchParams): Promise<Result<DhmFetchResponse[]>> {
+    const itemErrors: any[] = [];
+    const successfulResults: DhmFetchResponse[] = [];
+
     try {
       this.logger.log(
-        `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`,
+        `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`
       );
 
       const baseUrl = this.getUrl();
@@ -63,7 +84,9 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
         return Err("DHM Water Level URL is not configured");
       }
 
-      const htmlPages: DhmFetchResponse[] = await Promise.all(
+      const allSeriesIds = config.flatMap((cfg) => cfg.SERIESID);
+
+      const results = await Promise.allSettled(
         config.flatMap((cfg) => {
           return cfg.SERIESID.map(async (seriesId) => {
             const queryParams = buildQueryParams(seriesId);
@@ -80,10 +103,54 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
               location: cfg.LOCATION,
             };
           });
-        }),
+        })
       );
 
-      return Ok(htmlPages);
+      results.forEach((result, index) => {
+        const seriesId = allSeriesIds[index];
+        if (!seriesId) {
+          return;
+        }
+
+        if (result.status === "fulfilled") {
+          successfulResults.push(result.value);
+        } else {
+          itemErrors.push({
+            itemId: seriesId.toString(),
+            stage: "fetch" as const,
+            errorCode: "FETCH_FAILED",
+            message: result.reason?.message || "Unknown error",
+            timestamp: new Date().toISOString(),
+          });
+          this.logger.warn(
+            `Failed to fetch data for seriesId ${seriesId}: ${result.reason?.message}`
+          );
+        }
+      });
+
+      if (successfulResults.length === 0) {
+        return Err("All seriesIds failed", null, {
+          totalItems: allSeriesIds.length,
+          successfulItems: 0,
+          failedItems: allSeriesIds.length,
+          itemErrors,
+        });
+      }
+
+      if (itemErrors.length > 0) {
+        return Ok(successfulResults, {
+          totalItems: allSeriesIds.length,
+          successfulItems: successfulResults.length,
+          failedItems: itemErrors.length,
+          itemErrors,
+        });
+      }
+
+      return Ok(successfulResults, {
+        totalItems: allSeriesIds.length,
+        successfulItems: successfulResults.length,
+        failedItems: 0,
+      });
     } catch (error: any) {
       console.log(error);
       this.logger.error("Failed to fetch DHM data", error);
@@ -111,7 +178,7 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
         }
 
         const normalizedData = this.normalizeDhmRiverAndRainfallWatchData(
-          data as DhmInputItem[],
+          data as DhmInputItem[]
         );
 
         observations.push({
@@ -178,17 +245,17 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
    * Using functional composition - no if-else needed!
    */
   async execute(
-    params: DhmFetchParams,
+    params: DhmFetchParams
   ): Promise<Result<Indicator<{ value: number; datetime: string }>[]>> {
     return chainAsync(this.fetch(params), (rawData: DhmFetchResponse[]) =>
       chainAsync(this.aggregate(rawData), (observations: DhmObservation[]) =>
-        this.transform(observations),
-      ),
+        this.transform(observations)
+      )
     );
   }
 
   private normalizeDhmRiverAndRainfallWatchData(
-    dataArray: DhmInputItem[],
+    dataArray: DhmInputItem[]
   ): DhmNormalizedItem[] {
     return dataArray.map((item) => {
       const base = {

@@ -4,6 +4,8 @@ import { HttpService } from '@nestjs/axios';
 import { OnModuleInit } from '@nestjs/common';
 import { SettingsService } from 'settings';
 import { ConfigurationManager, ConfigPath } from './configuration-manager';
+import { AdapterHealthConfig } from '../types/health.type';
+import { HealthMonitoringService } from '../services/health-monitoring.service';
 
 export abstract class ObservationAdapter<TParams = any>
   extends ConfigurationManager
@@ -13,6 +15,7 @@ export abstract class ObservationAdapter<TParams = any>
   config: any = null;
 
   private configPath: ConfigPath | null = null;
+  public healthService?: HealthMonitoringService;
 
   constructor(
     protected readonly httpService: HttpService,
@@ -37,8 +40,20 @@ export abstract class ObservationAdapter<TParams = any>
     const { dataSource, sourceType } = this.configPath;
     const extracted = this.extractConfigForPath(this.configPath);
 
-    this.config = extracted.config;
-    this.dataSourceUrl = extracted.url;
+    if (extracted.config) {
+      this.config = extracted.config;
+    } else {
+      ConfigurationManager.logger.error(
+        `No config found for ${this.constructor.name} ${dataSource} ${sourceType}`,
+      );
+    }
+    if (extracted.url) {
+      this.dataSourceUrl = extracted.url;
+    } else {
+      ConfigurationManager.logger.error(
+        `No url found for ${this.constructor.name} ${dataSource} ${sourceType}`,
+      );
+    }
 
     this.logConfigExtraction(this.constructor.name, dataSource, sourceType);
   }
@@ -49,6 +64,8 @@ export abstract class ObservationAdapter<TParams = any>
   abstract aggregate(rawData: unknown): Result<unknown>;
   abstract transform(aggregatedData: unknown): Result<Indicator[]>;
   abstract execute(params: TParams): Promise<Result<Indicator[]>>;
+
+  abstract getAdapterId(): string;
 
   protected getUrl(): string | null {
     return this.dataSourceUrl;
@@ -64,5 +81,17 @@ export abstract class ObservationAdapter<TParams = any>
 
   setConfig(config: any): void {
     this.config = config;
+  }
+
+  setHealthService(service: HealthMonitoringService): void {
+    this.healthService = service;
+  }
+
+  registerHealthConfig(config: AdapterHealthConfig): void {
+    if (this.healthService) {
+      this.healthService.registerAdapter(config);
+    } else {
+      console.log('Health service not set');
+    }
   }
 }

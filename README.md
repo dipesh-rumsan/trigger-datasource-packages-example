@@ -1,6 +1,6 @@
-# NestJS, Prisma Monorepo Seed
+# Rahat Triggers - NestJS Monorepo
 
-A monorepo containing the Nestjs Seed system built with NestJS and Turborepo. This project provides a scalable architecture for handling data triggers and database operations.
+A monorepo containing the Rahat Triggers system built with NestJS and Turborepo. This project provides a scalable architecture for monitoring external data sources (DHM, GLOFAS, GFH), standardizing observations, and triggering alerts based on configurable conditions.
 
 ## Project Structure
 
@@ -8,11 +8,37 @@ This monorepo contains the following applications and packages:
 
 ### Applications
 
-- **api** - Main Seed NestJS application
+- **rahat-triggers** - Main triggers microservice application that monitors data sources, processes observations, and manages trigger conditions
 
-### Packages
+### Core Packages
 
-- **@lib/database** - Shared database package with Prisma integration and NestJS modules
+- **@lib/core** - Shared core package containing:
+  - `ObservationAdapter` base interface for data source adapters
+  - `HealthMonitoringService` for tracking adapter health metrics
+  - `HealthCacheService` for persisting health data in Redis
+  - Result types for functional error handling
+  - Shared types and interfaces
+
+- **@lib/database** - Shared database package with:
+  - Prisma ORM integration and schema definitions
+  - NestJS modules for database access
+  - Database utilities and helpers
+  - Seed scripts for initial data
+
+### Adapter Packages
+
+- **@lib/dhm-adapter** - Department of Hydrology and Meteorology (DHM) data adapter
+  - DHM Rainfall observations
+  - DHM Water Level observations
+- **@lib/glofas-adapter** - Global Flood Awareness System (GLOFAS) data adapter
+  - River discharge forecasts
+  - Flood prediction data
+
+- **@lib/gfh-adapter** - Google Flood Hub (GFH) data adapter
+  - Google flood forecast data
+
+### Configuration Packages
+
 - **@workspace/eslint-config** - Shared ESLint configurations
 - **@workspace/typescript-config** - Shared TypeScript configurations
 
@@ -20,17 +46,18 @@ This monorepo contains the following applications and packages:
 
 Before running this project, make sure you have the following installed:
 
-- Node.js (version 18 or higher)
-- pnpm (recommended package manager)
-- PostgreSQL database
+- Node.js (version 20 or higher)
+- pnpm (version 8.14.1 or higher)
+- PostgreSQL database (version 13 or higher)
+- Redis (version 5.0 or higher)
 
 ## Getting Started
 
 1. **Clone the repository**
 
    ```bash
-   git clone git@github.com:dipesh-rumsan/turbo-setup.git
-   cd turbo-setup
+   git clone git@github.com:dipesh-rumsan/trigger-datasource-packages-example.git
+   cd trigger-datasource-packages-example
    ```
 
 2. **Install dependencies**
@@ -44,10 +71,30 @@ Before running this project, make sure you have the following installed:
    Copy the environment example files and configure them:
 
    ```bash
-   cp apps/api/.env.example apps/api/.env
+   cp apps/triggers/.env.example apps/triggers/.env
+   cp apps/triggers/.env.example package/database/.env
    ```
 
-   Update the database configuration in the `.env` file. See the `.env.example` file for required variables.
+   Update the following configuration in the `.env` file:
+
+   ```env
+   # Database Configuration
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_USER=postgres
+   DB_PASSWORD=your_password
+   DB_NAME=rahat-trigger
+
+   # Redis Configuration
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   REDIS_PASSWORD=
+
+   # Application Configuration
+   PORT=7800
+   NODE_ENV=development
+   FLOODS_API_KEY="key"
+   ```
 
 4. **Set up the database**
 
@@ -57,20 +104,44 @@ Before running this project, make sure you have the following installed:
 
    # Run database migrations
    pnpm --filter @lib/database db:migrate
+
+   # Seed the database with initial data
+   pnpm --filter @lib/database db:seed
    ```
+
+   The seed script will populate the database with:
+   - Initial settings and configurations
+   - Sample trigger categories
+   - Sample data sources
+   - Sample trigger conditions
 
 5. **Build all packages**
 
+   Build packages in the correct order (dependencies first):
+
    ```bash
+   # Build all packages and applications
    pnpm build
+
+   # Or build specific packages
+   pnpm --filter @lib/database build
+   pnpm --filter @lib/core build
+   pnpm --filter @lib/dhm-adapter build
+   pnpm --filter @lib/glofas-adapter build
+   pnpm --filter rahat-triggers build
    ```
 
 6. **Start the development server**
+
    ```bash
+   # Start all apps in development mode
    pnpm dev
+
+   # Or start specific app
+   pnpm --filter rahat-triggers dev
    ```
 
-The triggers application will be available at `http://localhost:8000/v1` with Swagger documentation at `http://localhost:8000/swagger`.
+The triggers application will be available as a microservice at `http://localhost:7800`.
 
 ## Development Commands
 
@@ -80,19 +151,30 @@ The triggers application will be available at `http://localhost:8000/v1` with Sw
 # Build all packages and apps
 pnpm build
 
-# Build specific package
+# Build specific packages (in dependency order)
 pnpm --filter @lib/database build
-pnpm --filter triggers build
+pnpm --filter @lib/core build
+pnpm --filter @lib/dhm-adapter build
+pnpm --filter @lib/glofas-adapter build
+
+# Build the main application
+pnpm --filter rahat-triggers build
+
+# Clean build artifacts
+pnpm turbo clean
 ```
 
 ### Development
 
 ```bash
-# Start all apps in development mode
-pnpm dev
+# Start triggers app in development mode with hot reload
+pnpm --filter rahat-triggers dev
 
-# Start specific app
-pnpm --filter api dev
+# Start in debug mode
+pnpm --filter rahat-triggers dev:debug
+
+# Start in production mode
+pnpm --filter rahat-triggers start:prod
 ```
 
 ### Database Operations
@@ -101,11 +183,33 @@ pnpm --filter api dev
 # Generate Prisma client
 pnpm --filter @lib/database db:generate
 
-# Run migrations
+# Create a new migration
 pnpm --filter @lib/database db:migrate
 
-# Deploy migrations (production)
+# Deploy migrations to production
 pnpm --filter @lib/database db:deploy
+
+# Seed the database
+pnpm --filter @lib/database db:seed
+
+# Open Prisma Studio (database GUI)
+pnpm --filter @lib/database db:studio
+
+# Reset database (⚠️ drops all data)
+pnpm --filter @lib/database db:reset
+```
+
+### Linting and Formatting
+
+```bash
+# Lint all packages
+pnpm lint
+
+# Lint specific package
+pnpm --filter rahat-triggers lint
+
+# Format code
+pnpm --filter rahat-triggers format
 ```
 
 ### Testing
@@ -115,61 +219,41 @@ pnpm --filter @lib/database db:deploy
 pnpm test
 
 # Run tests for specific package
-pnpm --filter api test
+pnpm --filter rahat-triggers test
+
+# Run tests in watch mode
+pnpm --filter rahat-triggers test:watch
+
+# Run tests with coverage
+pnpm --filter rahat-triggers test:cov
 ```
 
 ## Architecture
 
-The project follows a modular architecture with shared packages:
+The project follows a clean, modular architecture with clear separation of concerns:
 
-- **Database Layer**: Centralized database operations using Prisma ORM
-- **API Layer**: RESTful APIs built with NestJS
-- **Shared Utilities**: Common functionality across packages
-- **Configuration**: Centralized ESLint and TypeScript configurations
+### Data Flow
 
-## Key Features
+```
+External Sources (DHM/GLOFAS/GFH)
+  ↓
+Adapters (@lib/dhm-adapter, @lib/glofas-adapter, @lib/gfh-adapter)
+  ↓ fetch() → Result<Indicator[]>
+Health Monitoring (tracks execution, errors, response times)
+  ↓
+Standardized Observations (Indicator type)
+  ↓
+Database (PostgreSQL via Prisma)
+  ↓
+Trigger Evaluation (conditions, thresholds, rules)
+  ↓
+Actions (notifications, webhooks, etc.)
+```
 
-- **Type Safety**: Full TypeScript support across all packages
-- **Database Integration**: Prisma ORM with PostgreSQL
-- **Exception Handling**: Comprehensive error handling for database operations
-- **API Documentation**: Auto-generated Swagger documentation
-- **Logging**: Structured logging with Winston
-- **Development Tools**: Hot reload, debugging support, and comprehensive tooling
+### Layer Architecture
 
-## Package Dependencies
-
-The packages have the following dependency relationships:
-
-- `api` app depends on `@lib/database`
-- `@lib/database` is a standalone package that can be used by multiple applications
-- Configuration packages are shared across all applications
-
-## Troubleshooting
-
-### Database Connection Issues
-
-If you encounter database connection problems:
-
-1. Verify your database is running
-2. Check the environment variables in your `.env` file
-3. Ensure the database URL format is correct
-4. Run database migrations if needed
-
-### Build Issues
-
-If builds fail:
-
-1. Clear node_modules and reinstall: `pnpm clean` or `rm -rf node_modules && pnpm install`
-2. Clear Turborepo cache: `pnpm turbo clean`
-3. Rebuild all packages: `pnpm build`
-
-### Port Conflicts
-
-If the default port (3000) is in use:
-
-1. Update the `PORT` environment variable in your `.env` file
-2. Restart the development server
-
-## License
-
-This project is licensed under the MIT License.
+- **Adapter Layer**: External data source integration with health monitoring
+- **Service Layer**: Business logic for triggers, sources, and processing
+- **Data Layer**: Prisma ORM with PostgreSQL for persistence, Redis for caching
+- **Scheduling Layer**: NestJS Schedule for cron jobs
+- **Queue Layer**: Bull/Redis for background job processing

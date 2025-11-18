@@ -9,12 +9,21 @@ import {
   RiverStationData,
 } from '@lib/dhm-adapter';
 import { GlofasAdapter, GlofasServices } from '@lib/glofas-adapter';
-import { Indicator, isErr } from '@lib/core';
+import {
+  Indicator,
+  isErr,
+  HealthMonitoringService,
+  HealthMonitoredAdapter,
+} from '@lib/core';
 import { SourceType } from '@lib/database';
 
 @Injectable()
 export class ScheduleSourcesDataService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ScheduleSourcesDataService.name);
+
+  private dhmWaterMonitored: HealthMonitoredAdapter<DhmFetchParams>;
+  private dhmRainfallMonitored: HealthMonitoredAdapter<DhmFetchParams>;
+  private glofasMonitored: HealthMonitoredAdapter<null>;
 
   constructor(
     private readonly dhmWaterLevelAdapter: DhmWaterLevelAdapter,
@@ -22,7 +31,24 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
     private readonly glofasAdapter: GlofasAdapter,
     private readonly dhmService: DhmService,
     private readonly glofasServices: GlofasServices,
-  ) {}
+    private readonly healthService: HealthMonitoringService,
+  ) {
+    this.dhmWaterMonitored = new HealthMonitoredAdapter(
+      this.dhmWaterLevelAdapter,
+      this.healthService,
+      this.dhmWaterLevelAdapter.getAdapterId(),
+    );
+    this.dhmRainfallMonitored = new HealthMonitoredAdapter(
+      this.dhmRainfallLevelAdapter,
+      this.healthService,
+      this.dhmRainfallLevelAdapter.getAdapterId(),
+    );
+    this.glofasMonitored = new HealthMonitoredAdapter(
+      this.glofasAdapter,
+      this.healthService,
+      this.glofasAdapter.getAdapterId(),
+    );
+  }
   onApplicationBootstrap() {
     this.syncRiverWaterData();
     this.syncRainfallData();
@@ -39,7 +65,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
       endDate: new Date('2025-12-31').toISOString().split('T')[0],
     };
 
-    const riverData = await this.dhmWaterLevelAdapter.execute(params);
+    const riverData = await this.dhmWaterMonitored.execute(params);
 
     if (isErr<Indicator[]>(riverData)) {
       this.logger.warn(riverData.details);
@@ -110,7 +136,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
       endDate: new Date('2025-12-31').toISOString().split('T')[0],
     };
 
-    const rainfallData = await this.dhmRainfallLevelAdapter.execute(params);
+    const rainfallData = await this.dhmRainfallMonitored.execute(params);
 
     if (isErr<Indicator[]>(rainfallData)) {
       this.logger.warn(rainfallData.details);
@@ -127,7 +153,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
   // run every hour
   @Cron('0 * * * *')
   async synchronizeGlofas() {
-    const glofasResult = await this.glofasAdapter.execute();
+    const glofasResult = await this.glofasMonitored.execute(null);
 
     if (isErr<Indicator[]>(glofasResult)) {
       this.logger.warn(glofasResult.details);
