@@ -18,7 +18,7 @@ const prisma = new PrismaClient();
 
 const BATCH_SIZE = 2;
 const ONCHAIN_ENDPOINT =
-  'http://localhost:5500/v1/projects/ab4881c6-5fcb-4cf4-ba87-fec5e0a8c13d/actions';
+  'http://localhost:5555/v1/projects/ab4881c6-5fcb-4cf4-ba87-fec5e0a8c13d/actions';
 
 const config = {
   accessToken: '',
