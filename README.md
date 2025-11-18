@@ -57,7 +57,7 @@ Before running this project, make sure you have the following installed:
 
    ```bash
    git clone git@github.com:dipesh-rumsan/trigger-datasource-packages-example.git
-   cd triggers
+   cd trigger-datasource-packages-example
    ```
 
 2. **Install dependencies**
@@ -84,7 +84,6 @@ Before running this project, make sure you have the following installed:
    DB_USER=postgres
    DB_PASSWORD=your_password
    DB_NAME=rahat-trigger
-   DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?schema=public
 
    # Redis Configuration
    REDIS_HOST=localhost
