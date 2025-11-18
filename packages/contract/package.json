@@ -2,9 +2,17 @@
   "name": "@lib/contracts",
   "private": true,
   "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
   "scripts": {
     "test": "hardhat test",
     "clean": "hardhat clean"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./artifacts": "./scripts/artifacts/index.ts",
+    "./artifacts/TriggerContract.json": "./scripts/artifacts/TriggerContract.json",
+    "./deployments.json": "./scripts/deployments.json"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.0.3",

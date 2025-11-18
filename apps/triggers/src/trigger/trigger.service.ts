@@ -15,6 +15,17 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { AddTriggerJobDto, UpdateTriggerParamsJobDto } from 'src/common/dto';
 import { lastValueFrom } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
+import {
+  deployments,
+  getContractWithSigner,
+  CONTRACT_NAMES,
+} from '@lib/contracts';
+import {
+  TriggerConditionPayload,
+  TriggerContractWriter,
+  TriggerWithPhase,
+} from './types';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
 
@@ -29,6 +40,7 @@ export class TriggerService {
     @InjectQueue(BQUEUE.SCHEDULE) private readonly scheduleQueue: Queue,
     @InjectQueue(BQUEUE.TRIGGER) private readonly triggerQueue: Queue,
     private eventEmitter: EventEmitter2,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(appId: string, dto: CreateTriggerDto, createdBy: string) {
@@ -86,6 +98,8 @@ export class TriggerService {
       this.logger.log(`
         Trigger added to stellar queue action: ${res?.name} with id: ${queueData.id} for AA ${appId}
         `);
+
+      await this.addTriggerOnChain(trigger as TriggerWithPhase);
 
       return trigger;
     } catch (error: any) {
@@ -368,6 +382,60 @@ export class TriggerService {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
+  }
+
+  private async addTriggerOnChain(trigger: TriggerWithPhase) {
+    const contractAddress = deployments?.triggerContract;
+
+    if (!contractAddress) {
+      this.logger.error('Trigger contract address is not configured.');
+      throw new RpcException('Trigger contract address missing.');
+    }
+
+    try {
+      const contract = getContractWithSigner(
+        CONTRACT_NAMES.trigger,
+        contractAddress,
+        this.configService,
+      ) as unknown as TriggerContractWriter;
+      const condition = this.buildOnChainCondition(trigger);
+      const tx = await contract.addTrigger(condition);
+      await tx.wait();
+
+      await this.updateTransaction(trigger.uuid, tx.hash);
+      this.logger.log(
+        `Trigger ${trigger.uuid} stored on-chain. Tx hash: ${tx.hash}`,
+      );
+      return tx.hash;
+    } catch (error) {
+      this.logger.error(
+        `Failed to add trigger ${trigger.uuid} on-chain`,
+        error as Error,
+      );
+      throw new RpcException('Unable to store trigger on-chain.');
+    }
+  }
+
+  private buildOnChainCondition(trigger: TriggerWithPhase) {
+    const statement = trigger.triggerStatement || {};
+    const rawValue =
+      statement.value ??
+      statement.threshold ??
+      statement.dangerLevel ??
+      statement.warningLevel ??
+      0;
+    const numericValue = Number(rawValue);
+    const sanitizedValue = Number.isFinite(numericValue)
+      ? Math.max(Math.floor(numericValue), 0)
+      : 0;
+
+    return {
+      value: BigInt(sanitizedValue),
+      source: statement.source ?? trigger.source ?? '',
+      operator: statement.operator ?? statement.condition ?? '>=',
+      expression: statement.expression ?? '',
+      sourceSubType: statement.sourceSubType ?? statement.metric ?? '',
+    };
   }
 
   async remove(repeatKey: string) {

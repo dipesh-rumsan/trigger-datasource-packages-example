@@ -8,6 +8,8 @@ import { PhasesService } from 'src/phases/phases.service';
 import { CORE_MODULE, JOBS, EVENTS } from 'src/constant';
 import { CreateTriggerDto, GetTriggersDto, UpdateTriggerDto } from './dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
+import { getContractWithSigner } from '@lib/contracts';
 
 // Mock the paginator function
 jest.mock('@rumsan/prisma', () => ({
@@ -15,7 +17,23 @@ jest.mock('@rumsan/prisma', () => ({
   paginator: () => jest.fn(),
 }));
 
+const contractAddTriggerMock = jest.fn().mockResolvedValue({
+  hash: '0xhash',
+  wait: jest.fn().mockResolvedValue(null),
+});
+
+jest.mock('@lib/contracts', () => {
+  const actual = jest.requireActual('@lib/contracts');
+  return {
+    ...actual,
+    getContractWithSigner: jest.fn(() => ({
+      addTrigger: contractAddTriggerMock,
+    })),
+  };
+});
+
 describe('TriggerService', () => {
+  const mockedGetContractWithSigner = getContractWithSigner as jest.Mock;
   let service: TriggerService;
   let mockPrismaService: any;
   let mockClientProxy: jest.Mocked<ClientProxy>;
@@ -63,6 +81,18 @@ describe('TriggerService', () => {
     activatePhase: jest.fn(),
     addTriggersToPhases: jest.fn(),
     revertPhase: jest.fn(),
+  };
+
+  const mockConfigServiceImplementation = {
+    getOrThrow: jest.fn().mockImplementation((key: string) => {
+      if (key === 'RPC_URL') {
+        return 'http://localhost:8545';
+      }
+      if (key === 'MODERATOR_PRIVATE_KEY') {
+        return '0x123';
+      }
+      return '';
+    }),
   };
 
   const mockScheduleQueueImplementation = {
@@ -121,6 +151,10 @@ describe('TriggerService', () => {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigServiceImplementation,
+        },
       ],
     }).compile();
 
@@ -132,6 +166,19 @@ describe('TriggerService', () => {
     mockScheduleQueue = module.get('BullQueue_SCHEDULE');
     mockTriggerQueue = module.get('BullQueue_TRIGGER');
     mockStellarQueue = module.get('BullQueue_STELLAR');
+
+    mockPrismaService.trigger.findUnique.mockResolvedValue({
+      uuid: 'trigger-uuid',
+    });
+    mockPrismaService.trigger.update.mockResolvedValue({
+      uuid: 'trigger-uuid',
+      transactionHash: '0xhash',
+    });
+    contractAddTriggerMock.mockResolvedValue({
+      hash: '0xhash',
+      wait: jest.fn().mockResolvedValue(null),
+    });
+    mockedGetContractWithSigner.mockClear();
   });
 
   afterEach(() => {
