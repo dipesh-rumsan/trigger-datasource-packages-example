@@ -85,5 +85,11 @@ export interface HealthCacheInterface {
     stats: ItemStatistics,
   ): Promise<void>;
   getHealthStatus(adapterId: string): Promise<AdapterHealthStatus | null>;
-  getAllHealthStatuses(): Promise<AdapterHealthStatus[]>;
+  getAllHealthStatuses(): Promise<HealthDataResult>;
+}
+
+export interface HealthDataResult {
+  overall_status: HealthStatus;
+  last_updated: string;
+  sources: AdapterHealthStatus[];
 }
