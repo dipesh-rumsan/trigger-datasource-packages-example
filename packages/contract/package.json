@@ -6,13 +6,11 @@
   "types": "./index.ts",
   "scripts": {
     "test": "hardhat test",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "build": "tsc"
   },
   "exports": {
-    ".": "./index.ts",
-    "./artifacts": "./scripts/artifacts/index.ts",
-    "./artifacts/TriggerContract.json": "./scripts/artifacts/TriggerContract.json",
-    "./deployments.json": "./scripts/deployments.json"
+    ".": "./dist/index.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.0.3",

@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import triggerContractData from "./artifacts/TriggerContract.json";
+import triggerContractData from "../abi/TriggerContract.json";
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import path from "path";
 import dotenv from "dotenv";
