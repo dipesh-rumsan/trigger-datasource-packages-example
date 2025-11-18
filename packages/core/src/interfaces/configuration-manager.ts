@@ -5,6 +5,8 @@ import {
   DataSourceConfigValue,
   SourceType,
   URLConfig,
+  DataSourceConfigType,
+  DataSourceType,
 } from '@lib/database';
 import { SettingsService } from '../settings';
 
@@ -19,7 +21,7 @@ export interface ExtractedConfig {
 }
 
 export abstract class ConfigurationManager {
-  private static readonly logger = new Logger('ConfigurationManager');
+  public static readonly logger = new Logger('ConfigurationManager');
   private static dataSourceValue: DataSourceValue | null = null;
   private static dataSourceConfigValue: DataSourceConfigValue | null = null;
   private static isConfigLoading = false;
@@ -77,12 +79,12 @@ export abstract class ConfigurationManager {
   }
 
   private async fetchDataSourceSetting(): Promise<void> {
-    const result = await tryCatchAsync<DataSourceValue | null>(async () => {
+    const result = await tryCatchAsync<DataSourceType | null>(async () => {
       ConfigurationManager.logger.log('Fetching DATASOURCE setting...');
 
       const settings = (await this.settingsService.getByName(
         'DATASOURCE',
-      )) as unknown as DataSourceValue;
+      )) as unknown as DataSourceType;
 
       if (!settings) {
         ConfigurationManager.logger.error('DATASOURCE setting not found');
@@ -102,17 +104,17 @@ export abstract class ConfigurationManager {
       throw new Error(result.error);
     }
 
-    ConfigurationManager.dataSourceValue = result.data;
+    ConfigurationManager.dataSourceValue = result.data?.value ?? null;
   }
 
   private async fetchDataSourceConfigSetting(): Promise<void> {
-    const result = await tryCatchAsync<DataSourceConfigValue | null>(
+    const result = await tryCatchAsync<DataSourceConfigType | null>(
       async () => {
         ConfigurationManager.logger.log('Fetching DATASOURCECONFIG setting...');
 
         const settings = (await this.settingsService.getByName(
           'DATASOURCECONFIG',
-        )) as unknown as DataSourceConfigValue;
+        )) as unknown as DataSourceConfigType;
 
         if (!settings) {
           ConfigurationManager.logger.error(
@@ -134,12 +136,12 @@ export abstract class ConfigurationManager {
       );
       throw new Error(result.error);
     }
-
-    ConfigurationManager.dataSourceConfigValue = result.data;
+    ConfigurationManager.dataSourceConfigValue = result.data?.value ?? null;
   }
 
   protected extractConfigForPath(configPath: ConfigPath): ExtractedConfig {
     if (!this.hasConfigCached()) {
+      ConfigurationManager.logger.error('No config cached');
       return { config: null, url: null };
     }
 
@@ -155,7 +157,7 @@ export abstract class ConfigurationManager {
     dataSource: keyof DataSourceValue,
     sourceType?: SourceType,
   ): any {
-    let config = ConfigurationManager.dataSourceValue![dataSource];
+    const config = ConfigurationManager.dataSourceValue![dataSource];
 
     if (!sourceType || !config) {
       return config;

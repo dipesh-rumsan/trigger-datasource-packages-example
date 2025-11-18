@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { SourceService } from './source.service';
 import { SourceController } from './source.controller';
-import { HealthCacheService } from './health-cache.service';
+import { HealthCacheService } from '@lib/core';
 
 @Module({
   imports: [ConfigModule],

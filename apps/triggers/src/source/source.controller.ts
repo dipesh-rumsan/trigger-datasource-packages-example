@@ -3,7 +3,7 @@ import { MessagePattern } from '@nestjs/microservices';
 import { SourceService } from './source.service';
 import { MS_TRIGGERS_JOBS } from 'src/constant';
 import { GetSouceDto } from './dto/get-source.dto';
-import { HealthCacheService } from './health-cache.service';
+import { HealthCacheService } from '@lib/core';
 
 @Controller('source')
 export class SourceController {
@@ -30,6 +30,6 @@ export class SourceController {
     cmd: MS_TRIGGERS_JOBS.SOURCE.GET_HEALTH,
   })
   async getSourcesHealth() {
-    return await this.healthCacheService.getHealthSummary();
+    return await this.healthCacheService.getAllHealthStatuses();
   }
 }

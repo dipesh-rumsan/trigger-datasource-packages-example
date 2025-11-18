@@ -1,7 +1,11 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { GlofasAdapter } from './glofas.adapter';
-import { SettingsModule, SettingsService } from '@lib/core';
+import {
+  HealthMonitoringService,
+  SettingsModule,
+  SettingsService,
+} from '@lib/core';
 
 const adapters = [GlofasAdapter];
 
@@ -17,7 +21,7 @@ export class GlofasModule {
       global: true,
       module: GlofasModule,
       imports: [HttpModule, SettingsModule],
-      providers: [...adapters, SettingsService],
+      providers: [...adapters, SettingsService, HealthMonitoringService],
       exports: [...adapters],
     };
   }
@@ -30,7 +34,7 @@ export class GlofasModule {
     return {
       module: GlofasModule,
       imports: [SettingsModule],
-      providers: [...adapters],
+      providers: [...adapters, HealthMonitoringService],
       exports: [...adapters],
     };
   }
