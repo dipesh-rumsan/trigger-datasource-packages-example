@@ -20,33 +20,16 @@ export class TriggerController {
     // also we are  checking if the payload  is an object as it is may be use for single create in others modules
     // we are using  here at once because we have to use the same method for different  moddules that is job schedule
 
-    const { user, appId, triggers, ...rest } = payload;
-
-    if (Array.isArray(triggers)) {
-      const bulkResult = bulkTriggerPayloadSchema.safeParse(triggers);
-      if (!bulkResult.success) {
-        throw new BadRequestException({
-          message: 'Invalid bulk trigger payload',
-          errors: bulkResult.error.errors.map((err, index) => ({
-            index,
-            path: err.path,
-            message: err.message,
-          })),
-        });
-      }
-
-      return await this.triggerService.bulkCreate(appId, triggers, user?.name);
+    const { user, appId, ...rest } = payload;
+    if (Array.isArray(payload?.triggers)) {
+      return await this.triggerService.bulkCreate(
+        appId,
+        payload.triggers,
+        user?.name,
+      );
     }
 
-    const result = triggerPayloadSchema.safeParse(rest);
-    if (!result.success) {
-      throw new BadRequestException({
-        message: 'Invalid trigger payload',
-        errors: result.error.flatten(),
-      });
-    }
-
-    return await this.triggerService.create(appId, result.data, user?.name);
+    return await this.triggerService.create(appId, rest, user?.name);
   }
 
   @MessagePattern({

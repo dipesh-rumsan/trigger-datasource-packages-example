@@ -1,4 +1,10 @@
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { CreateTriggerDto, GetTriggersDto, UpdateTriggerDto } from './dto';
 import {
   paginator,
@@ -15,6 +21,7 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { AddTriggerJobDto, UpdateTriggerParamsJobDto } from 'src/common/dto';
 import { lastValueFrom } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { triggerPayloadSchema } from './validation/trigger.schema';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
 
@@ -48,6 +55,13 @@ export class TriggerService {
         delete dto.triggerDocuments?.type;
         trigger = await this.createManualTrigger(appId, dto, createdBy);
       } else {
+        const result = triggerPayloadSchema.safeParse(dto);
+        if (!result.success) {
+          throw new BadRequestException({
+            message: `Invalid trigger payload: ${JSON.stringify(result.error.flatten())}`,
+          });
+        }
+
         const sanitizedPayload = {
           title: dto.title,
           description: dto.description,
