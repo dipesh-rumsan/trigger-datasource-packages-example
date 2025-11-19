@@ -107,40 +107,24 @@ const triggerStatementInputSchema = z
     return parsed.data;
   });
 
-export const triggerPayloadSchema = z
-  .object({
-    repeatKey: z.string().trim().min(1, 'repeatKey is required'),
-    repeatEvery: z.string().optional(),
-    triggerStatement: triggerStatementInputSchema,
-    triggerDocuments: z
-      .union([z.record(z.any()), z.null(), z.undefined()])
-      .optional()
-      .transform((val) => (val === null ? undefined : val)),
-    notes: z.string().trim().max(500).optional().default(''),
-    title: z.string().trim().min(3).max(120),
-    description: z.string().trim().min(3).max(500),
-    isMandatory: z.boolean().optional().default(false),
-    isTriggered: z.boolean().optional().default(false),
-    isDeleted: z.boolean().optional().default(false),
-    phaseId: z.string().trim().min(1, 'phaseId is required'),
-    riverBasin: z.string().trim().min(1, 'riverBasin is required'),
-    source: z.nativeEnum(DataSource),
-  })
-  .superRefine((value, ctx) => {
-    const targetSubTypes = SOURCE_CONFIG[value.triggerStatement.source];
-    if (
-      targetSubTypes &&
-      !(targetSubTypes.subTypes as readonly string[]).includes(
-        value.triggerStatement.sourceSubType,
-      )
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `Invalid sourceSubType for ${value.triggerStatement.source}`,
-        path: ['triggerStatement', 'sourceSubType'],
-      });
-    }
-  });
+export const triggerPayloadSchema = z.object({
+  repeatKey: z.string().trim().min(1, 'repeatKey is required'),
+  repeatEvery: z.string().optional(),
+  triggerStatement: triggerStatementInputSchema,
+  triggerDocuments: z
+    .union([z.record(z.any()), z.null(), z.undefined()])
+    .optional()
+    .transform((val) => (val === null ? undefined : val)),
+  notes: z.string().trim().max(500).optional().default(''),
+  title: z.string().trim().min(3).max(120),
+  description: z.string().trim().min(3).max(500),
+  isMandatory: z.boolean().optional().default(false),
+  isTriggered: z.boolean().optional().default(false),
+  isDeleted: z.boolean().optional().default(false),
+  phaseId: z.string().trim().min(1, 'phaseId is required'),
+  riverBasin: z.string().trim().min(1, 'riverBasin is required'),
+  source: z.nativeEnum(DataSource),
+});
 
 export const bulkTriggerPayloadSchema = z
   .array(triggerPayloadSchema)
