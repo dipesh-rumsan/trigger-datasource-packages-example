@@ -2,11 +2,7 @@
   "extends": "@workspace/typescript-config/nestjs.json",
   "compilerOptions": {
     "baseUrl": "./",
-    "outDir": "./dist",
-    "paths": {
-      "@lib/contracts": ["../../packages/contract/index.ts"],
-      "@lib/contracts/*": ["../../packages/contract/*"]
-    }
+    "outDir": "./dist"
   },
   "exclude": ["node_modules", "dist"]
 }
