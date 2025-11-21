@@ -19,7 +19,7 @@ import type { Queue } from 'bull';
 import { PhasesService } from 'src/phases/phases.service';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { AddTriggerJobDto, UpdateTriggerParamsJobDto } from 'src/common/dto';
-import { lastValueFrom } from 'rxjs';
+import { catchError, lastValueFrom, of, throwError, timeout } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { triggerPayloadSchema } from './validation/trigger.schema';
 
@@ -56,6 +56,7 @@ export class TriggerService {
         trigger = await this.createManualTrigger(appId, dto, createdBy);
       } else {
         const result = triggerPayloadSchema.safeParse(dto);
+        console.log(result);
         if (!result.success) {
           throw new BadRequestException({
             message: `Invalid trigger payload: ${JSON.stringify(result.error.flatten())}`,
@@ -91,18 +92,41 @@ export class TriggerService {
       };
 
       const res = await lastValueFrom(
-        this.client.send(
-          { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
-          { triggers: [queueData] },
-        ),
-      );
+        this.client
+          .send(
+            { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
+            { triggers: [queueData] },
+          )
+          .pipe(
+            timeout(3000),
+            catchError((error) => {
+              if (error.name === 'TimeoutError') {
+                // Handle timeout specifically
+                this.logger.error(
+                  `Error while adding trigger onChain, action ${JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE} for AA ${appId}, timeout in 3 Seconds`,
+                );
+                return of(null);
+              }
 
-      this.logger.log(`
+              this.logger.error(
+                `Error while adding trigger onChain. Action ${JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE} for AA ${appId}, error: ${error.message}`,
+              );
+
+              return of(null);
+            }),
+          ),
+      );
+      if (!res) {
+        this.logger.warn(`Trigger Statement onChain not added for AA ${appId}`);
+      } else {
+        this.logger.log(`
         Trigger added to stellar queue action: ${res?.name} with id: ${queueData.id} for AA ${appId}
         `);
+      }
 
       return trigger;
     } catch (error: any) {
+      console.log(error);
       this.logger.error(error);
       throw new RpcException(error.message);
     }
