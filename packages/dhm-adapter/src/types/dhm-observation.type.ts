@@ -52,6 +52,11 @@ export enum DhmSourceDataTypeEnum {
   DAILY = 3,
 }
 
+type WaterLevelType = {
+  value: number;
+  datetime: string | Date;
+};
+
 export interface RiverStationItem {
   name: string;
   id: number;
@@ -61,7 +66,7 @@ export interface RiverStationItem {
   latitude: number | null;
   longitude: number | null;
   series_id: number;
-  waterLevel: number | null;
+  waterLevel: WaterLevelType;
   status: string;
   warning_level: string;
   danger_level: string;
@@ -71,6 +76,9 @@ export interface RiverStationItem {
   elevation: number;
   images: Array<Record<string, any>>;
   tags: string[];
+  indicator: string;
+  units: string;
+  value: number;
 }
 
 export type RainfallStationItem = {
@@ -87,6 +95,8 @@ export type RainfallStationItem = {
   value: number | null;
   interval: number | null;
   blink: boolean;
+  indicator: string;
+  units: string;
 };
 
 export interface RiverWaterHistoryItem {

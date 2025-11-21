@@ -9,10 +9,10 @@ import { AxiosError } from 'axios';
 import { Cron } from '@nestjs/schedule';
 import {
   DhmWaterLevelAdapter,
-  DhmFetchParams,
   DhmRainfallAdapter,
   DhmService,
   RiverStationData,
+  RainfallStationData,
 } from '@lib/dhm-adapter';
 import { GlofasAdapter, GlofasServices } from '@lib/glofas-adapter';
 import {
@@ -31,8 +31,8 @@ export class ScheduleSourcesDataService
 {
   private readonly logger = new Logger(ScheduleSourcesDataService.name);
 
-  private dhmWaterMonitored: HealthMonitoredAdapter<DhmFetchParams>;
-  private dhmRainfallMonitored: HealthMonitoredAdapter<DhmFetchParams>;
+  private dhmWaterMonitored: HealthMonitoredAdapter<undefined>;
+  private dhmRainfallMonitored: HealthMonitoredAdapter<undefined>;
   private glofasMonitored: HealthMonitoredAdapter<null>;
 
   constructor(
@@ -82,14 +82,7 @@ export class ScheduleSourcesDataService
   // run every 15 minutes
   @Cron('*/15 * * * *')
   async syncRiverWaterData() {
-    const params: DhmFetchParams = {
-      seriesIds: ['29089'],
-      location: 'Doda river at East-West Highway',
-      startDate: new Date('2025-01-01').toISOString().split('T')[0],
-      endDate: new Date('2025-12-31').toISOString().split('T')[0],
-    };
-
-    const riverData = await this.dhmWaterMonitored.execute(params);
+    const riverData = await this.dhmWaterMonitored.execute();
 
     if (isErr<Indicator[]>(riverData)) {
       this.logger.warn(riverData.details);
@@ -138,8 +131,14 @@ export class ScheduleSourcesDataService
         danger_level: '3.8',
         stationIndex: '281.5',
         warning_level: '3.4',
-        waterLevel: indicator.value,
+        waterLevel: {
+          value: indicator.value,
+          datetime: indicator.issuedAt,
+        },
         history: indicator.info,
+        indicator: indicator.indicator,
+        units: indicator.units,
+        value: indicator.value,
       };
 
       await this.dhmService.saveDataInDhm(
@@ -153,14 +152,7 @@ export class ScheduleSourcesDataService
   // run every 15 minutes
   @Cron('*/15 * * * *')
   async syncRainfallData() {
-    const params: DhmFetchParams = {
-      seriesIds: ['29089'],
-      location: 'Doda river at East-West Highway',
-      startDate: new Date('2025-01-01').toISOString().split('T')[0],
-      endDate: new Date('2025-12-31').toISOString().split('T')[0],
-    };
-
-    const rainfallData = await this.dhmRainfallMonitored.execute(params);
+    const rainfallData = await this.dhmRainfallMonitored.execute();
 
     if (isErr<Indicator[]>(rainfallData)) {
       this.logger.warn(rainfallData.details);
@@ -170,8 +162,66 @@ export class ScheduleSourcesDataService
       } else {
         this.logger.warn(rainfallData.details);
       }
-      return;
+      // return;
     }
+    // Currently rainfall api is not working so we are using dummy data
+    const info: RainfallStationData = {
+      id: 111,
+      name: 'Doda river at East-West Highway',
+      basin: 'Koshi',
+      blink: false,
+      status: 'BELOW WARNING LEVEL',
+      history: [
+        {
+          max: 0,
+          min: 0,
+          value: 0,
+          datetime: '2025-10-14T05:00:00.000Z',
+        },
+        {
+          max: 0,
+          min: 0,
+          value: 0,
+          datetime: '2025-10-14T06:00:00.000Z',
+        },
+        {
+          max: 0,
+          min: 0,
+          value: 0,
+          datetime: '2025-10-14T07:00:00.000Z',
+        },
+        {
+          max: 0,
+          min: 0,
+          value: 0,
+          datetime: '2025-10-14T08:00:00.000Z',
+        },
+        {
+          max: 0,
+          min: 0,
+          value: 0,
+          datetime: '2025-10-14T09:00:00.000Z',
+        },
+        {
+          max: 0,
+          min: 0,
+          value: 0,
+          datetime: '2025-10-14T10:00:00.000Z',
+        },
+      ],
+      district: 'Sunsari',
+      interval: null,
+      latitude: 26.855192,
+      longitude: 87.152283,
+      series_id: 1505,
+      description: 'Hydrological Station with RLS',
+      stationIndex: '695',
+      indicator: 'water_level_m',
+      units: 'mm',
+      value: 10.9,
+    };
+
+    await this.dhmService.saveDataInDhm(SourceType.RAINFALL, info.name, info);
   }
 
   // run every hour
@@ -193,7 +243,7 @@ export class ScheduleSourcesDataService
     glofasResult.data.forEach(async (indicator) => {
       await this.glofasServices.saveDataInGlofas(
         (indicator.location as any).basinId,
-        indicator.info,
+        indicator,
       );
     });
   }

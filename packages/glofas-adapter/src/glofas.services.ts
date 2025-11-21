@@ -17,8 +17,8 @@ export class GlofasServices {
               riverBasin,
             },
             info: {
-              path: ['forecastDate'],
-              equals: payload.forecastDate,
+              path: ['info', 'forecastDate'],
+              equals: payload.info.forecastDate,
             },
           },
         });

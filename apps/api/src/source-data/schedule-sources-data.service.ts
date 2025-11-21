@@ -3,7 +3,6 @@ import { AxiosError } from 'axios';
 import { Cron } from '@nestjs/schedule';
 import {
   DhmWaterLevelAdapter,
-  DhmFetchParams,
   DhmRainfallAdapter,
   DhmService,
   RiverStationData,
@@ -21,8 +20,8 @@ import { SourceType } from '@lib/database';
 export class ScheduleSourcesDataService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ScheduleSourcesDataService.name);
 
-  private dhmWaterMonitored: HealthMonitoredAdapter<DhmFetchParams>;
-  private dhmRainfallMonitored: HealthMonitoredAdapter<DhmFetchParams>;
+  private dhmWaterMonitored: HealthMonitoredAdapter<undefined>;
+  private dhmRainfallMonitored: HealthMonitoredAdapter<undefined>;
   private glofasMonitored: HealthMonitoredAdapter<null>;
 
   constructor(
@@ -58,14 +57,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
   // run every 15 minutes
   @Cron('*/15 * * * *')
   async syncRiverWaterData() {
-    const params: DhmFetchParams = {
-      seriesIds: ['29089'],
-      location: 'Doda river at East-West Highway',
-      startDate: new Date('2025-01-01').toISOString().split('T')[0],
-      endDate: new Date('2025-12-31').toISOString().split('T')[0],
-    };
-
-    const riverData = await this.dhmWaterMonitored.execute(params);
+    const riverData = await this.dhmWaterMonitored.execute();
 
     if (isErr<Indicator[]>(riverData)) {
       this.logger.warn(riverData.details);
@@ -114,8 +106,14 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
         danger_level: '3.8',
         stationIndex: '281.5',
         warning_level: '3.4',
-        waterLevel: indicator.value,
+        waterLevel: {
+          value: indicator.value,
+          datetime: indicator.issuedAt,
+        },
         history: indicator.info,
+        indicator: indicator.indicator,
+        units: indicator.units,
+        value: indicator.value,
       };
 
       await this.dhmService.saveDataInDhm(
@@ -129,14 +127,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
   // run every 15 minutes
   @Cron('*/15 * * * *')
   async syncRainfallData() {
-    const params: DhmFetchParams = {
-      seriesIds: ['29089'],
-      location: 'Doda river at East-West Highway',
-      startDate: new Date('2025-01-01').toISOString().split('T')[0],
-      endDate: new Date('2025-12-31').toISOString().split('T')[0],
-    };
-
-    const rainfallData = await this.dhmRainfallMonitored.execute(params);
+    const rainfallData = await this.dhmRainfallMonitored.execute();
 
     if (isErr<Indicator[]>(rainfallData)) {
       this.logger.warn(rainfallData.details);
@@ -169,7 +160,7 @@ export class ScheduleSourcesDataService implements OnApplicationBootstrap {
     glofasResult.data.forEach(async (indicator) => {
       await this.glofasServices.saveDataInGlofas(
         (indicator.location as any).basinId,
-        indicator.info,
+        indicator,
       );
     });
   }
