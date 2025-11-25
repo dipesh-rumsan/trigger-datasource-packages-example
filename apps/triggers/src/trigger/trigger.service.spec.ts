@@ -88,7 +88,7 @@ describe('TriggerService', () => {
       if (key === 'RPC_URL') {
         return 'http://localhost:8545';
       }
-      if (key === 'MODERATOR_PRIVATE_KEY') {
+      if (key === 'PRIVATE_KEY') {
         return '0x123';
       }
       return '';

@@ -17,14 +17,9 @@ import { lastValueFrom } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import {
-  deployments,
-  getContractWithSigner,
-  CONTRACT_NAMES,
-} from '@lib/contracts';
-import {
-  TriggerConditionPayload,
-  TriggerContractWriter,
   TriggerWithPhase,
+  BlockchainJobPayload,
+  SerializedCondition,
 } from './types';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
@@ -41,6 +36,8 @@ export class TriggerService {
     @InjectQueue(BQUEUE.TRIGGER) private readonly triggerQueue: Queue,
     private eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
+    @InjectQueue(BQUEUE.BLOCKCHAIN_TRANSFER)
+    private readonly blockchainQueue: Queue,
   ) {}
 
   async create(appId: string, dto: CreateTriggerDto, createdBy: string) {
@@ -58,6 +55,7 @@ export class TriggerService {
           `User requested MANUAL Trigger, So creating manul trigger`,
         );
         delete dto.triggerDocuments?.type;
+
         trigger = await this.createManualTrigger(appId, dto, createdBy);
       } else {
         const sanitizedPayload = {
@@ -75,31 +73,7 @@ export class TriggerService {
         trigger = await this.scheduleJob(sanitizedPayload);
       }
 
-      const queueData: AddTriggerJobDto = {
-        id: trigger.uuid,
-        trigger_type: trigger.isMandatory ? 'MANDATORY' : 'OPTIONAL',
-        phase: trigger.phase.name,
-        title: trigger.title,
-        description: trigger.description,
-        source: trigger.source,
-        river_basin: trigger.phase.riverBasin,
-        params: JSON.parse(JSON.stringify(trigger.triggerStatement)),
-        is_mandatory: trigger.isMandatory,
-        notes: trigger.notes,
-      };
-
-      const res = await lastValueFrom(
-        this.client.send(
-          { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
-          { triggers: [queueData] },
-        ),
-      );
-
-      this.logger.log(`
-        Trigger added to stellar queue action: ${res?.name} with id: ${queueData.id} for AA ${appId}
-        `);
-
-      await this.addTriggerOnChain(trigger as TriggerWithPhase);
+      await this.addTriggerOnChain(trigger);
 
       return trigger;
     } catch (error: any) {
@@ -135,6 +109,7 @@ export class TriggerService {
           return await this.scheduleJob(sanitizedPayload);
         }),
       );
+
       const queueData: AddTriggerJobDto[] = k.map((trigger) => {
         return {
           id: trigger.uuid,
@@ -160,6 +135,7 @@ export class TriggerService {
       this.logger.log(`
         Total ${k.length} triggers added for action: ${res?.name} to stellar queue for AA ${appId}
         `);
+
       return k;
     } catch (error: any) {
       console.log(error);
@@ -277,37 +253,30 @@ export class TriggerService {
       //   throw new RpcException('riverBasin or activeYear not provided');
       // }
 
-      return paginate(
-        this.prisma.trigger,
-        {
-          where: {
-            isDeleted: false,
-            phase: {
-              ...(activeYear && { activeYear }),
-              ...(riverBasin && {
-                riverBasin: {
-                  contains: riverBasin,
-                  mode: 'insensitive',
-                },
-              }),
-            },
-          },
-          include: {
-            phase: {
-              include: {
-                source: true,
+      return paginate(this.prisma.trigger, {
+        where: {
+          isDeleted: false,
+          phase: {
+            ...(activeYear && { activeYear }),
+            ...(riverBasin && {
+              riverBasin: {
+                contains: riverBasin,
+                mode: 'insensitive',
               },
+            }),
+          },
+        },
+        include: {
+          phase: {
+            include: {
+              source: true,
             },
           },
-          orderBy: {
-            updatedAt: 'desc',
-          },
         },
-        {
-          page: dto.page,
-          perPage: dto.perPage,
+        orderBy: {
+          updatedAt: 'desc',
         },
-      );
+      });
     } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
@@ -369,7 +338,6 @@ export class TriggerService {
         repeatKey: randomUUID(),
         createdBy,
       };
-
       const trigger = await this.prisma.trigger.create({
         data: payload,
         include: {
@@ -385,38 +353,26 @@ export class TriggerService {
   }
 
   private async addTriggerOnChain(trigger: TriggerWithPhase) {
-    const contractAddress = deployments?.triggerContract;
-
-    if (!contractAddress) {
-      this.logger.error('Trigger contract address is not configured.');
-      throw new RpcException('Trigger contract address missing.');
-    }
-
     try {
-      const contract = getContractWithSigner(
-        CONTRACT_NAMES.trigger,
-        contractAddress,
-        this.configService,
-      ) as unknown as TriggerContractWriter;
       const condition = this.buildOnChainCondition(trigger);
-      const tx = await contract.addTrigger(condition);
-      await tx.wait();
 
-      await this.updateTransaction(trigger.uuid, tx.hash);
-      this.logger.log(
-        `Trigger ${trigger.uuid} stored on-chain. Tx hash: ${tx.hash}`,
-      );
-      return tx.hash;
+      const payload: BlockchainJobPayload = {
+        triggerUuid: trigger.uuid,
+        condition,
+      };
+      await this.blockchainQueue.add(JOBS.BLOCKCHAIN.ADD_TRIGGER, payload);
     } catch (error) {
       this.logger.error(
-        `Failed to add trigger ${trigger.uuid} on-chain`,
+        `Failed to queue blockchain job for trigger ${trigger.uuid}`,
         error as Error,
       );
-      throw new RpcException('Unable to store trigger on-chain.');
+      throw new RpcException('Unable to enqueue trigger for on-chain sync.');
     }
   }
 
-  private buildOnChainCondition(trigger: TriggerWithPhase) {
+  private buildOnChainCondition(
+    trigger: TriggerWithPhase,
+  ): SerializedCondition {
     const statement = trigger.triggerStatement || {};
     const rawValue =
       statement.value ??
@@ -430,7 +386,7 @@ export class TriggerService {
       : 0;
 
     return {
-      value: BigInt(sanitizedValue),
+      value: sanitizedValue.toString(),
       source: statement.source ?? trigger.source ?? '',
       operator: statement.operator ?? statement.condition ?? '>=',
       expression: statement.expression ?? '',
@@ -578,7 +534,6 @@ export class TriggerService {
 
     try {
       const { triggeredBy, triggerDocuments, user } = payload;
-      console.log('payload', payload);
 
       const trigger = await this.prisma.trigger.findUnique({
         where: {

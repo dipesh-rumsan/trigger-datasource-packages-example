@@ -1,9 +1,30 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TriggersController } from './triggers.controller';
 import { TriggersService } from './trigger.service';
 
+const TRIGGERS_MICROSERVICE = 'TRIGGERS_MICROSERVICE';
+
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule,
+    ClientsModule.registerAsync([
+      {
+        name: TRIGGERS_MICROSERVICE,
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.REDIS,
+          options: {
+            host: configService.get<string>('REDIS_HOST'),
+            port: Number(configService.get<string>('REDIS_PORT')),
+            password: configService.get<string>('REDIS_PASSWORD'),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
+  ],
   controllers: [TriggersController],
   providers: [TriggersService],
 })

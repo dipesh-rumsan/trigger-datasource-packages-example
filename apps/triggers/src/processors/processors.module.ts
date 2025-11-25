@@ -10,6 +10,8 @@ import { StatsModule } from 'src/stats/stat.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CORE_MODULE } from 'src/constant';
 import { NotificationProcessor } from './notification.processor';
+import { BlockchainProcessor } from './blockchain.processor';
+import { TriggerModule } from '../trigger/trigger.module';
 
 @Module({
   imports: [
@@ -28,12 +30,14 @@ import { NotificationProcessor } from './notification.processor';
     SourcesDataModule,
     ActivityModule,
     StatsModule,
+    TriggerModule,
   ],
   providers: [
     ScheduleProcessor,
     TriggerProcessor,
     // ContractProcessor,
     CommunicationProcessor,
+    BlockchainProcessor,
     StatsProcessor,
     NotificationProcessor,
   ],

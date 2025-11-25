@@ -3,7 +3,6 @@ import { Controller, Param } from '@nestjs/common';
 import { Get, Post, Patch, Delete, Body } from '@nestjs/common';
 import { TriggersService } from './trigger.service';
 import { Prisma } from '@lib/database';
-import { TriggerDto } from './dto/trigger.dto';
 
 @ApiTags('triggers')
 @Controller('triggers')
@@ -29,7 +28,7 @@ export class TriggersController {
   @ApiOperation({ summary: 'Create a new trigger' })
   @ApiResponse({ status: 201, description: 'Trigger created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  create(@Body() data: TriggerDto) {
+  create(@Body() data: any) {
     return this.triggersService.create(data);
   }
 

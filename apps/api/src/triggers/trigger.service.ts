@@ -1,12 +1,21 @@
 import { Prisma, PrismaService } from '@lib/database';
-import { Injectable, Logger } from '@nestjs/common';
-import { TriggerDto } from './dto/trigger.dto';
-import { Parser } from 'expr-eval';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+// import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class TriggersService {
   private readonly logger = new Logger(TriggersService.name);
-  constructor(private readonly prismaService: PrismaService) {}
+  private static readonly TRIGGER_CREATE_PATTERN = {
+    cmd: 'ms.jobs.triggers.add',
+  };
+  private static readonly TRIGGERS_MICROSERVICE = 'TRIGGERS_MICROSERVICE';
+
+  constructor(
+    private readonly prismaService: PrismaService,
+    @Inject(TriggersService.TRIGGERS_MICROSERVICE)
+    private readonly triggersClient: ClientProxy,
+  ) {}
 
   async findAll() {
     this.logger.log('Finding all triggers');
@@ -20,59 +29,12 @@ export class TriggersService {
     });
   }
 
-  async create(data: TriggerDto) {
-    // Payload example
-    /*
-    {
-    "repeatKey": "asfadf",
-    "repeatEvery": "1",
-    "triggerStatement": {
-        "phase": "Readness",
-        "value": 5,
-        "source": "water_level_m",
-        "operator": ">=",
-        "expression": "warning_level >= 5",
-        "riverBasin": "Doda",
-        "sourceSubType": "warning_level"
-    },
-    "triggerDocuments": null,
-    "notes": "asdfasdfasf",
-    "title": "Titile",
-    "description": "this is atest",
-    "phaseId": null,
-    "source": null,
-    "isMandatory": false,
-    "isTriggered": false,
-    "isDeleted": false,
-    "isDailyMonitored": false,
-    "createdBy": null,
-    "triggeredBy": null,
-    "transactionHash": null,
-    "triggeredAt": null,
-    }
-    */
-    this.logger.log('Creating trigger', data);
-    const triggerStatement = JSON.parse(data.triggerStatement) as {
-      expression: string;
-      source: string;
-      operator: string;
-      value: number;
-      sourceSubType: string;
-    };
-    console.log('Trigger statement', triggerStatement);
-
-    const result = Parser.evaluate(triggerStatement.expression, {
-      [triggerStatement.sourceSubType]: 90,
-    });
-
-    console.log('Result', result);
-
-    return this.prismaService.trigger.create({
-      data: {
-        ...data,
-        triggerStatement: triggerStatement,
-      },
-    });
+  async create(payload: Record<string, any>) {
+    this.logger.log('Forwarding trigger creation request to microservice');
+    return this.triggersClient.send(
+      TriggersService.TRIGGER_CREATE_PATTERN,
+      payload,
+    );
   }
 
   async update(id: number, data: Prisma.TriggerUpdateInput) {

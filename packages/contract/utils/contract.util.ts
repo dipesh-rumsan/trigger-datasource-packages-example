@@ -18,7 +18,7 @@ const getRpcUrl = (configService?: ConfigReader) => {
 
 const getPrivateKey = (configService?: ConfigReader) => {
   if (configService) {
-    return configService.getOrThrow<string>("MODERATOR_PRIVATE_KEY");
+    return configService.getOrThrow<string>("PRIVATE_KEY");
   }
   return DEFAULT_PRIVATE_KEY;
 };

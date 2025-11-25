@@ -33,6 +33,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       {
         name: BQUEUE.STELLAR,
       },
+      {
+        name: BQUEUE.BLOCKCHAIN_TRANSFER,
+      },
     ),
     forwardRef(() => PhasesModule),
   ],
