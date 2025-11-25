@@ -108,7 +108,7 @@ const triggerStatementInputSchema = z
   });
 
 export const triggerPayloadSchema = z.object({
-  repeatKey: z.string().trim().min(1, 'repeatKey is required'),
+  repeatKey: z.string().optional(),
   repeatEvery: z.string().optional(),
   triggerStatement: triggerStatementInputSchema,
   triggerDocuments: z

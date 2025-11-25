@@ -18,28 +18,28 @@ import {
   SettingsService,
   DATA_SOURCE_EVENTS,
   DataSourceEventPayload,
+  HealthMonitoringService,
 } from "@lib/core";
 import { buildQueryParams, scrapeDataFromHtml } from "../../utils";
 import {
   DataSource,
   SourceType,
-  PrismaService,
   RainfallWaterLevelConfig,
+  PrismaService,
 } from "@lib/database";
 import { AxiosError } from "axios";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
-  private readonly dhmUrl =
-    "https://dhm.gov.np/site/getRiverWatchBySeriesId_Single";
-
   private readonly logger = new Logger(DhmRainfallAdapter.name);
 
   constructor(
     @Inject(HttpService) httpService: HttpService,
     @Inject(SettingsService) settingsService: SettingsService,
     @Inject(PrismaService) private readonly db: PrismaService,
+    @Inject(HealthMonitoringService)
+    healthService: HealthMonitoringService,
     @Optional()
     @Inject(EventEmitter2)
     private readonly eventEmitter?: EventEmitter2
@@ -48,16 +48,34 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
       dataSource: DataSource.DHM,
       sourceType: SourceType.RAINFALL,
     });
+    this.setHealthService(healthService);
+  }
+
+  getAdapterId(): string {
+    return "DHM:RAINFALL";
   }
 
   async init() {
     this.logger.log("DhmRainfallAdapter initialization");
+
+    this.registerHealthConfig({
+      adapterId: this.getAdapterId(),
+      name: "DHM Rainfall API",
+      dataSource: DataSource.DHM,
+      sourceType: SourceType.RAINFALL,
+      sourceUrl: this.getUrl() || "",
+      fetchIntervalMinutes: 15,
+      staleThresholdMultiplier: 1.5,
+    });
   }
 
   /**
    * Fetch raw HTML/data from DHM website
    */
   async fetch(params: DhmFetchParams): Promise<Result<DhmFetchResponse[]>> {
+    const itemErrors: any[] = [];
+    const successfulResults: DhmFetchResponse[] = [];
+
     try {
       this.logger.log(
         `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`
@@ -71,7 +89,9 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
         return Err("DHM RAINFALL URL is not configured");
       }
 
-      const htmlPages: DhmFetchResponse[] = await Promise.all(
+      const allSeriesIds = config.flatMap((cfg) => cfg.SERIESID);
+
+      const results = await Promise.allSettled(
         config.flatMap((cfg) => {
           return cfg.SERIESID.map(async (seriesId) => {
             const queryParams = buildQueryParams(+seriesId);
@@ -91,7 +111,51 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
         })
       );
 
-      return Ok(htmlPages);
+      results.forEach((result, index) => {
+        const seriesId = allSeriesIds[index];
+        if (!seriesId) {
+          return;
+        }
+
+        if (result.status === "fulfilled") {
+          successfulResults.push(result.value);
+        } else {
+          itemErrors.push({
+            itemId: seriesId.toString(),
+            stage: "fetch" as const,
+            errorCode: "FETCH_FAILED",
+            message: result.reason?.message || "Unknown error",
+            timestamp: new Date().toISOString(),
+          });
+          this.logger.warn(
+            `Failed to fetch data for seriesId ${seriesId}: ${result.reason?.message}`
+          );
+        }
+      });
+
+      if (successfulResults.length === 0) {
+        return Err("All seriesIds failed", null, {
+          totalItems: allSeriesIds.length,
+          successfulItems: 0,
+          failedItems: allSeriesIds.length,
+          itemErrors,
+        });
+      }
+
+      if (itemErrors.length > 0) {
+        return Ok(successfulResults, {
+          totalItems: allSeriesIds.length,
+          successfulItems: successfulResults.length,
+          failedItems: itemErrors.length,
+          itemErrors,
+        });
+      }
+
+      return Ok(successfulResults, {
+        totalItems: allSeriesIds.length,
+        successfulItems: successfulResults.length,
+        failedItems: 0,
+      });
     } catch (error: any) {
       this.logger.error("Failed to fetch DHM data", error);
       return Err("Failed to fetch DHM observations", error);

@@ -9,13 +9,10 @@ import {
   chainAsync,
   DATA_SOURCE_EVENTS,
   DataSourceEventPayload,
+  HealthMonitoringService,
 } from '@lib/core';
-import {
-  DataSource,
-  PrismaService,
-  GlofasStationInfo,
-  SourceType,
-} from '@lib/database';
+
+import { DataSource, GlofasStationInfo, SourceType } from '@lib/database';
 import { SettingsService } from '@lib/core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { getFormattedDate, parseGlofasData } from './utils';
@@ -27,8 +24,8 @@ export class GlofasAdapter extends ObservationAdapter {
 
   constructor(
     @Inject(HttpService) httpService: HttpService,
-    @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(SettingsService) settingsService: SettingsService,
+    @Inject(HealthMonitoringService) healthService: HealthMonitoringService,
     @Optional()
     @Inject(EventEmitter2)
     private readonly eventEmitter?: EventEmitter2,
@@ -36,16 +33,33 @@ export class GlofasAdapter extends ObservationAdapter {
     super(httpService, settingsService, {
       dataSource: DataSource.GLOFAS,
     });
+    this.setHealthService(healthService);
+  }
+
+  getAdapterId(): string {
+    return 'GLOFAS';
   }
 
   async init() {
     this.logger.log('Glofas Adapter initialization');
+
+    this.registerHealthConfig({
+      adapterId: this.getAdapterId(),
+      name: 'Glofas API',
+      dataSource: DataSource.GLOFAS,
+      sourceUrl: this.getUrl() || '',
+      fetchIntervalMinutes: 60,
+      staleThresholdMultiplier: 1.1,
+    });
   }
 
   /**
    * Fetch raw HTML/data from Glofas website
    */
   async fetch(): Promise<Result<GlofasFetchResponse[]>> {
+    const itemErrors: any[] = [];
+    const successfulResults: GlofasFetchResponse[] = [];
+
     try {
       const baseUrl = this.getUrl();
 
@@ -56,12 +70,11 @@ export class GlofasAdapter extends ObservationAdapter {
         return Err('Glofas Water Level URL is not configured');
       }
 
-      const htmlPages: GlofasFetchResponse[] = await Promise.all(
+      const results = await Promise.allSettled(
         config.map(async (cfg) => {
           const yesterdayDate = new Date();
           yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-          const { dateString, dateTimeString } =
-            getFormattedDate(yesterdayDate);
+          const { dateTimeString } = getFormattedDate(yesterdayDate);
 
           const glofasURL = new URL(baseUrl);
 
@@ -95,11 +108,56 @@ export class GlofasAdapter extends ObservationAdapter {
         }),
       );
 
-      return Ok(htmlPages);
+      results.forEach((result, index) => {
+        const station = config[index];
+        if (!station) {
+          return;
+        }
+
+        const location = station.LOCATION;
+        if (result.status === 'fulfilled') {
+          successfulResults.push(result.value);
+        } else {
+          itemErrors.push({
+            itemId: location,
+            stage: 'fetch' as const,
+            errorCode: 'FETCH_FAILED',
+            message: result.reason?.message || 'Unknown error',
+            timestamp: new Date().toISOString(),
+          });
+          this.logger.warn(
+            `Failed to fetch data for location ${location}: ${result.reason?.message}`,
+          );
+        }
+      });
+
+      if (successfulResults.length === 0) {
+        return Err('All locations failed', null, {
+          totalItems: config.length,
+          successfulItems: 0,
+          failedItems: config.length,
+          itemErrors,
+        });
+      }
+
+      if (itemErrors.length > 0) {
+        return Ok(successfulResults, {
+          totalItems: config.length,
+          successfulItems: successfulResults.length,
+          failedItems: itemErrors.length,
+          itemErrors,
+        });
+      }
+
+      return Ok(successfulResults, {
+        totalItems: config.length,
+        successfulItems: successfulResults.length,
+        failedItems: 0,
+      });
     } catch (error: any) {
       console.log(error);
-      this.logger.error('Failed to fetch DHM data', error);
-      return Err('Failed to fetch DHM observations', error);
+      this.logger.error('Failed to fetch Glofas data', error);
+      return Err('Failed to fetch Glofas observations', error);
     }
   }
 

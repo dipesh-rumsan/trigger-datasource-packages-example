@@ -12,6 +12,10 @@
     "@nestjs/axios": "^4.0.1",
     "@lib/database": "workspace:*"
   },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "ioredis": "^5.0.0"
+  },
   "devDependencies": {
     "typescript": "5.9.2",
     "jest": "^27.0.6",
