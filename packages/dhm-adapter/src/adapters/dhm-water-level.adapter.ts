@@ -65,14 +65,12 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
   /**
    * Fetch raw HTML/data from DHM website
    */
-  async fetch(params: DhmFetchParams): Promise<Result<DhmFetchResponse[]>> {
+  async fetch(): Promise<Result<DhmFetchResponse[]>> {
     const itemErrors: any[] = [];
     const successfulResults: DhmFetchResponse[] = [];
 
     try {
-      this.logger.log(
-        `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`
-      );
+      this.logger.log(`Fetching DHM data for stations`);
 
       const baseUrl = this.getUrl();
 
@@ -244,10 +242,10 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
    * Main pipeline execution - chains fetch → aggregate → transform
    * Using functional composition - no if-else needed!
    */
-  async execute(
-    params: DhmFetchParams
-  ): Promise<Result<Indicator<{ value: number; datetime: string }>[]>> {
-    return chainAsync(this.fetch(params), (rawData: DhmFetchResponse[]) =>
+  async execute(): Promise<
+    Result<Indicator<{ value: number; datetime: string }>[]>
+  > {
+    return chainAsync(this.fetch(), (rawData: DhmFetchResponse[]) =>
       chainAsync(this.aggregate(rawData), (observations: DhmObservation[]) =>
         this.transform(observations)
       )
