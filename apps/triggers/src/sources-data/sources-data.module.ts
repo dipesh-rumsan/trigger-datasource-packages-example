@@ -15,6 +15,7 @@ import { DhmStationProcessorService } from './utils/dhm-station-processor.servic
 import { GlofasStationProcessorService } from './utils/glofas-station-processor.service';
 import { GfhStationProcessorService } from './utils/gfh-station-processor.service';
 import Redis from 'ioredis';
+import { DataSourceEventsListener } from './data-source-events.listener';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import Redis from 'ioredis';
     DhmStationProcessorService,
     GlofasStationProcessorService,
     GfhStationProcessorService,
+    DataSourceEventsListener,
     {
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {
