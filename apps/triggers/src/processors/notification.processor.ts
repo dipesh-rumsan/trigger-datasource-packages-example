@@ -3,7 +3,7 @@ import type { Job } from 'bull';
 import { ClientProxy } from '@nestjs/microservices';
 import { Inject, Logger } from '@nestjs/common';
 import { BQUEUE, JOBS, CORE_MODULE } from 'src/constant';
-import { lastValueFrom } from 'rxjs';
+import { catchError, lastValueFrom, timeout } from 'rxjs';
 
 @Processor(BQUEUE.NOTIFICATION_TRIGGER)
 export class NotificationProcessor {
@@ -17,7 +17,18 @@ export class NotificationProcessor {
     try {
       this.logger.log(`🚀 Processing notification job: ${payload}`);
       const rdata = await lastValueFrom(
-        this.client.send({ cmd: 'rahat.jobs.notification.create' }, payload),
+        this.client
+          .send({ cmd: 'rahat.jobs.notification.create' }, payload)
+          .pipe(
+            timeout(30000),
+            catchError((error) => {
+              this.logger.error(
+                `Microservice call failed for notification job:`,
+                error,
+              );
+              throw error;
+            }),
+          ),
       );
       this.logger.log(`✅ Notification delivered: ${rdata}`);
     } catch (error: any) {

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
 import {
   DhmObservation,
@@ -16,6 +16,8 @@ import {
   Err,
   chainAsync,
   SettingsService,
+  DATA_SOURCE_EVENTS,
+  DataSourceEventPayload,
   HealthMonitoringService,
 } from "@lib/core";
 import { buildQueryParams, scrapeDataFromHtml } from "../../utils";
@@ -23,7 +25,10 @@ import {
   DataSource,
   SourceType,
   RainfallWaterLevelConfig,
+  PrismaService,
 } from "@lib/database";
+import { AxiosError } from "axios";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
@@ -32,8 +37,12 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
   constructor(
     @Inject(HttpService) httpService: HttpService,
     @Inject(SettingsService) settingsService: SettingsService,
+    @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(HealthMonitoringService)
-    healthService: HealthMonitoringService
+    healthService: HealthMonitoringService,
+    @Optional()
+    @Inject(EventEmitter2)
+    private readonly eventEmitter?: EventEmitter2
   ) {
     super(httpService, settingsService, {
       dataSource: DataSource.DHM,
@@ -223,6 +232,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
       });
 
       this.logger.log(`Transformed to ${indicators.length} indicators`);
+      this.emitDataSourceEvent(indicators);
       return Ok(indicators);
     } catch (error: any) {
       this.logger.error("Failed to transform DHM data", error);
@@ -286,5 +296,19 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
       throw new Error("Invalid data format");
     });
+  }
+
+  private emitDataSourceEvent(indicators: Indicator[]): void {
+    if (!this.eventEmitter || indicators.length === 0) {
+      return;
+    }
+
+    const payload: DataSourceEventPayload = {
+      dataSource: DataSource.DHM,
+      sourceType: SourceType.RAINFALL,
+      indicators,
+      fetchedAt: new Date().toISOString(),
+    };
+    this.eventEmitter.emit(DATA_SOURCE_EVENTS.DHM.RAINFALL, payload);
   }
 }

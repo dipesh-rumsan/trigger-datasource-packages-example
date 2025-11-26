@@ -1,4 +1,10 @@
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { CreateTriggerDto, GetTriggersDto, UpdateTriggerDto } from './dto';
 import {
   paginator,
@@ -13,8 +19,9 @@ import type { Queue } from 'bull';
 import { PhasesService } from 'src/phases/phases.service';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { AddTriggerJobDto, UpdateTriggerParamsJobDto } from 'src/common/dto';
-import { lastValueFrom } from 'rxjs';
+import { catchError, lastValueFrom, of, throwError, timeout } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { triggerPayloadSchema } from './validation/trigger.schema';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
 
@@ -48,6 +55,14 @@ export class TriggerService {
         delete dto.triggerDocuments?.type;
         trigger = await this.createManualTrigger(appId, dto, createdBy);
       } else {
+        const result = triggerPayloadSchema.safeParse(dto);
+        console.log(result);
+        if (!result.success) {
+          throw new BadRequestException({
+            message: `Invalid trigger payload: ${JSON.stringify(result.error.flatten())}`,
+          });
+        }
+
         const sanitizedPayload = {
           title: dto.title,
           description: dto.description,
@@ -77,18 +92,41 @@ export class TriggerService {
       };
 
       const res = await lastValueFrom(
-        this.client.send(
-          { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
-          { triggers: [queueData] },
-        ),
-      );
+        this.client
+          .send(
+            { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
+            { triggers: [queueData] },
+          )
+          .pipe(
+            timeout(3000),
+            catchError((error) => {
+              if (error.name === 'TimeoutError') {
+                // Handle timeout specifically
+                this.logger.error(
+                  `Error while adding trigger onChain, action ${JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE} for AA ${appId}, timeout in 3 Seconds`,
+                );
+                return of(null);
+              }
 
-      this.logger.log(`
+              this.logger.error(
+                `Error while adding trigger onChain. Action ${JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE} for AA ${appId}, error: ${error.message}`,
+              );
+
+              return of(null);
+            }),
+          ),
+      );
+      if (!res) {
+        this.logger.warn(`Trigger Statement onChain not added for AA ${appId}`);
+      } else {
+        this.logger.log(`
         Trigger added to stellar queue action: ${res?.name} with id: ${queueData.id} for AA ${appId}
         `);
+      }
 
       return trigger;
     } catch (error: any) {
+      console.log(error);
       this.logger.error(error);
       throw new RpcException(error.message);
     }
@@ -137,11 +175,28 @@ export class TriggerService {
       });
 
       const res = await lastValueFrom(
-        this.client.send(
-          { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
-          { triggers: queueData },
-        ),
-      );
+        this.client
+          .send(
+            { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
+            { triggers: queueData },
+          )
+          .pipe(
+            timeout(30000),
+            catchError((error) => {
+              this.logger.error(
+                `Microservice call failed for add trigger onChain:`,
+                error,
+              );
+              throw error;
+            }),
+          ),
+      ).catch((error) => {
+        this.logger.error(
+          `Microservice call failed for add trigger onChain queue:`,
+          error,
+        );
+        throw error;
+      });
 
       this.logger.log(`
         Total ${k.length} triggers added for action: ${res?.name} to stellar queue for AA ${appId}
@@ -232,16 +287,33 @@ export class TriggerService {
       };
 
       const res = await lastValueFrom(
-        this.client.send(
-          {
-            cmd: JOBS.STELLAR.UPDATE_ONCHAIN_TRIGGER_PARAMS_QUEUE,
-            uuid: appId,
-          },
-          {
-            trigger: queueData,
-          },
-        ),
-      );
+        this.client
+          .send(
+            {
+              cmd: JOBS.STELLAR.UPDATE_ONCHAIN_TRIGGER_PARAMS_QUEUE,
+              uuid: appId,
+            },
+            {
+              trigger: queueData,
+            },
+          )
+          .pipe(
+            timeout(30000),
+            catchError((error) => {
+              this.logger.error(
+                `Microservice call failed for update trigger onChain:`,
+                error,
+              );
+              throw error;
+            }),
+          ),
+      ).catch((error) => {
+        this.logger.error(
+          `Microservice call failed for update trigger onChain queue:`,
+          error,
+        );
+        throw error;
+      });
 
       this.logger.log(`
         Trigger added to stellar queue with id: ${res?.name} for AA ${appId}
@@ -624,16 +696,33 @@ export class TriggerService {
       }
 
       const res = await lastValueFrom(
-        this.client.send(
-          {
-            cmd: JOBS.STELLAR.UPDATE_ONCHAIN_TRIGGER_PARAMS_QUEUE,
-            uuid: appId ? appId : appIds?.app,
-          },
-          {
-            trigger: jobDetails,
-          },
-        ),
-      );
+        this.client
+          .send(
+            {
+              cmd: JOBS.STELLAR.UPDATE_ONCHAIN_TRIGGER_PARAMS_QUEUE,
+              uuid: appId ? appId : appIds?.app,
+            },
+            {
+              trigger: jobDetails,
+            },
+          )
+          .pipe(
+            timeout(30000),
+            catchError((error) => {
+              this.logger.error(
+                `Microservice call failed for update trigger onChain:`,
+                error,
+              );
+              throw error;
+            }),
+          ),
+      ).catch((error) => {
+        this.logger.error(
+          `Microservice call failed for update trigger onChain queue:`,
+          error,
+        );
+        throw error;
+      });
 
       this.logger.log(`
         Trigger added to stellar queue with id: ${jobDetails.id}, action: ${res?.name} for appId ${appId}
