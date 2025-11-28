@@ -3,6 +3,8 @@ enum ActivityStatus {
     WORK_IN_PROGRESS
     COMPLETED
     DELAYED
+
+    @@schema("public")
 }
 
 model ActivityCategory {
@@ -19,6 +21,7 @@ model ActivityCategory {
 
     @@unique([app, name])
     @@map("tbl_activity_categories")
+    @@schema("public")
 }
 
 model ActivityManager {
@@ -33,6 +36,7 @@ model ActivityManager {
     Activity Activity[]
 
     @@map("tbl_activity_managers")
+    @@schema("public")
 }
 
 model Activity {
@@ -71,4 +75,5 @@ model Activity {
     updatedAt DateTime? @updatedAt()
 
     @@map("tbl_activities")
+    @@schema("public")
 }

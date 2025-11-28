@@ -1,13 +1,13 @@
-enum SettingDataType {
+enum MockSettingDataType {
   STRING
   NUMBER
   BOOLEAN
   OBJECT
-  @@schema("public")
+  @@schema("mock")
 }
 
 // ++++++++++++++++++ START: @rumsan/settings +++++++++++++++++++++++++++
-model Setting {
+model MockSetting {
   name           String          @id @unique
   value          Json
   dataType       SettingDataType
@@ -16,5 +16,5 @@ model Setting {
   isPrivate      Boolean         @default(true)
 
   @@map("tbl_settings")
-    @@schema("public")
+  @@schema("mock")
 }

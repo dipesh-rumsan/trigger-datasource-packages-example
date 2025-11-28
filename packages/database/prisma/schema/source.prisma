@@ -1,6 +1,7 @@
 enum SourceType {
   RAINFALL
   WATER_LEVEL
+  @@schema("public")
 }
 
 enum DataSource {
@@ -9,6 +10,7 @@ enum DataSource {
   MANUAL
   DAILY_MONITORING
   GFH
+  @@schema("public")
 }
 
 model Source {
@@ -24,6 +26,7 @@ model Source {
   Phase           Phase[]
 
   @@map("tbl_sources")
+  @@schema("public")
 }
 
 model SourcesData {
@@ -40,6 +43,7 @@ model SourcesData {
   updatedAt DateTime? @updatedAt()
 
   @@map("tbl_sources_data")
+  @@schema("public")
 }
 
 model DailyMonitoring {
@@ -59,4 +63,5 @@ model DailyMonitoring {
   updatedAt  DateTime? @updatedAt()
 
   @@map("tbl_daily_monitoring")
+  @@schema("public")
 }
