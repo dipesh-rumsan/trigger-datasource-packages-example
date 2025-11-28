@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SourceDataModule } from './source-data/source-data.module';
 import { PrismaModule } from '@lib/database';
 import { DhmModule } from '@lib/dhm-adapter';
 import { ConfigModule } from '@nestjs/config';
@@ -23,7 +22,6 @@ import { TriggersModule } from './triggers/trigger.module';
     }),
     DhmModule.forRoot(),
     GlofasModule.forRoot(),
-    SourceDataModule,
     TriggersModule,
     SettingsModule,
   ],

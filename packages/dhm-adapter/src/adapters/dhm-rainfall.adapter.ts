@@ -223,7 +223,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
         // Water level indicator
         results.push({
           ...baseIndicator,
-          indicator: "water_level_m",
+          indicator: "rainfall_mm",
           units: "m",
           value: obs.data[0]?.value || 0,
         });
