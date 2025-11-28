@@ -80,7 +80,7 @@ export class ScheduleSourcesDataService
   }
 
   // run every 15 minutes
-  @Cron('*/15 * * * *')
+  @Cron('*/30 * * * * *')
   async syncRiverWaterData() {
     const riverData = await this.dhmWaterMonitored.execute();
 
@@ -150,10 +150,9 @@ export class ScheduleSourcesDataService
   }
 
   // run every 15 minutes
-  @Cron('*/15 * * * *')
+  @Cron('*/30 * * * *')
   async syncRainfallData() {
     const rainfallData = await this.dhmRainfallMonitored.execute();
-
     if (isErr<Indicator[]>(rainfallData)) {
       this.logger.warn(rainfallData.details);
       if (rainfallData.details instanceof AxiosError) {
@@ -165,63 +164,64 @@ export class ScheduleSourcesDataService
       // return;
     }
     // Currently rainfall api is not working so we are using dummy data
-    const info: RainfallStationData = {
-      id: 111,
-      name: 'Doda river at East-West Highway',
-      basin: 'Koshi',
-      blink: false,
-      status: 'BELOW WARNING LEVEL',
-      history: [
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T05:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T06:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T07:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T08:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T09:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T10:00:00.000Z',
-        },
-      ],
-      district: 'Sunsari',
-      interval: null,
-      latitude: 26.855192,
-      longitude: 87.152283,
-      series_id: 1505,
-      description: 'Hydrological Station with RLS',
-      stationIndex: '695',
-      indicator: 'water_level_m',
-      units: 'mm',
-      value: 10.9,
-    };
+    // const info: RainfallStationData = {
+    //   id: 111,
+    //   name: 'Doda river at East-West Highway',
+    //   basin: 'Koshi',
+    //   blink: false,
+    //   status: 'BELOW WARNING LEVEL',
+    //   history: [
+    //     {
+    //       max: 0,
+    //       min: 0,
+    //       value: 0,
+    //       datetime: '2025-10-14T05:00:00.000Z',
+    //     },
+    //     {
+    //       max: 0,
+    //       min: 0,
+    //       value: 0,
+    //       datetime: '2025-10-14T06:00:00.000Z',
+    //     },
+    //     {
+    //       max: 0,
+    //       min: 0,
+    //       value: 0,
+    //       datetime: '2025-10-14T07:00:00.000Z',
+    //     },
+    //     {
+    //       max: 0,
+    //       min: 0,
+    //       value: 0,
+    //       datetime: '2025-10-14T08:00:00.000Z',
+    //     },
+    //     {
+    //       max: 0,
+    //       min: 0,
+    //       value: 0,
+    //       datetime: '2025-10-14T09:00:00.000Z',
+    //     },
+    //     {
+    //       max: 0,
+    //       min: 0,
+    //       value: 0,
+    //       datetime: '2025-10-14T10:00:00.000Z',
+    //     },
+    //   ],
+    //   district: 'Sunsari',
+    //   interval: null,
+    //   latitude: 26.855192,
+    //   longitude: 87.152283,
+    //   series_id: 1505,
+    //   description: 'Hydrological Station with RLS',
+    //   stationIndex: '695',
+    //   indicator: 'water_level_m',
+    //   units: 'mm',
+    //   value: 10.9,
+    // };
+    console.log({ rainfallData });
 
-    await this.dhmService.saveDataInDhm(SourceType.RAINFALL, info.name, info);
+    // await this.dhmService.saveDataInDhm(SourceType.RAINFALL, info.name, info);
   }
 
   // run every hour

@@ -13,7 +13,6 @@ export class DataSourceEventsListener {
 
   constructor(
     private prisma: PrismaService,
-    @Inject(forwardRef(() => TriggerService))
     private readonly triggerService: TriggerService,
   ) {}
 
@@ -25,15 +24,10 @@ export class DataSourceEventsListener {
       this.logger.warn(`indicators not found `);
       return;
     }
-    const triggers = await this.prisma.trigger.findMany({
-      where: {
-        source: DataSource.DHM,
-        triggerStatement: {
-          path: ['source'],
-          equals: event.indicators[0].indicator,
-        },
-      },
-    });
+    const triggers = await this.triggerService.findTriggersBySourceAndIndicator(
+      DataSource.DHM,
+      indicators[0].indicator,
+    );
 
     if (!triggers.length) {
       this.logger.log('No triggers found for DHM Rainfall event');
@@ -75,15 +69,10 @@ export class DataSourceEventsListener {
       this.logger.warn(`indicators not found `);
       return;
     }
-    const triggers = await this.prisma.trigger.findMany({
-      where: {
-        source: DataSource.DHM,
-        triggerStatement: {
-          path: ['source'],
-          equals: event.indicators[0].indicator,
-        },
-      },
-    });
+    const triggers = await this.triggerService.findTriggersBySourceAndIndicator(
+      DataSource.DHM,
+      indicators[0].indicator,
+    );
 
     if (!triggers.length) {
       this.logger.log('No triggers found for DHM Rainfall event');
@@ -126,15 +115,10 @@ export class DataSourceEventsListener {
       this.logger.warn(`indicators not found `);
       return;
     }
-    const triggers = await this.prisma.trigger.findMany({
-      where: {
-        source: DataSource.DHM,
-        triggerStatement: {
-          path: ['source'],
-          equals: event.indicators[0].indicator,
-        },
-      },
-    });
+    const triggers = await this.triggerService.findTriggersBySourceAndIndicator(
+      DataSource.GLOFAS,
+      indicators[0].indicator,
+    );
 
     if (!triggers.length) {
       this.logger.log('No triggers found for DHM Rainfall event');
