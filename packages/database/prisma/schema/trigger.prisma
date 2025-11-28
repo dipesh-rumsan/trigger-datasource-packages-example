@@ -28,6 +28,7 @@ model Trigger {
     createdAt   DateTime  @default(now())
     updatedAt   DateTime? @updatedAt()
 
+    @@schema("public")
     @@map("tbl_triggers")
 }
 
@@ -68,4 +69,5 @@ model TriggerHistory {
     revertedBy String
 
     @@map("tbl_trigger_history")
+    @@schema("public")
 }

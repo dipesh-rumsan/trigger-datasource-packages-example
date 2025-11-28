@@ -19,7 +19,7 @@ import type { Queue } from 'bull';
 import { PhasesService } from 'src/phases/phases.service';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { AddTriggerJobDto, UpdateTriggerParamsJobDto } from 'src/common/dto';
-import { catchError, lastValueFrom, of, throwError, timeout } from 'rxjs';
+import { catchError, lastValueFrom, of, timeout } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { triggerPayloadSchema } from './validation/trigger.schema';
 

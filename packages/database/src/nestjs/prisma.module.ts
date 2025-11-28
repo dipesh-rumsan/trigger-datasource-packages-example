@@ -62,8 +62,9 @@ export class PrismaModule {
         'DB_NAME',
         configService.get<string>('DB_DATABASE', 'postgres'),
       );
+      const dbSchema = configService.get('DB_SCHEMA', 'public');
 
-      databaseUrl = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}?schema=public`;
+      databaseUrl = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}?schema=${dbSchema}`;
       this.logger.log(
         'Constructed DATABASE_URL from individual environment variables',
       );
