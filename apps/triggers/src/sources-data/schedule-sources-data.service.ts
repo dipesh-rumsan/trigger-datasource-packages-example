@@ -15,6 +15,7 @@ import {
   RainfallStationData,
 } from '@lib/dhm-adapter';
 import { GlofasAdapter, GlofasServices } from '@lib/glofas-adapter';
+import { GfhAdapter, GfhService } from '@lib/gfh-adapter';
 import {
   Indicator,
   isErr,
@@ -34,6 +35,7 @@ export class ScheduleSourcesDataService
   private dhmWaterMonitored: HealthMonitoredAdapter<undefined>;
   private dhmRainfallMonitored: HealthMonitoredAdapter<undefined>;
   private glofasMonitored: HealthMonitoredAdapter<null>;
+  private gfhMonitored: HealthMonitoredAdapter<undefined>;
 
   constructor(
     @Inject(HealthCacheService)
@@ -41,8 +43,10 @@ export class ScheduleSourcesDataService
     private readonly dhmWaterLevelAdapter: DhmWaterLevelAdapter,
     private readonly dhmRainfallLevelAdapter: DhmRainfallAdapter,
     private readonly glofasAdapter: GlofasAdapter,
+    private readonly gfhAdapter: GfhAdapter,
     private readonly dhmService: DhmService,
     private readonly glofasServices: GlofasServices,
+    private readonly gfhService: GfhService,
     private readonly healthService: HealthMonitoringService,
   ) {
     this.dhmWaterMonitored = this.wrapWithHealthMonitoring(
@@ -52,6 +56,7 @@ export class ScheduleSourcesDataService
       this.dhmRainfallLevelAdapter,
     );
     this.glofasMonitored = this.wrapWithHealthMonitoring(this.glofasAdapter);
+    this.gfhMonitored = this.wrapWithHealthMonitoring(this.gfhAdapter);
   }
 
   onModuleInit() {
@@ -60,6 +65,7 @@ export class ScheduleSourcesDataService
       this.dhmWaterLevelAdapter,
       this.dhmRainfallLevelAdapter,
       this.glofasAdapter,
+      this.gfhAdapter,
     ].forEach((adapter) => adapter.setHealthService(this.healthService));
   }
 
@@ -67,6 +73,7 @@ export class ScheduleSourcesDataService
     this.syncRiverWaterData();
     this.syncRainfallData();
     this.synchronizeGlofas();
+    this.syncGfhData();
   }
 
   private wrapWithHealthMonitoring<T>(
@@ -242,6 +249,31 @@ export class ScheduleSourcesDataService
 
     glofasResult.data.forEach(async (indicator) => {
       await this.glofasServices.saveDataInGlofas(
+        (indicator.location as any).basinId,
+        indicator,
+      );
+    });
+  }
+
+  //run every 24 hours
+  @Cron('0 0 * * *')
+  async syncGfhData() {
+    const gfhResult = await this.gfhMonitored.execute();
+
+    if (isErr<Indicator[]>(gfhResult)) {
+      this.logger.warn(gfhResult.details);
+      if (gfhResult.details instanceof AxiosError) {
+        const errorMessage = `HTTP Error: ${gfhResult.details.response?.status} ${gfhResult.details.response?.statusText} - Data: ${JSON.stringify(gfhResult.details.response?.data)} - Config: ${JSON.stringify(gfhResult.details.response?.config)}`;
+        this.logger.warn(errorMessage);
+      } else {
+        this.logger.warn(gfhResult.details);
+      }
+      return;
+    }
+
+    gfhResult.data.forEach(async (indicator) => {
+      await this.gfhService.saveDataInGfh(
+        SourceType.WATER_LEVEL,
         (indicator.location as any).basinId,
         indicator,
       );

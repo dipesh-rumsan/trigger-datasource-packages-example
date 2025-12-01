@@ -40,6 +40,7 @@
     "@lib/database": "workspace:*",
     "@lib/dhm-adapter": "workspace:*",
     "@lib/glofas-adapter": "workspace:*",
+    "@lib/gfh-adapter": "workspace:*",
     "@nestjs/event-emitter": "3.0.0",
     "@nestjs/mapped-types": "*",
     "@rumsan/connect": "^1.0.6",

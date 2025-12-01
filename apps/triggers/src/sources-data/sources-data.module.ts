@@ -9,10 +9,10 @@ import { GlofasService } from './glofas.service';
 import { ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { BQUEUE } from 'src/constant';
-import { GfhService } from './gfh.service';
 import Redis from 'ioredis';
 import { HealthMonitoringService, HealthCacheService } from '@lib/core';
 import { GlofasModule, GlofasServices } from '@lib/glofas-adapter';
+import { GfhModule, GfhService } from '@lib/gfh-adapter';
 
 @Module({
   imports: [
@@ -22,6 +22,7 @@ import { GlofasModule, GlofasServices } from '@lib/glofas-adapter';
     }),
     DhmModule.forRoot(),
     GlofasModule.forRoot(),
+    GfhModule.forRoot(),
   ],
   controllers: [SourcesDataController],
   providers: [
@@ -35,6 +36,7 @@ import { GlofasModule, GlofasServices } from '@lib/glofas-adapter';
     HealthMonitoringService,
     DhmServiceLib,
     GlofasServices,
+    GfhService,
     {
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {
