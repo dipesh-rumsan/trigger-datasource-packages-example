@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
 import {
   DhmObservation,
@@ -15,6 +15,8 @@ import {
   ObservationAdapter,
   Err,
   chainAsync,
+  DATA_SOURCE_EVENTS,
+  DataSourceEventPayload,
   HealthMonitoringService,
   AdapterHealthConfig,
 } from "@lib/core";
@@ -25,6 +27,7 @@ import {
   RainfallWaterLevelConfig,
 } from "@lib/database";
 import { SettingsService } from "@lib/core";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
@@ -34,7 +37,10 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
     @Inject(HttpService) httpService: HttpService,
     @Inject(HealthMonitoringService)
     healthService: HealthMonitoringService,
-    @Inject(SettingsService) settingsService: SettingsService
+    @Inject(SettingsService) settingsService: SettingsService,
+    @Optional()
+    @Inject(EventEmitter2)
+    private readonly eventEmitter?: EventEmitter2
   ) {
     super(httpService, settingsService, {
       dataSource: DataSource.DHM,
@@ -231,11 +237,27 @@ export class DhmWaterLevelAdapter extends ObservationAdapter<DhmFetchParams> {
       });
 
       this.logger.log(`Transformed to ${indicators.length} indicators`);
+      this.emitDataSourceEvent(indicators);
       return Ok(indicators);
     } catch (error: any) {
       this.logger.error("Failed to transform DHM data", error);
       return Err("Failed to transform to indicators", error);
     }
+  }
+
+  private emitDataSourceEvent(indicators: Indicator[]): void {
+    if (!this.eventEmitter || indicators.length === 0) {
+      return;
+    }
+
+    const payload: DataSourceEventPayload = {
+      dataSource: DataSource.DHM,
+      sourceType: SourceType.WATER_LEVEL,
+      indicators,
+      fetchedAt: new Date().toISOString(),
+    };
+
+    this.eventEmitter.emit(DATA_SOURCE_EVENTS.DHM.WATER_LEVEL, payload);
   }
 
   /**

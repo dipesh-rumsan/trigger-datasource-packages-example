@@ -1,8 +1,12 @@
-import { Controller } from '@nestjs/common';
+import { BadRequestException, Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { MS_TRIGGERS_JOBS } from 'src/constant';
 import { GetTriggersDto, UpdateTriggerTransactionDto } from './dto';
 import { TriggerService } from './trigger.service';
+import {
+  triggerPayloadSchema,
+  bulkTriggerPayloadSchema,
+} from './validation/trigger.schema';
 
 @Controller('trigger')
 export class TriggerController {
@@ -15,6 +19,7 @@ export class TriggerController {
     // here we are checking if the payload is an array  for bulk create
     // also we are  checking if the payload  is an object as it is may be use for single create in others modules
     // we are using  here at once because we have to use the same method for different  moddules that is job schedule
+
     const { user, appId, ...rest } = payload;
     if (Array.isArray(payload?.triggers)) {
       return await this.triggerService.bulkCreate(
@@ -23,6 +28,7 @@ export class TriggerController {
         user?.name,
       );
     }
+
     return await this.triggerService.create(appId, rest, user?.name);
   }
 

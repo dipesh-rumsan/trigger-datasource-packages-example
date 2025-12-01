@@ -3,6 +3,7 @@ enum ApplicationEnvironment {
     STAGING
     DEVELOPMENT
     TEST
+    @@schema("public")
 }
 
 model Application {
@@ -18,6 +19,7 @@ model Application {
     deletedAt DateTime?
 
     @@map("tbl_applications")
+    @@schema("public")
 }
 
 model Stats {
@@ -29,4 +31,5 @@ model Stats {
     updatedAt DateTime? @updatedAt()
 
     @@map("tbl_stats")
+    @@schema("public")
 }

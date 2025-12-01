@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import {
   Indicator,
@@ -7,10 +7,14 @@ import {
   ObservationAdapter,
   Err,
   chainAsync,
+  DATA_SOURCE_EVENTS,
+  DataSourceEventPayload,
   HealthMonitoringService,
 } from '@lib/core';
-import { DataSource, GlofasStationInfo } from '@lib/database';
+
+import { DataSource, GlofasStationInfo, SourceType } from '@lib/database';
 import { SettingsService } from '@lib/core';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { getFormattedDate, parseGlofasData } from './utils';
 import { GlofasFetchResponse, GlofasObservation } from './types';
 
@@ -22,6 +26,9 @@ export class GlofasAdapter extends ObservationAdapter {
     @Inject(HttpService) httpService: HttpService,
     @Inject(SettingsService) settingsService: SettingsService,
     @Inject(HealthMonitoringService) healthService: HealthMonitoringService,
+    @Optional()
+    @Inject(EventEmitter2)
+    private readonly eventEmitter?: EventEmitter2,
   ) {
     super(httpService, settingsService, {
       dataSource: DataSource.GLOFAS,
@@ -223,6 +230,7 @@ export class GlofasAdapter extends ObservationAdapter {
       });
 
       this.logger.log(`Transformed to ${indicators.length} indicators`);
+      this.emitDataSourceEvent(indicators);
       return Ok(indicators);
     } catch (error: any) {
       this.logger.error('Failed to transform DHM data', error);
@@ -240,5 +248,20 @@ export class GlofasAdapter extends ObservationAdapter {
         this.transform(observations),
       ),
     );
+  }
+
+  private emitDataSourceEvent(indicators: Indicator[]): void {
+    if (!this.eventEmitter || indicators.length === 0) {
+      return;
+    }
+
+    const payload: DataSourceEventPayload = {
+      dataSource: DataSource.GLOFAS,
+      sourceType: SourceType.WATER_LEVEL,
+      indicators,
+      fetchedAt: new Date().toISOString(),
+    };
+
+    this.eventEmitter.emit(DATA_SOURCE_EVENTS.GLOFAS.WATER_LEVEL, payload);
   }
 }

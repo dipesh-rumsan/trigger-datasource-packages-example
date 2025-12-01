@@ -2,6 +2,7 @@ enum Phases {
   PREPAREDNESS
   READINESS
   ACTIVATION
+  @@schema("public")
 }
 
 model Phase {
@@ -32,4 +33,5 @@ model Phase {
 
   @@unique([riverBasin, activeYear, name])
   @@map("tbl_phases")
+  @@schema("public")
 }

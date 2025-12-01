@@ -22,6 +22,16 @@ const config: DataSourceType = {
           SERIESID: [29089],
         },
       },
+      {
+        [SourceType.RAINFALL]: {
+          LOCATION: 'Doda river at East-West Highway',
+          SERIESID: [29785, 29608, 5726, 29689],
+        },
+        [SourceType.WATER_LEVEL]: {
+          LOCATION: 'Doda river at East-West Highway',
+          SERIESID: [29089],
+        },
+      },
     ],
     [DataSource.GLOFAS]: [
       {

@@ -148,11 +148,12 @@ export class ScheduleSourcesDataService
         value: indicator.value,
       };
 
-      await this.dhmService.saveDataInDhm(
+      const result = await this.dhmService.saveDataInDhm(
         SourceType.WATER_LEVEL,
         riverId,
         info,
       );
+      console.log('result', result);
     });
   }
 
@@ -171,6 +172,8 @@ export class ScheduleSourcesDataService
       }
       // return;
     }
+
+    console.log('rainfallData', rainfallData);
     // Currently rainfall api is not working so we are using dummy data
     const info: RainfallStationData = {
       id: 111,
@@ -228,7 +231,12 @@ export class ScheduleSourcesDataService
       value: 10.9,
     };
 
-    await this.dhmService.saveDataInDhm(SourceType.RAINFALL, info.name, info);
+    const result = await this.dhmService.saveDataInDhm(
+      SourceType.RAINFALL,
+      info.name,
+      info,
+    );
+    console.log('result', result);
   }
 
   // run every hour

@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { BQUEUE } from 'src/constant';
 import Redis from 'ioredis';
+import { DataSourceEventsListener } from './data-source-events.listener';
 import { HealthMonitoringService, HealthCacheService } from '@lib/core';
 import { GlofasModule, GlofasServices } from '@lib/glofas-adapter';
 import { GfhModule, GfhService } from '@lib/gfh-adapter';
@@ -33,6 +34,7 @@ import { GfhModule, GfhService } from '@lib/gfh-adapter';
     GfhService,
     ConfigService,
     HealthCacheService,
+    DataSourceEventsListener,
     HealthMonitoringService,
     DhmServiceLib,
     GlofasServices,
