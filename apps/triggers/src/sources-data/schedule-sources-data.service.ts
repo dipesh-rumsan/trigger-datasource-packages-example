@@ -80,7 +80,7 @@ export class ScheduleSourcesDataService
   }
 
   // run every 15 minutes
-  @Cron('*/30 * * * * *')
+  @Cron('*/15 * * * *')
   async syncRiverWaterData() {
     const riverData = await this.dhmWaterMonitored.execute();
 
@@ -151,7 +151,7 @@ export class ScheduleSourcesDataService
   }
 
   // run every 15 minutes
-  @Cron('*/30 * * * *')
+  @Cron('*/15 * * * *')
   async syncRainfallData() {
     const rainfallData = await this.dhmRainfallMonitored.execute();
     if (isErr<Indicator[]>(rainfallData)) {
@@ -222,7 +222,6 @@ export class ScheduleSourcesDataService
       units: 'mm',
       value: 10.9,
     };
-    console.log({ rainfallData });
 
     const result = await this.dhmService.saveDataInDhm(
       SourceType.RAINFALL,
