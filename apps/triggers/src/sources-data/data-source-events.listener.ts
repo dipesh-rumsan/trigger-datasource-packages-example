@@ -19,7 +19,9 @@ export class DataSourceEventsListener {
   @OnEvent(DATA_SOURCE_EVENTS.DHM.WATER_LEVEL)
   async handleDhmWaterLevel(event: DataSourceEventPayload) {
     const indicators: Indicator[] = event.indicators;
-    this.logger.log(`DHM WATER LEVEL EVENT RECEIVED`, indicators);
+    this.logger.log(
+      `DHM WATER LEVEL EVENT RECEIVED ${indicators.length} indicators`,
+    );
     if (indicators.length === 0) {
       this.logger.warn(`indicators not found `);
       return;
@@ -63,7 +65,9 @@ export class DataSourceEventsListener {
   @OnEvent(DATA_SOURCE_EVENTS.DHM.RAINFALL)
   async handleDhmRainfall(event: DataSourceEventPayload) {
     const indicators: Indicator[] = event.indicators;
-    this.logger.log(`DHM RAIN FALL EVENT RECEIVED`, indicators);
+    this.logger.log(
+      `DHM RAIN FALL EVENT RECEIVED ${indicators.length} indicators`,
+    );
 
     if (indicators.length === 0) {
       this.logger.warn(`indicators not found `);
@@ -109,7 +113,9 @@ export class DataSourceEventsListener {
   async handleGlofasWaterLevel(event: DataSourceEventPayload) {
     const indicators: Indicator[] = event.indicators;
 
-    this.logger.log(`GLOFAS WATER LEVEL EVENT RECEIVED`, indicators);
+    this.logger.log(
+      `GLOFAS WATER LEVEL EVENT RECEIVED ${indicators.length} indicators`,
+    );
 
     if (indicators.length === 0) {
       this.logger.warn(`indicators not found `);
