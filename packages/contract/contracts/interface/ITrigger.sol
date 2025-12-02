@@ -12,7 +12,7 @@ interface ITrigger {
     }
 
     function addTrigger(TriggerLib.Condition calldata condition) external returns (uint256);
-    function updateTriggerPhase(uint256 triggerId, uint256 observedValue) external;
+    function setTriggered(uint256 triggerId, uint256 observedValue) external;
     function getTrigger(uint256 triggerId) external view returns (Trigger memory);
     function getTriggerValue(uint256 triggerId) external view returns (uint256);
     function totalTriggers() external view returns (uint256);

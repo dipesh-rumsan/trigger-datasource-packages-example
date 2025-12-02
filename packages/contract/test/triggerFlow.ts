@@ -3,7 +3,7 @@ import { network } from "hardhat";
 
 const { ethers } = await network.connect();
 
-describe("Trigger → Phased Condition Flow", function () {
+describe("Trigger Contract", function () {
   let trigger: any;
   let triggerId: bigint;
 
@@ -42,50 +42,41 @@ describe("Trigger → Phased Condition Flow", function () {
 
     const t = await trigger.getTrigger(triggerId);
     expect(t.phase).to.equal("Preparedness");
+    expect(t.isTriggered).to.be.false;
 
     log(`✅ Added trigger in Preparedness phase (triggerId: ${triggerId})`);
   });
 
-  it("Should move trigger phase from Preparedness → Readiness", async function () {
-    const tx = await trigger.updatePhase(triggerId, "Readiness");
-    await tx.wait();
-
-    const t = await trigger.getTrigger(triggerId);
-    expect(t.phase).to.equal("Readiness");
-
-    log("✅ Trigger phase updated to Readiness");
-  });
-
-  it("Should fail to activate trigger in Readiness phase if condition not met", async function () {
-    const observedValue = 2;
-    await expect(
-      trigger.setTrigger(triggerId, observedValue)
-    ).to.be.revertedWith("Condition not met");
-
-    const t = await trigger.getTrigger(triggerId);
-    expect(t.phase).to.equal("Readiness");
-
-    log("✅ Condition check failed correctly during Readiness phase");
-  });
-
-  it("Should activate trigger when condition is met → Activation phase", async function () {
+  it("Should set trigger to triggered state", async function () {
     const observedValue = 6;
-    await expect(trigger.setTrigger(triggerId, observedValue))
+    await expect(trigger.setTriggered(triggerId, observedValue))
       .to.emit(trigger, "TriggerActivated")
       .withArgs(triggerId, observedValue);
 
     const t = await trigger.getTrigger(triggerId);
     expect(t.isTriggered).to.be.true;
-    expect(t.phase).to.equal("Activation");
 
-    log("✅ Trigger successfully activated and phase updated to Activation");
+    const storedValue = await trigger.getTriggerValue(triggerId);
+    expect(storedValue).to.equal(observedValue);
+
+    log("✅ Trigger successfully set to triggered state");
   });
 
-  it("Should not allow phase downgrade once Activated", async function () {
+  it("Should not allow setting trigger to triggered state twice", async function () {
+    const observedValue = 7;
     await expect(
-      trigger.updatePhase(triggerId, "Readiness")
-    ).to.be.revertedWith("Cannot downgrade phase after activation");
+      trigger.setTriggered(triggerId, observedValue)
+    ).to.be.revertedWith("Trigger already activated");
 
-    log("✅ Phase downgrade prevented after activation");
+    log("✅ Prevented double-triggering");
+  });
+
+  it("Should fail with invalid trigger ID", async function () {
+    const invalidTriggerId = 999;
+    await expect(trigger.setTriggered(invalidTriggerId, 5)).to.be.revertedWith(
+      "Invalid trigger ID"
+    );
+
+    log("✅ Invalid trigger ID check works correctly");
   });
 });

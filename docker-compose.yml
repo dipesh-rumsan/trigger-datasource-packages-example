@@ -1,6 +1,30 @@
 version: "3.9"
 
 services:
+  postgres:
+    container_name: postgres
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: rahat
+      POSTGRES_PASSWORD: rahat123
+      POSTGRES_DB: rahat-trigger
+    ports:
+      - "5555:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d
+
+  redis:
+    container_name: redis
+    image: redis:7
+    restart: always
+    command: ["redis-server", "--requirepass", "rahat123"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   api:
     container_name: api
     image: triggers:latest-1
@@ -14,19 +38,8 @@ services:
       - "3003:8000"
     depends_on:
       - postgres
-
-  postgres:
-    container_name: postgres
-    image: postgres:16
-    restart: always
-    environment:
-      POSTGRES_USER: rahat
-      POSTGRES_PASSWORD: rahat123
-      POSTGRES_DB: rahat-setup
-    ports:
-      - "5555:5432" # host:container
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - redis
 
 volumes:
   postgres_data:
+  redis_data:

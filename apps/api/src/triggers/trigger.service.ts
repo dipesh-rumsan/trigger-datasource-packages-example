@@ -9,6 +9,9 @@ export class TriggersService {
   private static readonly TRIGGER_CREATE_PATTERN = {
     cmd: 'ms.jobs.triggers.add',
   };
+  private static readonly TRIGGER_ACTIVATE_PATTERN = {
+    cmd: 'ms.jobs.triggers.activate',
+  };
   private static readonly TRIGGERS_MICROSERVICE = 'TRIGGERS_MICROSERVICE';
 
   constructor(
@@ -33,6 +36,14 @@ export class TriggersService {
     this.logger.log('Forwarding trigger creation request to microservice');
     return this.triggersClient.send(
       TriggersService.TRIGGER_CREATE_PATTERN,
+      payload,
+    );
+  }
+
+  async activateTrigger(payload: Record<string, any>) {
+    this.logger.log('Forwarding trigger activation request to microservice');
+    return this.triggersClient.send(
+      TriggersService.TRIGGER_ACTIVATE_PATTERN,
       payload,
     );
   }

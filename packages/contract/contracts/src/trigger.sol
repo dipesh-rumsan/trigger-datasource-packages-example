@@ -34,33 +34,20 @@ contract TriggerContract is ITrigger {
         return triggerId;
     }
 
-    /// @notice Progress trigger through phases based on observed data
-    /// @dev Moves: Preparedness → Readiness → Activation (if condition met)
-    function updateTriggerPhase(uint256 triggerId, uint256 observedValue)
+    /// @notice Set a specific trigger to triggered state
+    function setTriggered(uint256 triggerId, uint256 observedValue)
         external
         override
     {
         require(triggerId > 0 && triggerId <= _triggerCounter, "Invalid trigger ID");
         TriggerLib.Trigger storage t = _triggers[triggerId];
+        require(!t.isTriggered, "Trigger already activated");
 
-        // Phase transition logic
-        if (t.phase == TriggerLib.Phase.Preparedness) {
-            t.phase = TriggerLib.Phase.Readiness;
-            emit TriggerPhaseChanged(triggerId, TriggerLib.Phase.Readiness);
-        } 
-        else if (t.phase == TriggerLib.Phase.Readiness) {
-            bool conditionMet = TriggerUtils.evaluate(observedValue, t.condition);
-            require(conditionMet, "Condition not met");
-            t.phase = TriggerLib.Phase.Activation;
-            t.isTriggered = true;
-            _triggerValues[triggerId] = observedValue;
+        t.isTriggered = true;
+        _triggerValues[triggerId] = observedValue;
 
-            emit TriggerPhaseChanged(triggerId, TriggerLib.Phase.Activation);
-            emit TriggerActivated(triggerId, observedValue);
-        } 
-        else {
-            revert("Trigger already activated");
-        }
+        emit TriggerPhaseChanged(triggerId, TriggerLib.Phase.Activation);
+        emit TriggerActivated(triggerId, observedValue);
     }
 
     function getTrigger(uint256 triggerId)

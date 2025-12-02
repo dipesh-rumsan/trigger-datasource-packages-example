@@ -21,7 +21,7 @@ const options = {
 const devLogger = {
   format: format.combine(
     format((info) => ({ ...info, level: info.level.toUpperCase() }))(),
-    format.colorize({ all: true }),
+    // format.colorize({ all: true }),
     format.timestamp({ format: 'YYYY-MM-DD, HH:mm:ss' }),
     format.errors({ stack: true }),
     customFormat,
