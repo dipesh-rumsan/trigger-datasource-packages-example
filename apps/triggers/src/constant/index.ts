@@ -13,6 +13,7 @@ export const CORE_MODULE = 'RAHAT_CORE_PROJECT_CLIENT';
 export const JOBS = {
   BLOCKCHAIN: {
     ADD_TRIGGER: 'rahat.jobs.addTrigger',
+    UPDATE_TRIGGER_PHASE: 'rahat.jobs.updateTriggerPhase',
   },
   SCHEDULE: {
     ADD: 'rahat.jobs.schedule.add',

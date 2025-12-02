@@ -43,6 +43,7 @@ describe('TriggerService', () => {
   let mockScheduleQueue: jest.Mocked<Queue>;
   let mockTriggerQueue: jest.Mocked<Queue>;
   let mockStellarQueue: jest.Mocked<Queue>;
+  let mockBlockchainQueue: jest.Mocked<Queue>;
 
   const mockPrismaServiceImplementation = {
     trigger: {
@@ -119,6 +120,14 @@ describe('TriggerService', () => {
     removeRepeatableByKey: jest.fn(),
   };
 
+  const mockBlockchainQueueImplementation = {
+    add: jest.fn(),
+    process: jest.fn(),
+    getJob: jest.fn(),
+    removeJobs: jest.fn(),
+    removeRepeatableByKey: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -148,6 +157,10 @@ describe('TriggerService', () => {
           useValue: mockStellarQueueImplementation,
         },
         {
+          provide: 'BullQueue_BLOCKCHAIN_TRANSFER',
+          useValue: mockBlockchainQueueImplementation,
+        },
+        {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
         },
@@ -166,6 +179,7 @@ describe('TriggerService', () => {
     mockScheduleQueue = module.get('BullQueue_SCHEDULE');
     mockTriggerQueue = module.get('BullQueue_TRIGGER');
     mockStellarQueue = module.get('BullQueue_STELLAR');
+    mockBlockchainQueue = module.get('BullQueue_BLOCKCHAIN_TRANSFER');
 
     mockPrismaService.trigger.findUnique.mockResolvedValue({
       uuid: 'trigger-uuid',
@@ -851,12 +865,14 @@ describe('TriggerService', () => {
       triggeredBy: 'user-name',
       activatedAt: new Date(),
       user: { name: 'user-name' },
+      observedValue: 12,
     };
 
     it('should successfully activate trigger', async () => {
       const uuid = 'test-uuid';
 
       const mockTrigger = {
+        id: 5,
         uuid: mockUuid,
         isTriggered: false,
         source: DataSource.MANUAL,
@@ -867,6 +883,7 @@ describe('TriggerService', () => {
       };
 
       const mockActivatedTrigger = {
+        id: 5,
         uuid: mockUuid,
         isTriggered: true,
         triggeredBy: 'user-name',
@@ -915,6 +932,17 @@ describe('TriggerService', () => {
             group: 'Trigger Statement',
             notify: true,
           }),
+        }),
+      );
+      expect(mockBlockchainQueue.add).toHaveBeenCalledWith(
+        JOBS.BLOCKCHAIN.UPDATE_TRIGGER_PHASE,
+        {
+          triggerId: mockActivatedTrigger.id.toString(),
+          observedValue: mockPayload.observedValue.toString(),
+        },
+        expect.objectContaining({
+          attempts: 3,
+          removeOnComplete: true,
         }),
       );
       expect(result).toEqual(mockActivatedTrigger);

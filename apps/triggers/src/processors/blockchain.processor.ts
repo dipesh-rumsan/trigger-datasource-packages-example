@@ -8,7 +8,11 @@ import {
   getContractWithSigner,
 } from '@lib/contracts';
 import { ConfigService } from '@nestjs/config';
-import type { BlockchainJobPayload } from '../trigger/types';
+import type {
+  BlockchainJobPayload,
+  BlockchainUpdatePhasePayload,
+  TriggerContractWriter,
+} from '../trigger/types';
 import { TriggerService } from '../trigger/trigger.service';
 
 @Processor(BQUEUE.BLOCKCHAIN_TRANSFER)
@@ -35,7 +39,7 @@ export class BlockchainProcessor {
         CONTRACT_NAMES.trigger,
         contractAddress,
         this.configService,
-      ) as any;
+      ) as unknown as TriggerContractWriter;
 
       const parsedCondition = {
         ...condition,
@@ -54,6 +58,42 @@ export class BlockchainProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to add trigger ${triggerUuid} on-chain`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  @Process(JOBS.BLOCKCHAIN.UPDATE_TRIGGER_PHASE)
+  async handleUpdateTriggerPhase(
+    job: Job<BlockchainUpdatePhasePayload>,
+  ): Promise<void> {
+    const { triggerId, observedValue } = job.data;
+    const contractAddress = deployments?.triggerContract;
+
+    if (!contractAddress) {
+      this.logger.error('Trigger contract address is not configured.');
+      throw new Error('Trigger contract address missing.');
+    }
+
+    try {
+      const contract = getContractWithSigner(
+        CONTRACT_NAMES.trigger,
+        contractAddress,
+        this.configService,
+      ) as unknown as TriggerContractWriter;
+
+      const transaction = await contract.updateTriggerPhase(
+        BigInt(triggerId),
+        BigInt(observedValue),
+      );
+      await transaction.wait();
+      this.logger.log(
+        `Trigger ${triggerId} phase updated on-chain. Tx hash: ${transaction.hash}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to update trigger ${triggerId} phase on-chain`,
         error as Error,
       );
       throw error;

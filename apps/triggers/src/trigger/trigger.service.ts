@@ -12,15 +12,23 @@ import { BQUEUE, CORE_MODULE, EVENTS, JOBS } from 'src/constant';
 import type { Queue } from 'bull';
 import { PhasesService } from 'src/phases/phases.service';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { AddTriggerJobDto, UpdateTriggerParamsJobDto } from 'src/common/dto';
+import { UpdateTriggerParamsJobDto } from 'src/common/dto';
 import { lastValueFrom } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import {
   TriggerWithPhase,
   BlockchainJobPayload,
+  BlockchainUpdatePhasePayload,
   SerializedCondition,
 } from './types';
+
+type TriggerStatementValues = {
+  value?: unknown;
+  threshold?: unknown;
+  dangerLevel?: unknown;
+  warningLevel?: unknown;
+};
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
 
@@ -110,31 +118,9 @@ export class TriggerService {
         }),
       );
 
-      const queueData: AddTriggerJobDto[] = k.map((trigger) => {
-        return {
-          id: trigger.uuid,
-          trigger_type: trigger.isMandatory ? 'MANDATORY' : 'OPTIONAL',
-          phase: trigger.phase.name,
-          title: trigger.title,
-          description: trigger.description,
-          source: trigger.source,
-          river_basin: trigger.phase.riverBasin,
-          params: JSON.parse(JSON.stringify(trigger.triggerStatement)),
-          is_mandatory: trigger.isMandatory,
-          notes: trigger.notes,
-        };
-      });
-
-      const res = await lastValueFrom(
-        this.client.send(
-          { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
-          { triggers: queueData },
-        ),
-      );
-
-      this.logger.log(`
-        Total ${k.length} triggers added for action: ${res?.name} to stellar queue for AA ${appId}
-        `);
+      for (const trigger of k) {
+        await this.addTriggerOnChain(trigger);
+      }
 
       return k;
     } catch (error: any) {
@@ -236,6 +222,7 @@ export class TriggerService {
       this.logger.log(`
         Trigger added to stellar queue with id: ${res?.name} for AA ${appId}
         `);
+
       return updatedTrigger;
     } catch (error: any) {
       this.logger.error(error);
@@ -374,16 +361,9 @@ export class TriggerService {
     trigger: TriggerWithPhase,
   ): SerializedCondition {
     const statement = trigger.triggerStatement || {};
-    const rawValue =
-      statement.value ??
-      statement.threshold ??
-      statement.dangerLevel ??
-      statement.warningLevel ??
-      0;
-    const numericValue = Number(rawValue);
-    const sanitizedValue = Number.isFinite(numericValue)
-      ? Math.max(Math.floor(numericValue), 0)
-      : 0;
+    const sanitizedValue = this.resolveTriggerStatementValue(
+      statement as TriggerStatementValues,
+    );
 
     return {
       value: sanitizedValue.toString(),
@@ -584,13 +564,6 @@ export class TriggerService {
         },
       });
 
-      const jobDetails: UpdateTriggerParamsJobDto = {
-        id: updatedTrigger.uuid,
-        isTriggered: updatedTrigger.isTriggered,
-        params: JSON.parse(JSON.stringify(updatedTrigger.triggerStatement)),
-        source: updatedTrigger.source,
-      };
-
       if (trigger.isMandatory) {
         await this.prisma.phase.update({
           where: {
@@ -617,50 +590,11 @@ export class TriggerService {
         });
       }
 
-      // TODO: EVM Change
-      this.triggerQueue.add(JOBS.TRIGGER.REACHED_THRESHOLD, trigger, {
-        attempts: 3,
-        removeOnComplete: true,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
-      });
-
-      this.logger.log(`
-        Trigger added to trigger queue with id: ${trigger.uuid}, action: ${JOBS.TRIGGER.REACHED_THRESHOLD} for appId ${appId}
-        `);
-
-      const phaseId = updatedTrigger.phaseId;
-      const appIds = await this.prisma.activity.findFirst({
-        where: {
-          phaseId,
-        },
-      });
-
-      if (!appId && !appIds?.app) {
-        this.logger.warn(
-          'No appId or appIds found. Skipping stellar onChain queue update and notification creation.',
-        );
-
-        return updatedTrigger;
-      }
-
-      const res = await lastValueFrom(
-        this.client.send(
-          {
-            cmd: JOBS.STELLAR.UPDATE_ONCHAIN_TRIGGER_PARAMS_QUEUE,
-            uuid: appId ? appId : appIds?.app,
-          },
-          {
-            trigger: jobDetails,
-          },
-        ),
+      const observedValue = this.resolveTriggerStatementValue(
+        trigger.triggerStatement as TriggerStatementValues | null,
       );
 
-      this.logger.log(`
-        Trigger added to stellar queue with id: ${jobDetails.id}, action: ${res?.name} for appId ${appId}
-        `);
+      console.log('observedValue', observedValue);
 
       this.eventEmitter.emit(EVENTS.NOTIFICATION.CREATE, {
         payload: {
@@ -760,5 +694,29 @@ export class TriggerService {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
+  }
+
+  private resolveTriggerStatementValue(
+    statement: TriggerStatementValues | null,
+  ): string {
+    if (!statement) {
+      return '0';
+    }
+    const rawValue =
+      statement.value ??
+      statement.threshold ??
+      statement.dangerLevel ??
+      statement.warningLevel ??
+      0;
+    return this.sanitizeNumericValue(rawValue);
+  }
+
+  private sanitizeNumericValue(rawValue: unknown): string {
+    const numericValue = Number(rawValue);
+    if (!Number.isFinite(numericValue)) {
+      return '0';
+    }
+    const safeValue = Math.max(Math.floor(numericValue), 0);
+    return safeValue.toString();
   }
 }
