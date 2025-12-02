@@ -62,7 +62,7 @@ const config: DataSourceType = {
           {
             STATION_NAME: 'Sarda River Basin',
             RIVER_NAME: 'doda',
-            STATION_ID: 'G10165',
+            STATION_ID: 'G10166',
             POINT_ID: 'SI002576',
             LISFLOOD_DRAINAGE_AREA: 432,
             'LISFLOOD_X_(DEG)': 80.422917,

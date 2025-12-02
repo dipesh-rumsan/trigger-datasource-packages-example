@@ -190,6 +190,9 @@ importers:
       '@lib/dhm-adapter':
         specifier: workspace:*
         version: link:../../packages/dhm-adapter
+      '@lib/gfh-adapter':
+        specifier: workspace:*
+        version: link:../../packages/gfh-adapter
       '@lib/glofas-adapter':
         specifier: workspace:*
         version: link:../../packages/glofas-adapter
@@ -437,6 +440,40 @@ importers:
       typescript-eslint:
         specifier: ^8.15.0
         version: 8.46.4(eslint@9.39.1)(typescript@5.9.2)
+
+  packages/gfh-adapter:
+    dependencies:
+      '@lib/core':
+        specifier: workspace:*
+        version: link:../core
+      '@lib/database':
+        specifier: workspace:*
+        version: link:../database
+      '@nestjs/axios':
+        specifier: ^4.0.1
+        version: 4.0.1(@nestjs/common@10.4.20)(axios@1.13.2)(rxjs@7.8.2)
+      axios:
+        specifier: ^1.12.2
+        version: 1.13.2
+      cheerio:
+        specifier: ^1.1.2
+        version: 1.1.2
+    devDependencies:
+      '@types/jest':
+        specifier: ^27.0.2
+        version: 27.5.2
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      jest:
+        specifier: ^27.0.6
+        version: 27.5.1(ts-node@10.9.2)
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
 
   packages/glofas-adapter:
     dependencies:
