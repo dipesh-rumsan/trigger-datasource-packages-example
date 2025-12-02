@@ -7,6 +7,9 @@ import {
   DhmNormalizedItem,
   DhmSourceDataTypeEnum,
   DhmFetchResponse,
+  RainfallStationItem,
+  RiverStationItem,
+  DhmStationResponse,
 } from "../types/dhm-observation.type";
 import {
   Indicator,
@@ -27,7 +30,6 @@ import {
   RainfallWaterLevelConfig,
   PrismaService,
 } from "@lib/database";
-import { AxiosError } from "axios";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
@@ -69,6 +71,61 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
     });
   }
 
+  private async getStationsDetailsBySeriesId(
+    seriesId: number
+  ): Promise<RainfallStationItem> {
+    //TODO: DHM is changing the APIs so for not let it be constant
+    const baseUrl = `https://dhm.gov.np/home/getAPIData/3`;
+
+    const defaultStation: RainfallStationItem = {
+      name: "",
+      blink: false,
+      interval: 0,
+      id: 0,
+      stationIndex: "",
+      basin: "",
+      district: "",
+      latitude: 0,
+      longitude: 0,
+      series_id: 0,
+      status: "",
+      description: "",
+      indicator: "",
+      units: "",
+      value: 0,
+    };
+    try {
+      const response =
+        await this.httpService.axiosRef.get<DhmStationResponse>(baseUrl);
+      const riverWatch = response.data.rainfall_watch;
+
+      const station = riverWatch.find(
+        (station) => station.series_id === seriesId
+      );
+
+      if (!station) {
+        this.logger.warn(`Station not found for seriesId ${seriesId}`);
+        return defaultStation;
+      }
+
+      return station;
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to get stations details for seriesId ${seriesId}`,
+        error
+      );
+      return defaultStation;
+    }
+  }
+
+  private getLatestObservationValue(
+    stationDetail: RiverStationItem | RainfallStationItem
+  ): number {
+    if ("latest_observation" in stationDetail) {
+      return stationDetail.latest_observation?.value ?? 0;
+    }
+    return 0;
+  }
   /**
    * Fetch raw HTML/data from DHM website
    */
@@ -102,6 +159,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
             return {
               data: await this.httpService.axiosRef.post(baseUrl, form),
+              stationDetail: await this.getStationsDetailsBySeriesId(seriesId),
               location: cfg.LOCATION,
               seriesId,
             };
@@ -169,7 +227,9 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
       for (const {
         data: { data: rawData },
+        stationDetail,
         seriesId,
+        location,
       } of rawDatas) {
         const data = scrapeDataFromHtml(rawData.data.table);
 
@@ -184,7 +244,9 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
         observations.push({
           data: normalizedData,
+          stationDetail,
           seriesId,
+          location,
         });
       }
 
@@ -210,12 +272,13 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
           location: {
             type: "STATION" as const,
             seriesId: obs.seriesId,
+            basinId: obs.location!,
           },
           source: {
             key: "DHM",
             metadata: { originalUnit: "m" },
           },
-          history: obs.data,
+          info: { ...obs.stationDetail, history: obs.data },
         };
 
         const results: Indicator[] = [];
@@ -224,8 +287,8 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
         results.push({
           ...baseIndicator,
           indicator: "rainfall_mm",
-          units: "m",
-          value: obs.data[0]?.value || 0,
+          units: "mm",
+          value: this.getLatestObservationValue(obs.stationDetail),
         });
 
         return results;
