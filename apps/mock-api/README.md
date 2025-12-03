@@ -1,65 +1,185 @@
-# NestJs API Seed
+# Mock API - GLOFAS & GFH Data Simulator
 
-The application is NestJS API Seed. This application provides RESTful APIs for managing operations and integrates with the shared database package for data persistence.
+A NestJS-based mock API server that simulates external data sources (GLOFAS, GFH, DHM) for testing and development purposes. This mock server eliminates the need to call real external APIs during development and testing, providing fast, reliable, and predictable responses.
 
-## Overview
+## 🎯 Overview
 
-The API application is built with NestJS and provides a robust API layer for handling various trigger operations. It includes comprehensive error handling, logging, API documentation, and database integration through the shared database package.
+The Mock API is built with NestJS and provides mock endpoints that replicate the behavior of external flood forecasting systems. It uses the `mock` database schema to store and serve test data, allowing developers to test trigger systems without depending on external API availability, rate limits, or network connectivity.
 
-## Features
+## 🚀 Purpose
 
-- **RESTful API**: Well-structured REST endpoints for trigger operations
-- **Database Integration**: Uses the shared `@lib/database` package for data operations
-- **Exception Handling**: Global exception filters for database and application errors
-- **API Documentation**: Auto-generated Swagger documentation
-- **Logging**: Structured logging with Winston integration
-- **Validation**: Request validation using class-validator
-- **CORS Support**: Cross-origin resource sharing enabled
-- **Development Tools**: Hot reload and debugging support
+**Why Mock API?**
 
-## Project Structure
+Instead of calling real external APIs during development/testing:
 
-```
+- ❌ **Real APIs**: Slow, rate-limited, require authentication, unstable
+- ✅ **Mock API**: Fast, unlimited calls, no auth needed, always available
+
+This mock server enables:
+
+- 🧪 **Isolated Testing**: Test without external dependencies
+- ⚡ **Fast Development**: No network latency or API delays
+- 🎭 **Scenario Simulation**: Test edge cases (high floods, API failures, etc.)
+- 💰 **Cost Savings**: No API usage costs or rate limit concerns
+- 🔒 **Offline Development**: Work without internet connection
+
+## ✨ Features
+
+- **Mock Forecast Endpoints**: Simulates GLOFAS and GFH flood forecast APIs
+- **Mock Trigger Management**: CRUD operations for testing trigger workflows
+- **Database Integration**: Uses `@lib/database` with `mock` schema
+- **Swagger Documentation**: Interactive API documentation at `/swagger`
+- **Winston Logging**: Structured logging for debugging
+- **CORS Enabled**: Cross-origin requests supported
+- **Global Validation**: Request data validation with class-validator
+- **Exception Handling**: Comprehensive error handling filters
+
+## 📁 Project Structure
+
+```text
 src/
-├── app.controller.ts       # Main application controller
-├── app.module.ts          # Root application module
-├── app.service.ts         # Main application service
-├── main.ts               # Application bootstrap file
-├── all-exceptions.filter.ts  # Global exception filter
+├── app.controller.ts              # Main application controller
+├── app.module.ts                  # Root module with database & HTTP setup
+├── app.service.ts                 # Application service
+├── main.ts                        # Bootstrap file (port: 3005)
+├── all-exceptions.filter.ts       # Global exception handler
 ├── helpers/
-│   └── winston.logger.ts  # Winston logger configuration
-└── source-data/
-    ├── source-data.controller.ts  # Source data API endpoints
-    ├── source-data.module.ts      # Source data module
-    └── source-data.service.ts     # Source data business logic
+│   └── winston.logger.ts          # Winston logger configuration
+├── forecast/
+│   ├── forecast.controller.ts     # Mock forecast endpoints (GLOFAS, GFH)
+│   ├── forecast.service.ts        # Forecast data service
+│   └── forecast.module.ts         # Forecast module
+├── triggers/
+│   ├── triggers.controller.ts     # Mock trigger CRUD endpoints
+│   ├── trigger.service.ts         # Trigger business logic
+│   ├── trigger.module.ts          # Triggers module
+│   └── dto/
+│       └── trigger.dto.ts         # Trigger data transfer objects
+├── constants/                     # Application constants
+├── types/                         # TypeScript type definitions
+└── utils/                         # Utility functions
 ```
 
-## Environment Configuration
+## 🔌 API Endpoints
 
-The application requires environment variables to be configured. Copy the example file and update the values:
+### Forecast Endpoints (Mock External APIs)
+
+| Method | Endpoint                                  | Description               | Mocks            |
+| ------ | ----------------------------------------- | ------------------------- | ---------------- |
+| `GET`  | `/v1/forecast/river`                      | Get river forecast data   | DHM River Watch  |
+| `GET`  | `/v1/forecast/glofas`                     | Get GLOFAS forecast data  | GLOFAS WMS API   |
+| `POST` | `/v1/forecast/gauges:searchGaugesByArea`  | Search GFH gauges by area | Google Flood Hub |
+| `GET`  | `/v1/forecast/gaugeModels:batchGet`       | Get GFH gauge metadata    | Google Flood Hub |
+| `GET`  | `/v1/forecast/gauges:queryGaugeForecasts` | Get GFH gauge forecasts   | Google Flood Hub |
+
+### Trigger Management Endpoints (Testing)
+
+| Method   | Endpoint           | Description        |
+| -------- | ------------------ | ------------------ |
+| `GET`    | `/v1/triggers`     | Get all triggers   |
+| `GET`    | `/v1/triggers/:id` | Get trigger by ID  |
+| `POST`   | `/v1/triggers`     | Create new trigger |
+| `PATCH`  | `/v1/triggers/:id` | Update trigger     |
+| `DELETE` | `/v1/triggers/:id` | Delete trigger     |
+
+### Health Check
+
+| Method | Endpoint | Description        |
+| ------ | -------- | ------------------ |
+| `GET`  | `/v1`    | Basic health check |
+
+## 🛠️ Environment Configuration
+
+Copy the environment example file and update the values:
 
 ```bash
 cp .env.example .env
 ```
 
-The application supports both direct DATABASE_URL configuration and individual database parameters. See the `.env.example` file for all available configuration options.
-
-## Available Scripts
-
-### Development
+Update the `.env` file:
 
 ```bash
-# Start in development mode with hot reload
-pnpm dev
+# Database Configuration (uses mock schema)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=rahat_triggers
 
-# Start in debug mode
-pnpm start:debug
+# Application Configuration
+PORT=3005
+NODE_ENV=development
 
-# Build the application
+# Optional: Direct DATABASE_URL
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/rahat_triggers?schema=mock
+```
+
+**Note:** The mock API uses the same database as the triggers app but operates in the `mock` schema for data isolation.
+
+## 📦 Installation & Setup
+
+### 1. Install Dependencies
+
+From the monorepo root:
+
+```bash
+pnpm install
+```
+
+### 2. Setup Database
+
+Generate Prisma client and run migrations:
+
+```bash
+# Generate Prisma client
+pnpm --filter @lib/database db:generate
+
+# Run migrations
+pnpm --filter @lib/database db:migrate
+
+# Optional: Seed mock data
+pnpm --filter @lib/database seed
+```
+
+### 3. Build the Package
+
+```bash
+# Build mock-api
+pnpm --filter mock-api build
+
+# Or build all packages
 pnpm build
+```
 
-# Start in production mode
-pnpm start:prod
+## 🚀 Running the Application
+
+### Development Mode
+
+```bash
+# From monorepo root
+pnpm --filter mock-api dev
+
+# Or from app directory
+cd apps/mock-api
+pnpm dev
+```
+
+The server will start at: **`http://localhost:3005`**
+
+### Production Mode
+
+```bash
+# Build first
+pnpm --filter mock-api build
+
+# Start production server
+pnpm --filter mock-api start:prod
+```
+
+### Debug Mode
+
+```bash
+pnpm --filter mock-api dev:debug
 ```
 
 ### Testing

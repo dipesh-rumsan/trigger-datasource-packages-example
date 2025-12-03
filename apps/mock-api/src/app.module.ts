@@ -2,12 +2,10 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '@lib/database';
-// import { DhmModule } from '@lib/dhm-adapter';
+
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { SettingsModule } from '@lib/core';
-// import { GlofasModule } from '@lib/glofas-adapter';
-import { TriggersModule } from './triggers/trigger.module';
 
 @Module({
   imports: [
@@ -21,7 +19,6 @@ import { TriggersModule } from './triggers/trigger.module';
       global: true,
     }),
 
-    TriggersModule,
     SettingsModule,
   ],
   controllers: [AppController],

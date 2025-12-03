@@ -1,7 +1,7 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { demoRiverForecast } from 'src/data/dhm';
 import { PrismaService } from '@lib/database';
-import { glofasRawResponseTemplate } from 'src/data/glofas/raw-response';
+import { glofasRawResponseTemplate } from '../data/glofas/raw-response';
 import { DataSourceSettings } from '../types/data-source';
 import { parseDate } from '../utils/date';
 import {
