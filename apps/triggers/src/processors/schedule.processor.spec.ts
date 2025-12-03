@@ -3,8 +3,7 @@ import type { Job } from 'bull';
 import { ScheduleProcessor } from './schedule.processor';
 import { DhmService } from '../sources-data/dhm.service';
 import { GlofasService } from '../sources-data/glofas.service';
-import { BQUEUE, JOBS } from '../constant';
-import { DataSource } from '@prisma/client';
+import { DataSource } from '@lib/database';
 import { AddTriggerStatementDto } from '../sources-data/dto';
 
 describe('ScheduleProcessor', () => {

@@ -1,6 +1,6 @@
 import { validate } from 'class-validator';
 import { GetSouceDataDto, SourceDataType } from './get-source-data';
-import { DataSource } from '@prisma/client';
+import { DataSource } from '@lib/database';
 
 describe('GetSouceDataDto', () => {
   it('should be defined', () => {

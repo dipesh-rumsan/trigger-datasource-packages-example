@@ -2,8 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import type { Job } from 'bull';
 import { TriggerProcessor } from './trigger.processor';
 import { PhasesService } from '../phases/phases.service';
-import { BQUEUE, JOBS } from '../constant';
-import { DataSource } from '@prisma/client';
+import { DataSource } from '@lib/database';
 
 describe('TriggerProcessor', () => {
   let processor: TriggerProcessor;

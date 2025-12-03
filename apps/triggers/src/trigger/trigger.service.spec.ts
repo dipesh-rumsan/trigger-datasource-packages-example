@@ -10,8 +10,8 @@ import { CreateTriggerDto, GetTriggersDto, UpdateTriggerDto } from './dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 // Mock the paginator function
-jest.mock('@rumsan/prisma', () => ({
-  ...jest.requireActual('@rumsan/prisma'),
+jest.mock('@lib/database', () => ({
+  ...jest.requireActual('@lib/database'),
   paginator: () => jest.fn(),
 }));
 
