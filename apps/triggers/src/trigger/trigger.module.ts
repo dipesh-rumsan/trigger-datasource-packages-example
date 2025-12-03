@@ -7,6 +7,7 @@ import { PhasesModule } from 'src/phases/phases.module';
 import { HttpModule } from '@nestjs/axios';
 import { SourcesDataModule } from 'src/sources-data/sources-data.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { BlockchainService } from './blockchain.service';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     forwardRef(() => PhasesModule),
   ],
   controllers: [TriggerController],
-  providers: [TriggerService],
+  providers: [TriggerService, BlockchainService],
   exports: [TriggerService],
 })
 export class TriggerModule {}

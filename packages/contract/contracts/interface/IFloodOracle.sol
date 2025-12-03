@@ -9,8 +9,6 @@ interface IFloodDataAggregator {
     struct Source {
         string name;          // e.g., "GLOFAS"
         string description;   // Optional
-        string jsCode;        // JS code for Chainlink Functions
-        uint64 subscriptionId; // Chainlink subscription ID
         bool active;          // Whether the source is active
     }
 
@@ -34,17 +32,13 @@ interface IFloodDataAggregator {
     function registerSource(
         bytes32 sourceId,
         string calldata name,
-        string calldata description,
-        string calldata jsCode,
-        uint64 subscriptionId
+        string calldata description
     ) external;
 
     /// @notice Retrieve metadata for a specific source
     function sources(bytes32 sourceId) external view returns (
         string memory name,
         string memory description,
-        string memory jsCode,
-        uint64 subscriptionId,
         bool active
     );
 

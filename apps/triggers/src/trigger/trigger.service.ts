@@ -16,19 +16,7 @@ import { UpdateTriggerParamsJobDto } from 'src/common/dto';
 import { lastValueFrom } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
-import {
-  TriggerWithPhase,
-  BlockchainJobPayload,
-  BlockchainUpdatePhasePayload,
-  SerializedCondition,
-} from './types';
-
-type TriggerStatementValues = {
-  value?: unknown;
-  threshold?: unknown;
-  dangerLevel?: unknown;
-  warningLevel?: unknown;
-};
+import { BlockchainService } from './blockchain.service';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
 
@@ -43,9 +31,7 @@ export class TriggerService {
     @InjectQueue(BQUEUE.SCHEDULE) private readonly scheduleQueue: Queue,
     @InjectQueue(BQUEUE.TRIGGER) private readonly triggerQueue: Queue,
     private eventEmitter: EventEmitter2,
-    private readonly configService: ConfigService,
-    @InjectQueue(BQUEUE.BLOCKCHAIN_TRANSFER)
-    private readonly blockchainQueue: Queue,
+    private readonly blockchainService: BlockchainService,
   ) {}
 
   async create(appId: string, dto: CreateTriggerDto, createdBy: string) {
@@ -81,7 +67,7 @@ export class TriggerService {
         trigger = await this.scheduleJob(sanitizedPayload);
       }
 
-      await this.addTriggerOnChain(trigger);
+      await this.blockchainService.addTriggerOnChain(trigger);
 
       return trigger;
     } catch (error: any) {
@@ -119,7 +105,7 @@ export class TriggerService {
       );
 
       for (const trigger of k) {
-        await this.addTriggerOnChain(trigger);
+        await this.blockchainService.addTriggerOnChain(trigger);
       }
 
       return k;
@@ -339,41 +325,6 @@ export class TriggerService {
     }
   }
 
-  private async addTriggerOnChain(trigger: TriggerWithPhase) {
-    try {
-      const condition = this.buildOnChainCondition(trigger);
-
-      const payload: BlockchainJobPayload = {
-        triggerUuid: trigger.uuid,
-        condition,
-      };
-      await this.blockchainQueue.add(JOBS.BLOCKCHAIN.ADD_TRIGGER, payload);
-    } catch (error) {
-      this.logger.error(
-        `Failed to queue blockchain job for trigger ${trigger.uuid}`,
-        error as Error,
-      );
-      throw new RpcException('Unable to enqueue trigger for on-chain sync.');
-    }
-  }
-
-  private buildOnChainCondition(
-    trigger: TriggerWithPhase,
-  ): SerializedCondition {
-    const statement = trigger.triggerStatement || {};
-    const sanitizedValue = this.resolveTriggerStatementValue(
-      statement as TriggerStatementValues,
-    );
-
-    return {
-      value: sanitizedValue.toString(),
-      source: statement.source ?? trigger.source ?? '',
-      operator: statement.operator ?? statement.condition ?? '>=',
-      expression: statement.expression ?? '',
-      sourceSubType: statement.sourceSubType ?? statement.metric ?? '',
-    };
-  }
-
   async remove(repeatKey: string) {
     this.logger.log(`Removing trigger with repeatKey: ${repeatKey}`);
     try {
@@ -590,12 +541,6 @@ export class TriggerService {
         });
       }
 
-      const observedValue = this.resolveTriggerStatementValue(
-        trigger.triggerStatement as TriggerStatementValues | null,
-      );
-
-      console.log('observedValue', observedValue);
-
       this.eventEmitter.emit(EVENTS.NOTIFICATION.CREATE, {
         payload: {
           title: `Trigger Statement Met for ${updatedTrigger.phase.riverBasin}`,
@@ -694,29 +639,5 @@ export class TriggerService {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
-  }
-
-  private resolveTriggerStatementValue(
-    statement: TriggerStatementValues | null,
-  ): string {
-    if (!statement) {
-      return '0';
-    }
-    const rawValue =
-      statement.value ??
-      statement.threshold ??
-      statement.dangerLevel ??
-      statement.warningLevel ??
-      0;
-    return this.sanitizeNumericValue(rawValue);
-  }
-
-  private sanitizeNumericValue(rawValue: unknown): string {
-    const numericValue = Number(rawValue);
-    if (!Number.isFinite(numericValue)) {
-      return '0';
-    }
-    const safeValue = Math.max(Math.floor(numericValue), 0);
-    return safeValue.toString();
   }
 }
