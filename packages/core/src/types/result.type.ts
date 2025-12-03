@@ -9,10 +9,7 @@ export type Result<T> =
       executionContext?: ExecutionContext;
     };
 
-export function Ok<T>(
-  data: T,
-  executionContext?: ExecutionContext,
-): Result<T> {
+export function Ok<T>(data: T, executionContext?: ExecutionContext): Result<T> {
   return { success: true, data, executionContext };
 }
 
@@ -24,9 +21,7 @@ export function Err<T>(
   return { success: false, error, details, executionContext };
 }
 
-export function isErr<T>(
-  result: Result<T>,
-): result is {
+export function isErr<T>(result: Result<T>): result is {
   success: false;
   error: string;
   details?: unknown;
@@ -60,13 +55,20 @@ export function chain<T, U>(
 
 export async function chainAsync<T, U>(
   result: Result<T> | Promise<Result<T>>,
-  fn: (data: T) => Promise<Result<U>> | Result<U>,
+  fn: (
+    data: T,
+    executionContext?: ExecutionContext,
+  ) => Promise<Result<U>> | Result<U>,
 ): Promise<Result<U>> {
   const resolvedResult = await result;
   if (!resolvedResult.success) {
     return resolvedResult;
   }
-  const nextResult = await fn(resolvedResult.data);
+
+  const nextResult = await fn(
+    resolvedResult.data,
+    resolvedResult.executionContext,
+  );
   if (nextResult.success && resolvedResult.executionContext) {
     return {
       ...nextResult,

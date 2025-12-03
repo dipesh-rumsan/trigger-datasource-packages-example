@@ -13,7 +13,7 @@ export interface Indicator<T = any> {
   kind: 'OBSERVATION' | 'FORECAST';
   indicator: IndicatorType;
   value: number;
-  info?: T[];
+  info?: T | T[];
   units: string;
   issuedAt: string;
   location: LocationType;

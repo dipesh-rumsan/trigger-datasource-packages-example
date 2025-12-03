@@ -1,7 +1,9 @@
+import { Result } from "@lib/core";
 import axios from "axios";
 
 export interface DhmObservation {
   data: DhmNormalizedItem[];
+  stationDetail: RiverStationItem | RainfallStationItem;
   seriesId: number;
   location?: string;
 }
@@ -82,6 +84,10 @@ export interface RiverStationItem {
 }
 
 export type RainfallStationItem = {
+  latest_observation?: {
+    value: number;
+    datetime: string;
+  };
   id: number;
   series_id: number;
   stationIndex: string;
@@ -112,4 +118,10 @@ export interface RiverStationData extends RiverStationItem {
 
 export interface RainfallStationData extends RainfallStationItem {
   history?: RiverWaterHistoryItem[];
+}
+
+export interface DhmStationResponse {
+  type: number;
+  rainfall_watch: RainfallStationItem[];
+  river_watch: RiverStationItem[];
 }

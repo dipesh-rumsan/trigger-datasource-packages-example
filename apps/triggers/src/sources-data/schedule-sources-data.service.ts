@@ -11,10 +11,9 @@ import {
   DhmWaterLevelAdapter,
   DhmRainfallAdapter,
   DhmService,
-  RiverStationData,
-  RainfallStationData,
 } from '@lib/dhm-adapter';
 import { GlofasAdapter, GlofasServices } from '@lib/glofas-adapter';
+import { GfhAdapter, GfhService } from '@lib/gfh-adapter';
 import {
   Indicator,
   isErr,
@@ -34,6 +33,7 @@ export class ScheduleSourcesDataService
   private dhmWaterMonitored: HealthMonitoredAdapter<undefined>;
   private dhmRainfallMonitored: HealthMonitoredAdapter<undefined>;
   private glofasMonitored: HealthMonitoredAdapter<null>;
+  private gfhMonitored: HealthMonitoredAdapter<undefined>;
 
   constructor(
     @Inject(HealthCacheService)
@@ -41,8 +41,10 @@ export class ScheduleSourcesDataService
     private readonly dhmWaterLevelAdapter: DhmWaterLevelAdapter,
     private readonly dhmRainfallLevelAdapter: DhmRainfallAdapter,
     private readonly glofasAdapter: GlofasAdapter,
+    private readonly gfhAdapter: GfhAdapter,
     private readonly dhmService: DhmService,
     private readonly glofasServices: GlofasServices,
+    private readonly gfhService: GfhService,
     private readonly healthService: HealthMonitoringService,
   ) {
     this.dhmWaterMonitored = this.wrapWithHealthMonitoring(
@@ -52,6 +54,7 @@ export class ScheduleSourcesDataService
       this.dhmRainfallLevelAdapter,
     );
     this.glofasMonitored = this.wrapWithHealthMonitoring(this.glofasAdapter);
+    this.gfhMonitored = this.wrapWithHealthMonitoring(this.gfhAdapter);
   }
 
   onModuleInit() {
@@ -60,6 +63,7 @@ export class ScheduleSourcesDataService
       this.dhmWaterLevelAdapter,
       this.dhmRainfallLevelAdapter,
       this.glofasAdapter,
+      this.gfhAdapter,
     ].forEach((adapter) => adapter.setHealthService(this.healthService));
   }
 
@@ -67,6 +71,7 @@ export class ScheduleSourcesDataService
     this.syncRiverWaterData();
     this.syncRainfallData();
     this.synchronizeGlofas();
+    this.syncGfhData();
   }
 
   private wrapWithHealthMonitoring<T>(
@@ -97,56 +102,12 @@ export class ScheduleSourcesDataService
 
     riverData.data.forEach(async (indicator) => {
       const riverId = (indicator.location as any)?.basinId;
-      // Currently we do not have station data so we are using dummy data
-      const info: RiverStationData = {
-        id: 5554,
-        onm: '',
-        name: riverId,
-        tags: [],
-        basin: 'Mahakali',
-        images: [
-          {
-            id: 2625,
-            name: 'bdca0624990c25570064692a7b807baa',
-            size: 75478,
-            type: 0,
-            description: '',
-          },
-          {
-            id: 2669,
-            name: '8a0a35e1047c0877bef6f16699bbc61f',
-            size: 61510,
-            type: 0,
-            description: '',
-          },
-        ],
-        status: 'BELOW WARNING LEVEL',
-        steady: 'STEADY',
-        district: 'Kanchanpur',
-        latitude: 28.8526,
-        elevation: 162,
-        longitude: 80.4344,
-        series_id: 29089,
-        description: 'Doda (Machheli) river at East West Highway',
-        danger_level: '3.8',
-        stationIndex: '281.5',
-        warning_level: '3.4',
-        waterLevel: {
-          value: indicator.value,
-          datetime: indicator.issuedAt,
-        },
-        history: indicator.info,
-        indicator: indicator.indicator,
-        units: indicator.units,
-        value: indicator.value,
-      };
 
-      const result = await this.dhmService.saveDataInDhm(
+      await this.dhmService.saveDataInDhm(
         SourceType.WATER_LEVEL,
         riverId,
-        info,
+        indicator.info,
       );
-      console.log('result', result);
     });
   }
 
@@ -162,73 +123,17 @@ export class ScheduleSourcesDataService
       } else {
         this.logger.warn(rainfallData.details);
       }
-      // return;
+      return;
     }
 
-    console.log('rainfallData', rainfallData);
-    // Currently rainfall api is not working so we are using dummy data
-    const info: RainfallStationData = {
-      id: 111,
-      name: 'Doda river at East-West Highway',
-      basin: 'Koshi',
-      blink: false,
-      status: 'BELOW WARNING LEVEL',
-      history: [
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T05:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T06:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T07:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T08:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T09:00:00.000Z',
-        },
-        {
-          max: 0,
-          min: 0,
-          value: 0,
-          datetime: '2025-10-14T10:00:00.000Z',
-        },
-      ],
-      district: 'Sunsari',
-      interval: null,
-      latitude: 26.855192,
-      longitude: 87.152283,
-      series_id: 1505,
-      description: 'Hydrological Station with RLS',
-      stationIndex: '695',
-      indicator: 'water_level_m',
-      units: 'mm',
-      value: 10.9,
-    };
-
-    const result = await this.dhmService.saveDataInDhm(
-      SourceType.RAINFALL,
-      info.name,
-      info,
-    );
-    console.log('result', result);
+    rainfallData.data.forEach(async (indicator) => {
+      const riverId = (indicator.location as any)?.basinId;
+      await this.dhmService.saveDataInDhm(
+        SourceType.RAINFALL,
+        riverId,
+        indicator.info,
+      );
+    });
   }
 
   // run every hour
@@ -249,6 +154,31 @@ export class ScheduleSourcesDataService
 
     glofasResult.data.forEach(async (indicator) => {
       await this.glofasServices.saveDataInGlofas(
+        (indicator.location as any).basinId,
+        indicator,
+      );
+    });
+  }
+
+  //run every 24 hours
+  @Cron('0 0 * * *')
+  async syncGfhData() {
+    const gfhResult = await this.gfhMonitored.execute();
+
+    if (isErr<Indicator[]>(gfhResult)) {
+      this.logger.warn(gfhResult.details);
+      if (gfhResult.details instanceof AxiosError) {
+        const errorMessage = `HTTP Error: ${gfhResult.details.response?.status} ${gfhResult.details.response?.statusText} - Data: ${JSON.stringify(gfhResult.details.response?.data)} - Config: ${JSON.stringify(gfhResult.details.response?.config)}`;
+        this.logger.warn(errorMessage);
+      } else {
+        this.logger.warn(gfhResult.details);
+      }
+      return;
+    }
+
+    gfhResult.data.forEach(async (indicator) => {
+      await this.gfhService.saveDataInGfh(
+        SourceType.WATER_LEVEL,
         (indicator.location as any).basinId,
         indicator,
       );
