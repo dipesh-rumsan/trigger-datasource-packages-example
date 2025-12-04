@@ -115,7 +115,6 @@ export class ScheduleSourcesDataService
   @Cron('*/15 * * * *')
   async syncRainfallData() {
     const rainfallData = await this.dhmRainfallMonitored.execute();
-
     if (isErr<Indicator[]>(rainfallData)) {
       this.logger.warn(rainfallData.details);
       if (rainfallData.details instanceof AxiosError) {

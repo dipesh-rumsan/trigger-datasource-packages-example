@@ -827,4 +827,22 @@ export class TriggerService {
       throw new RpcException(error.message);
     }
   }
+
+  /**
+   * Find triggers for a specific source and indicator
+   */
+  async findTriggersBySourceAndIndicator(
+    source: DataSource,
+    indicator: string,
+  ) {
+    return this.prisma.trigger.findMany({
+      where: {
+        source,
+        triggerStatement: {
+          path: ['source'],
+          equals: indicator,
+        },
+      },
+    });
+  }
 }

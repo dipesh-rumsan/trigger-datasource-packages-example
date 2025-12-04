@@ -11,6 +11,9 @@ export const DATA_SOURCE_EVENTS = {
   GLOFAS: {
     WATER_LEVEL: 'events.data-source.glofas.water-level',
   },
+  GFH: {
+    WATER_LEVEL: 'events.data-source.gfh.water-level',
+  },
 } as const;
 
 export type DataSourceEventName = NestedRecord<
