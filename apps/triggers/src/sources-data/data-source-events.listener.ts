@@ -158,6 +158,55 @@ export class DataSourceEventsListener {
     }
   }
 
+  @OnEvent(DATA_SOURCE_EVENTS.GFH.WATER_LEVEL)
+  async handleGfsWaterLevel(event: DataSourceEventPayload) {
+    const indicators: Indicator[] = event.indicators;
+
+    this.logger.log(
+      `GFS WATER LEVEL EVENT RECEIVED ${indicators.length} indicators`,
+    );
+
+    if (indicators.length === 0) {
+      this.logger.warn(`indicators not found `);
+      return;
+    }
+    const triggers = await this.triggerService.findTriggersBySourceAndIndicator(
+      DataSource.GFH,
+      indicators[0].indicator,
+    );
+
+    if (!triggers.length) {
+      this.logger.log('No triggers found for DHM Rainfall event');
+      return;
+    }
+    /** The indicators freshly emitted from transform() */
+
+    for (const trigger of triggers) {
+      const statement = trigger.triggerStatement as TriggerStatement;
+      const expression = statement.expression;
+
+      // 2. Compute MEAN of all indicator values
+      const meanValue =
+        indicators.reduce((sum, ind) => sum + ind.value, 0) / indicators.length;
+
+      const meetsThreshold = this.evaluateConditionExpression(
+        {
+          expression,
+          sourceSubType: statement.sourceSubType,
+        },
+        meanValue,
+      );
+
+      if (meetsThreshold) {
+        this.logger.log(`Trigger ${trigger.id} MET threshold`);
+        // update trigger
+        await this.triggerService.activateTrigger(trigger.uuid, '', trigger);
+      } else {
+        this.logger.log(`Trigger ${trigger.id} NOT met`);
+      }
+    }
+  }
+
   private evaluateConditionExpression(
     triggerStatement: { expression: string; sourceSubType: string },
     indicatorValue: number,
