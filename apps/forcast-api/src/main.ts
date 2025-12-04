@@ -31,10 +31,10 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Rahat Triggers')
-    .setDescription('The Rahat Triggers API description')
+    .setTitle('Forcast API')
+    .setDescription('The Forcast API description')
     .setVersion('1.0')
-    .addTag('Triggers')
+    .addTag('Forcast')
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);

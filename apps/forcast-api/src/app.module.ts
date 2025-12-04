@@ -6,6 +6,7 @@ import { PrismaModule } from '@lib/database';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { SettingsModule } from '@lib/core';
+import { ForecastModule } from './forecast/forecast.module';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { SettingsModule } from '@lib/core';
     HttpModule.register({
       global: true,
     }),
-
+    ForecastModule,
     SettingsModule,
   ],
   controllers: [AppController],

@@ -21,7 +21,6 @@ This mock server enables:
 - ⚡ **Fast Development**: No network latency or API delays
 - 🎭 **Scenario Simulation**: Test edge cases (high floods, API failures, etc.)
 - 💰 **Cost Savings**: No API usage costs or rate limit concerns
-- 🔒 **Offline Development**: Work without internet connection
 
 ## ✨ Features
 
@@ -31,8 +30,6 @@ This mock server enables:
 - **Swagger Documentation**: Interactive API documentation at `/swagger`
 - **Winston Logging**: Structured logging for debugging
 - **CORS Enabled**: Cross-origin requests supported
-- **Global Validation**: Request data validation with class-validator
-- **Exception Handling**: Comprehensive error handling filters
 
 ## 📁 Project Structure
 
@@ -49,44 +46,9 @@ src/
 │   ├── forecast.controller.ts     # Mock forecast endpoints (GLOFAS, GFH)
 │   ├── forecast.service.ts        # Forecast data service
 │   └── forecast.module.ts         # Forecast module
-├── triggers/
-│   ├── triggers.controller.ts     # Mock trigger CRUD endpoints
-│   ├── trigger.service.ts         # Trigger business logic
-│   ├── trigger.module.ts          # Triggers module
-│   └── dto/
-│       └── trigger.dto.ts         # Trigger data transfer objects
-├── constants/                     # Application constants
 ├── types/                         # TypeScript type definitions
 └── utils/                         # Utility functions
 ```
-
-## 🔌 API Endpoints
-
-### Forecast Endpoints (Mock External APIs)
-
-| Method | Endpoint                                  | Description               | Mocks            |
-| ------ | ----------------------------------------- | ------------------------- | ---------------- |
-| `GET`  | `/v1/forecast/river`                      | Get river forecast data   | DHM River Watch  |
-| `GET`  | `/v1/forecast/glofas`                     | Get GLOFAS forecast data  | GLOFAS WMS API   |
-| `POST` | `/v1/forecast/gauges:searchGaugesByArea`  | Search GFH gauges by area | Google Flood Hub |
-| `GET`  | `/v1/forecast/gaugeModels:batchGet`       | Get GFH gauge metadata    | Google Flood Hub |
-| `GET`  | `/v1/forecast/gauges:queryGaugeForecasts` | Get GFH gauge forecasts   | Google Flood Hub |
-
-### Trigger Management Endpoints (Testing)
-
-| Method   | Endpoint           | Description        |
-| -------- | ------------------ | ------------------ |
-| `GET`    | `/v1/triggers`     | Get all triggers   |
-| `GET`    | `/v1/triggers/:id` | Get trigger by ID  |
-| `POST`   | `/v1/triggers`     | Create new trigger |
-| `PATCH`  | `/v1/triggers/:id` | Update trigger     |
-| `DELETE` | `/v1/triggers/:id` | Delete trigger     |
-
-### Health Check
-
-| Method | Endpoint | Description        |
-| ------ | -------- | ------------------ |
-| `GET`  | `/v1`    | Basic health check |
 
 ## 🛠️ Environment Configuration
 
@@ -166,38 +128,6 @@ pnpm dev
 
 The server will start at: **`http://localhost:3005`**
 
-### Production Mode
-
-```bash
-# Build first
-pnpm --filter mock-api build
-
-# Start production server
-pnpm --filter mock-api start:prod
-```
-
-### Debug Mode
-
-```bash
-pnpm --filter mock-api dev:debug
-```
-
-### Testing
-
-```bash
-# Run unit tests
-pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Run end-to-end tests
-pnpm test:e2e
-
-# Generate test coverage report
-pnpm test:cov
-```
-
 ### Code Quality
 
 ```bash
@@ -222,7 +152,7 @@ The application provides the following main endpoints:
 When the application is running, you can access the interactive Swagger documentation at:
 
 ```
-http://localhost:3000/swagger
+http://localhost:8000/swagger
 ```
 
 The Swagger UI provides detailed information about all available endpoints, request/response schemas, and allows you to test the API directly from the browser.
@@ -247,14 +177,6 @@ The application includes comprehensive error handling:
 - **Validation Errors**: Automatic validation of request data
 - **Structured Error Responses**: Consistent error response format
 
-## Logging
-
-The application uses Winston for structured logging with different log levels:
-
-- **Development**: Detailed logs with query information
-- **Production**: Optimized logging for performance
-- **Error Tracking**: Comprehensive error logging with context
-
 ## Development Workflow
 
 1. **Start the database**: Ensure PostgreSQL is running
@@ -263,41 +185,3 @@ The application uses Winston for structured logging with different log levels:
 4. **Generate Prisma client**: Run `pnpm --filter @lib/database db:generate`
 5. **Run migrations**: Run `pnpm --filter @lib/database db:migrate`
 6. **Start development server**: Run `pnpm dev`
-
-## Configuration
-
-The application can be configured through environment variables:
-
-- **Database Configuration**: Connection details for PostgreSQL
-- **Application Settings**: Port, environment mode, etc.
-- **Logging Configuration**: Log levels and output formats
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port Already in Use**: Change the PORT environment variable
-2. **Database Connection Failed**: Verify database configuration and ensure PostgreSQL is running
-3. **Build Errors**: Clear node_modules and reinstall dependencies
-4. **Migration Issues**: Check database permissions and connection string
-
-### Debug Mode
-
-To run the application in debug mode:
-
-```bash
-pnpm start:debug
-```
-
-This enables the Node.js debugger and provides detailed logging for troubleshooting issues.
-
-## Production Deployment
-
-For production deployment:
-
-1. Set `NODE_ENV=production` in your environment
-2. Configure production database settings
-3. Build the application: `pnpm build`
-4. Start with: `pnpm start:prod`
-
-The application includes production-optimized logging and error handling when running in production mode.
