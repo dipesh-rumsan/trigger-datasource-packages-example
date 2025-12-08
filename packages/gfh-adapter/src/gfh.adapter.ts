@@ -76,7 +76,6 @@ export class GfhAdapter extends ObservationAdapter {
     });
     const GfhApiData = SettingsService.get("GFHAPIKEY") as IApiKeyData;
     this.apiKey = GfhApiData.API_KEY || "";
-    console.log(this.apiKey);
   }
 
   /**
@@ -94,11 +93,9 @@ export class GfhAdapter extends ObservationAdapter {
         this.logger.error("GFH URL or api key is not configured");
         return Err("GFH URL or api key is not configured");
       }
-      console.log(this.gauges.length);
 
       if (this.gauges.length === 0) {
         this.gauges = await this.fetchGauges();
-        console.log(this.gauges);
       }
       if (this.gauges.length === 0) {
         this.logger.error("No gauges found");
@@ -106,7 +103,6 @@ export class GfhAdapter extends ObservationAdapter {
       }
 
       const config: GfhStationDetails[] = this.getConfig();
-      console.log({ config });
 
       const allStationDetails = config.flatMap(
         (gfhStationDetails) => gfhStationDetails.STATION_LOCATIONS_DETAILS
