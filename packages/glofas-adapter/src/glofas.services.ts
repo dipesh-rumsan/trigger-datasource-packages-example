@@ -62,4 +62,21 @@ export class GlofasServices {
       throw error;
     }
   }
+  async getDataSource() {
+    try {
+      const sourceData = await this.prisma.setting.findFirst({
+        where: {
+          name: 'DATASOURCE',
+        },
+        select: {
+          value: true,
+        },
+      });
+      const glofas = (sourceData?.value as Record<string, any>)['GLOFAS'];
+      return glofas;
+    } catch (error: any) {
+      this.logger.error('Error while fetching source data', error);
+      throw error;
+    }
+  }
 }

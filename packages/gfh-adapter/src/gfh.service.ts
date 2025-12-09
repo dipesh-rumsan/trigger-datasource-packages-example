@@ -79,4 +79,21 @@ export class GfhService {
       throw err;
     }
   }
+  async getDataSource() {
+    try {
+      const sourceData = await this.prisma.setting.findFirst({
+        where: {
+          name: "DATASOURCE",
+        },
+        select: {
+          value: true,
+        },
+      });
+      const gfh = (sourceData?.value as Record<string, any>)["GFH"];
+      return gfh;
+    } catch (error: any) {
+      this.logger.error("Error while fetching source data", error);
+      throw error;
+    }
+  }
 }

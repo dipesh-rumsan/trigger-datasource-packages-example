@@ -1,4 +1,9 @@
-import { DataSource, PrismaService, SourceType } from "@lib/database";
+import {
+  DataSource,
+  DataSourceValue,
+  PrismaService,
+  SourceType,
+} from "@lib/database";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import {
   RainfallStationData,
@@ -12,7 +17,7 @@ export class DhmService {
   async saveDataInDhm(
     type: SourceType,
     riverBasin: string,
-    payload: RiverStationData | RainfallStationData,
+    payload: RiverStationData | RainfallStationData
   ): Promise<any> {
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -51,11 +56,11 @@ export class DhmService {
           }
 
           this.logger.log(
-            `Series mismatch. Creating new for: ${payloadData.name}`,
+            `Series mismatch. Creating new for: ${payloadData.name}`
           );
         } else {
           this.logger.log(
-            `No record found. Creating new for: ${payloadData.name}`,
+            `No record found. Creating new for: ${payloadData.name}`
           );
         }
 
@@ -78,6 +83,24 @@ export class DhmService {
       });
     } catch (error: any) {
       this.logger.error(`Error saving data for ${riverBasin}:`, error);
+      throw error;
+    }
+  }
+
+  async getDataSource() {
+    try {
+      const sourceData = await this.prisma.setting.findFirst({
+        where: {
+          name: "DATASOURCE",
+        },
+        select: {
+          value: true,
+        },
+      });
+      const dhm = (sourceData?.value as Record<string, any>)["DHM"];
+      return dhm;
+    } catch (error: any) {
+      this.logger.error("Error while fetching source data", error);
       throw error;
     }
   }

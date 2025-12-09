@@ -28,6 +28,10 @@ import { buildQueryParams, getFormattedDate } from 'src/common';
 import { SettingsService } from '@lib/core';
 import { DataSourceValue } from 'src/types/settings';
 import { DhmService } from './dhm.service';
+import { GetSeriesDto } from './dto/get-series';
+import { DhmService as DHM } from '@lib/dhm-adapter';
+import { GlofasServices } from '@lib/glofas-adapter';
+import { GfhService } from '@lib/gfh-adapter';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -38,6 +42,9 @@ export class SourcesDataService {
     private prisma: PrismaService,
     private readonly dhmService: DhmService,
     private readonly httpService: HttpService,
+    private readonly dhm: DHM,
+    private readonly glofasServices: GlofasServices,
+    private readonly gfhServices: GfhService,
   ) {}
 
   async create(dto: CreateSourcesDataDto) {
@@ -89,6 +96,38 @@ export class SourcesDataService {
           perPage: perPage,
         },
       );
+    } catch (error: any) {
+      this.logger.error('Error while fetching source data', error);
+      throw new RpcException(error);
+    }
+  }
+
+  async findSeriesByDataSource(payload: GetSeriesDto) {
+    try {
+      if (payload.dataSource === DataSource.DHM) {
+        const dhm = await this.dhm.getDataSource();
+        const dhmTypeData = dhm[0][payload.type];
+
+        return [
+          {
+            seriesId: Array.isArray(dhmTypeData.SERIESID)
+              ? dhmTypeData.SERIESID?.toString()
+              : dhmTypeData.SERIESID,
+            stationName: dhmTypeData.LOCATION,
+          },
+        ];
+      }
+      if (payload.dataSource === DataSource.GLOFAS) {
+        const glofas = await this.glofasServices.getDataSource();
+        return glofas;
+      }
+      if (payload.dataSource === DataSource.GFH) {
+        const gfh = await this.gfhServices.getDataSource();
+        return gfh[0].STATION_LOCATIONS_DETAILS.map((station) => ({
+          seriesId: station.STATION_ID,
+          stationName: station.STATION_NAME,
+        }));
+      }
     } catch (error: any) {
       this.logger.error('Error while fetching source data', error);
       throw new RpcException(error);
