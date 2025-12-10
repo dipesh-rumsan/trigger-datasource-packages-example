@@ -109,22 +109,14 @@ export class SourcesDataService {
       switch (dataSource) {
         case DataSource.DHM: {
           const dhm = await this.dhm.getSourceData(type, riverBasin);
-          return dhm.map((value) => ({
-            seriesId: value.info['series_id'],
-            stationName: value.info['name'],
-          }));
+          return dhm;
         }
-
         case DataSource.GLOFAS: {
           const glofas = await this.glofasServices.getSourceData(
             type || SourceType.WATER_LEVEL,
             riverBasin,
           );
-
-          return glofas.map((value) => ({
-            seriesId: value.info['location'].basinId,
-            stationName: value.info['location'].basinId,
-          }));
+          return glofas;
         }
 
         case DataSource.GFH: {
@@ -132,11 +124,7 @@ export class SourcesDataService {
             type || SourceType.WATER_LEVEL,
             riverBasin,
           );
-
-          return gfh.map((value) => ({
-            seriesId: value.info['info'].riverGaugeId,
-            stationName: value.info['info'].stationName,
-          }));
+          return gfh;
         }
         default:
           return [];

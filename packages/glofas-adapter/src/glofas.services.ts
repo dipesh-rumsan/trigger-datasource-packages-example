@@ -1,6 +1,6 @@
 import { DataSource, Prisma, PrismaService, SourceType } from '@lib/database';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { GlofasDataObject, SourceInfo } from 'types/glofas-observation.type';
+import { GfofasInfo, GlofasDataObject } from 'types/glofas-observation.type';
 
 @Injectable()
 export class GlofasServices {
@@ -65,7 +65,7 @@ export class GlofasServices {
   async getSourceData(
     type: SourceType,
     riverBasin: string,
-  ): Promise<SourceInfo[]> {
+  ): Promise<Array<{ seriesId: string; stationName: string }>> {
     try {
       const sourceData = await this.prisma.sourcesData.findMany({
         where: {
@@ -79,7 +79,14 @@ export class GlofasServices {
           info: true,
         },
       });
-      return sourceData as SourceInfo[];
+
+      return sourceData.map((value) => {
+        const info = value.info as GfofasInfo;
+        return {
+          seriesId: info['location'].basinId,
+          stationName: info['location'].basinId,
+        };
+      });
     } catch (error: any) {
       this.logger.error('Error while fetching source data', error);
       throw error;

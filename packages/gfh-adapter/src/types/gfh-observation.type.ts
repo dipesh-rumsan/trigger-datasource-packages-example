@@ -153,6 +153,6 @@ export interface GfhTransformedResult {
   history: GfhHistoryItem[];
 }
 
-export type SourceInfo = {
-  info: Prisma.JsonObject;
+export type GfhInfo = {
+  info: { riverGaugeId: string; stationName: string };
 };

@@ -65,6 +65,6 @@ export interface GlofasInfoObject {
   forecastDate: string;
 }
 
-export type SourceInfo = {
-  info: Prisma.JsonObject;
+export type GfofasInfo = {
+  location: { basinId: string };
 };

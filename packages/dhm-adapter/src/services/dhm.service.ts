@@ -7,6 +7,7 @@ import {
 } from "@lib/database";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import {
+  DhmInfo,
   RainfallStationData,
   RiverStationData,
 } from "types/dhm-observation.type";
@@ -91,7 +92,7 @@ export class DhmService {
   async getSourceData(
     type: SourceType,
     riverBasin: string
-  ): Promise<Array<{ info: Prisma.JsonValue }>> {
+  ): Promise<Array<{ seriesId: string; stationName: string }>> {
     try {
       const sourceData = await this.prisma.sourcesData.findMany({
         where: {
@@ -105,7 +106,14 @@ export class DhmService {
           info: true,
         },
       });
-      return sourceData;
+
+      return sourceData.map((value) => {
+        const info = value.info as DhmInfo;
+        return {
+          seriesId: info["series_id"],
+          stationName: info["name"],
+        };
+      });
     } catch (error: any) {
       this.logger.error("Error while fetching source data", error);
       throw error;
