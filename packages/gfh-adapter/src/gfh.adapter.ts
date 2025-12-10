@@ -323,7 +323,7 @@ export class GfhAdapter extends ObservationAdapter {
           },
           source: {
             key: "GFH",
-            metadata: { originalUnit: "" },
+            metadata: { originalUnit: "m³/s" },
           },
           info: {
             ...stationDetails,
@@ -335,8 +335,8 @@ export class GfhAdapter extends ObservationAdapter {
 
         results.push({
           ...baseIndicator,
-          indicator: "prob_flood",
-          units: "",
+          indicator: "discharge_m3s",
+          units: "m³/s",
           value: (obs.stationData?.forecasts?.[0] as any)?.value || 0,
         });
 

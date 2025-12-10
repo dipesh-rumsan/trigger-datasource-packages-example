@@ -38,6 +38,8 @@ const triggerStatementSchemaBase = z.object({
   sourceSubType: z.string().min(1, 'sourceSubType is required'),
   operator: z.enum(operatorValues),
   value: numericValueSchema,
+  stationId: z.string().optional(),
+  stationName: z.string().optional(),
   expression: z
     .string()
     .trim()

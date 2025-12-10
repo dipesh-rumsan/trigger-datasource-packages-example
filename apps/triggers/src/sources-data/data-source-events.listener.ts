@@ -6,6 +6,12 @@ import { TriggerStatement } from 'src/trigger/validation/trigger.schema';
 import { Parser } from 'expr-eval';
 import { TriggerService } from 'src/trigger/trigger.service';
 
+type TriggerType = Prisma.TriggerGetPayload<{
+  include: {
+    phase: true;
+  };
+}>;
+
 @Injectable()
 export class DataSourceEventsListener {
   private readonly logger = new Logger(DataSourceEventsListener.name);
@@ -15,46 +21,63 @@ export class DataSourceEventsListener {
   @OnEvent(core.DATA_SOURCE_EVENTS.DHM.WATER_LEVEL)
   async handleDhmWaterLevel(event: core.DataSourceEventPayload) {
     const indicators: core.Indicator[] = event.indicators;
+
     this.logger.log(
       `DHM WATER LEVEL EVENT RECEIVED ${indicators.length} indicators`,
     );
+
     if (indicators.length === 0) {
       this.logger.warn(`indicators not found `);
       return;
     }
+
+    const indicator = indicators[0].indicator;
+
     const triggers = await this.triggerService.findTriggersBySourceAndIndicator(
       DataSource.DHM,
-      indicators[0].indicator,
+      indicator,
     );
 
     if (!triggers.length) {
-      this.logger.log('No triggers found for DHM Rainfall event');
+      this.logger.log(
+        `No triggers found for DHM Water Level event for indicator ${indicator}`,
+      );
       return;
     }
 
-    for (const trigger of triggers) {
-      const statement = trigger.triggerStatement as TriggerStatement;
-      const expression = statement.expression;
+    const triggerMap: Record<string, TriggerType[]> = triggers.reduce(
+      (acc, trigger) => {
+        const statement = trigger.triggerStatement as TriggerStatement;
+        const stationId = statement.stationId;
+        if (!stationId) {
+          this.logger.warn(
+            `Station ID not found for trigger ${trigger.uuid} for WATER LEVEL TRIGGER`,
+          );
+          return acc;
+        }
 
-      // 2. Compute MEAN of all indicator values
-      const meanValue =
-        indicators.reduce((sum, ind) => sum + ind.value, 0) / indicators.length;
+        if (!acc[stationId]) {
+          acc[stationId] = [];
+        }
+        acc[stationId].push(trigger);
+        return acc;
+      },
+      {},
+    );
 
-      const meetsThreshold = this.evaluateConditionExpression(
-        {
-          expression,
-          sourceSubType: statement.sourceSubType,
-        },
-        meanValue,
-      );
+    for await (const indicator of indicators) {
+      const stationId =
+        indicator.location.type === 'BASIN'
+          ? indicator.location.seriesId
+          : undefined;
 
-      if (meetsThreshold) {
-        this.logger.log(`Trigger ${trigger.id} MET threshold`);
-        // update trigger
-        await this.triggerService.activateTrigger(trigger.uuid, '', trigger);
-      } else {
-        this.logger.log(`Trigger ${trigger.id} NOT met`);
+      const triggers = triggerMap[stationId];
+
+      if (!triggers) {
+        continue;
       }
+
+      await this.processAndEvaluateTriggers(triggers, indicator.value);
     }
   }
 
@@ -69,9 +92,12 @@ export class DataSourceEventsListener {
       this.logger.warn(`indicators not found `);
       return;
     }
+
+    const indicator = indicators[0].indicator;
+
     const triggers = await this.triggerService.findTriggersBySourceAndIndicator(
       DataSource.DHM,
-      indicators[0].indicator,
+      indicator,
     );
 
     if (!triggers.length) {
@@ -79,29 +105,40 @@ export class DataSourceEventsListener {
       return;
     }
 
-    for (const trigger of triggers) {
-      const statement = trigger.triggerStatement as TriggerStatement;
-      const expression = statement.expression;
+    const triggerMap: Record<string, TriggerType[]> = triggers.reduce(
+      (acc, trigger) => {
+        const statement = trigger.triggerStatement as TriggerStatement;
+        const stationId = statement.stationId;
 
-      // 2. Compute MEAN of all indicator values
-      const meanValue =
-        indicators.reduce((sum, ind) => sum + ind.value, 0) / indicators.length;
+        if (!stationId) {
+          this.logger.warn(
+            `Station ID not found for trigger ${trigger.uuid} for RAINFALL TRIGGER`,
+          );
+          return acc;
+        }
 
-      const meetsThreshold = this.evaluateConditionExpression(
-        {
-          expression,
-          sourceSubType: statement.sourceSubType,
-        },
-        meanValue,
-      );
+        if (!acc[stationId]) {
+          acc[stationId] = [];
+        }
+        acc[stationId].push(trigger);
+        return acc;
+      },
+      {},
+    );
 
-      if (meetsThreshold) {
-        this.logger.log(`Trigger ${trigger.id} MET threshold`);
-        // update trigger
-        await this.triggerService.activateTrigger(trigger.uuid, '', trigger);
-      } else {
-        this.logger.log(`Trigger ${trigger.id} NOT met`);
+    for await (const indicator of indicators) {
+      const stationId =
+        indicator.location.type === 'BASIN'
+          ? indicator.location.seriesId
+          : undefined;
+
+      const triggers = triggerMap[stationId];
+
+      if (!triggers) {
+        continue;
       }
+
+      await this.processAndEvaluateTriggers(triggers, indicator.value);
     }
   }
 
@@ -149,15 +186,17 @@ export class DataSourceEventsListener {
       const fiveYearsMaxProbTriggers = triggerMap['five_years_max_prob'];
       const twentyYearsMaxProbTriggers = triggerMap['twenty_years_max_prob'];
 
-      await this.processGlofasTriggers(
+      await this.processAndEvaluateTriggers(
         twoYearsMaxProbTriggers,
         Number(twoYearsMaxProb.trim()) || 0,
       );
-      await this.processGlofasTriggers(
+
+      await this.processAndEvaluateTriggers(
         fiveYearsMaxProbTriggers,
         Number(fiveYearsMaxProb.trim()) || 0,
       );
-      await this.processGlofasTriggers(
+
+      await this.processAndEvaluateTriggers(
         twentyYearsMaxProbTriggers,
         Number(twentyYearsMaxProb.trim()) || 0,
       );
@@ -247,54 +286,40 @@ export class DataSourceEventsListener {
     }
   }
 
-  private async processGlofasTriggers(
-    triggers: Prisma.TriggerGetPayload<{
-      include: {
-        phase: true;
-      };
-    }>[] = [],
+  private async processAndEvaluateTriggers(
+    triggers: TriggerType[] = [],
     value: number,
   ) {
-    const activatedTriggers = [];
-    Promise.all(
-      triggers.map(async (trigger) => {
-        const statement = trigger.triggerStatement as TriggerStatement;
-        const expression = this.generateExpression(statement);
+    const triggerUuids = [];
 
-        const meetsThreshold = this.evaluateConditionExpression(
-          {
-            expression,
-            sourceSubType: statement.sourceSubType,
-          },
-          value,
-        );
+    for (const trigger of triggers) {
+      const statement = trigger.triggerStatement as TriggerStatement;
+      const expression = this.generateExpression(statement);
 
-        if (meetsThreshold) {
-          this.logger.log(`Trigger ${trigger.id} MET threshold`);
-          const t = await this.activateTrigger(trigger);
-          activatedTriggers.push(trigger);
-          return t;
-        }
-
-        return null;
-      }),
-    );
-
-    if (activatedTriggers.length > 0) {
-      this.logger.log(
-        `Activated ${activatedTriggers.length} triggers for GLOFAS Subtype ${(triggers[0].triggerStatement as TriggerStatement).sourceSubType}
-         with value ${value} and triggers ${activatedTriggers.map((trigger) => trigger.id).join(', ')}`,
+      const meetsThreshold = this.evaluateConditionExpression(
+        {
+          expression,
+          sourceSubType: statement.sourceSubType,
+        },
+        value,
       );
+
+      if (meetsThreshold) {
+        this.logger.log(`Trigger ${trigger.uuid} MET threshold`);
+        triggerUuids.push(trigger.uuid);
+      }
+    }
+
+    if (triggerUuids.length > 0) {
+      this.logger.log(
+        `Activated ${triggerUuids.length} triggers for GLOFAS Subtype ${(triggers[0].triggerStatement as TriggerStatement).sourceSubType}
+         with value ${value} and triggers ${triggerUuids.join(', ')}`,
+      );
+      await this.activateTriggers(triggerUuids);
     }
   }
 
-  private async activateTrigger(
-    trigger: Prisma.TriggerGetPayload<{
-      include: {
-        phase: true;
-      };
-    }>,
-  ) {
-    await this.triggerService.activateTrigger(trigger.uuid, '', trigger);
+  private async activateTriggers(triggerUuids: string[]) {
+    await this.triggerService.activeAutomatedTriggers(triggerUuids);
   }
 }
