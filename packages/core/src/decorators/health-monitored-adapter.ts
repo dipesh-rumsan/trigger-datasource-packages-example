@@ -14,11 +14,11 @@ export class HealthMonitoredAdapter<TParams = any> {
     private readonly adapterId: string,
   ) {}
 
-  async execute(params: TParams): Promise<Result<Indicator[]>> {
+  async execute(params?: TParams): Promise<Result<Indicator[]>> {
     const startTime = Date.now();
 
     try {
-      const result = await this.adapter.execute(params);
+      const result = await this.adapter.execute(params!);
       const duration = Date.now() - startTime;
 
       const report = this.buildExecutionReport(result, duration);

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
 import {
   DhmObservation,
@@ -7,6 +7,9 @@ import {
   DhmNormalizedItem,
   DhmSourceDataTypeEnum,
   DhmFetchResponse,
+  RainfallStationItem,
+  RiverStationItem,
+  DhmStationResponse,
 } from "../types/dhm-observation.type";
 import {
   Indicator,
@@ -16,6 +19,8 @@ import {
   Err,
   chainAsync,
   SettingsService,
+  DATA_SOURCE_EVENTS,
+  DataSourceEventPayload,
   HealthMonitoringService,
 } from "@lib/core";
 import { buildQueryParams, scrapeDataFromHtml } from "../../utils";
@@ -23,7 +28,9 @@ import {
   DataSource,
   SourceType,
   RainfallWaterLevelConfig,
+  PrismaService,
 } from "@lib/database";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
@@ -32,8 +39,12 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
   constructor(
     @Inject(HttpService) httpService: HttpService,
     @Inject(SettingsService) settingsService: SettingsService,
+    @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(HealthMonitoringService)
-    healthService: HealthMonitoringService
+    healthService: HealthMonitoringService,
+    @Optional()
+    @Inject(EventEmitter2)
+    private readonly eventEmitter?: EventEmitter2
   ) {
     super(httpService, settingsService, {
       dataSource: DataSource.DHM,
@@ -60,17 +71,70 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
     });
   }
 
+  private async getStationsDetailsBySeriesId(
+    seriesId: number
+  ): Promise<RainfallStationItem> {
+    //TODO: DHM is changing the APIs so for not let it be constant
+    const baseUrl = `https://dhm.gov.np/home/getAPIData/3`;
+
+    const defaultStation: RainfallStationItem = {
+      name: "",
+      blink: false,
+      interval: 0,
+      id: 0,
+      stationIndex: "",
+      basin: "",
+      district: "",
+      latitude: 0,
+      longitude: 0,
+      series_id: 0,
+      status: "",
+      description: "",
+      indicator: "",
+      units: "",
+      value: 0,
+    };
+    try {
+      const response =
+        await this.httpService.axiosRef.get<DhmStationResponse>(baseUrl);
+      const riverWatch = response.data.rainfall_watch;
+
+      const station = riverWatch.find(
+        (station) => station.series_id === seriesId
+      );
+
+      if (!station) {
+        this.logger.warn(`Station not found for seriesId ${seriesId}`);
+        return defaultStation;
+      }
+
+      return station;
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to get stations details for seriesId ${seriesId}`,
+        error
+      );
+      return defaultStation;
+    }
+  }
+
+  private getLatestObservationValue(
+    stationDetail: RiverStationItem | RainfallStationItem
+  ): number {
+    if ("latest_observation" in stationDetail) {
+      return stationDetail.latest_observation?.value ?? 0;
+    }
+    return 0;
+  }
   /**
    * Fetch raw HTML/data from DHM website
    */
-  async fetch(params: DhmFetchParams): Promise<Result<DhmFetchResponse[]>> {
+  async fetch(): Promise<Result<DhmFetchResponse[]>> {
     const itemErrors: any[] = [];
     const successfulResults: DhmFetchResponse[] = [];
 
     try {
-      this.logger.log(
-        `Fetching DHM data for stations: ${params.seriesIds.join(", ")}`
-      );
+      this.logger.log(`Fetching DHM data for stations:}`);
 
       const config: RainfallWaterLevelConfig["RAINFALL"][] = this.getConfig();
       const baseUrl = this.getUrl();
@@ -95,6 +159,7 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
             return {
               data: await this.httpService.axiosRef.post(baseUrl, form),
+              stationDetail: await this.getStationsDetailsBySeriesId(seriesId),
               location: cfg.LOCATION,
               seriesId,
             };
@@ -162,7 +227,9 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
       for (const {
         data: { data: rawData },
+        stationDetail,
         seriesId,
+        location,
       } of rawDatas) {
         const data = scrapeDataFromHtml(rawData.data.table);
 
@@ -177,7 +244,9 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
         observations.push({
           data: normalizedData,
+          stationDetail,
           seriesId,
+          location,
         });
       }
 
@@ -203,12 +272,13 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
           location: {
             type: "STATION" as const,
             seriesId: obs.seriesId,
+            basinId: obs.location!,
           },
           source: {
             key: "DHM",
             metadata: { originalUnit: "m" },
           },
-          history: obs.data,
+          info: { ...obs.stationDetail, history: obs.data },
         };
 
         const results: Indicator[] = [];
@@ -216,15 +286,16 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
         // Water level indicator
         results.push({
           ...baseIndicator,
-          indicator: "water_level_m",
-          units: "m",
-          value: obs.data[0]?.value || 0,
+          indicator: "rainfall_mm",
+          units: "mm",
+          value: this.getLatestObservationValue(obs.stationDetail),
         });
 
         return results;
       });
 
       this.logger.log(`Transformed to ${indicators.length} indicators`);
+      this.emitDataSourceEvent(indicators);
       return Ok(indicators);
     } catch (error: any) {
       this.logger.error("Failed to transform DHM data", error);
@@ -236,8 +307,8 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
    * Main pipeline execution - chains fetch → aggregate → transform
    * Using functional composition - no if-else needed!
    */
-  async execute(params: DhmFetchParams): Promise<Result<Indicator[]>> {
-    return chainAsync(this.fetch(params), (rawData: DhmFetchResponse[]) =>
+  async execute(): Promise<Result<Indicator[]>> {
+    return chainAsync(this.fetch(), (rawData: DhmFetchResponse[]) =>
       chainAsync(this.aggregate(rawData), (observations: DhmObservation[]) =>
         this.transform(observations)
       )
@@ -288,5 +359,19 @@ export class DhmRainfallAdapter extends ObservationAdapter<DhmFetchParams> {
 
       throw new Error("Invalid data format");
     });
+  }
+
+  private emitDataSourceEvent(indicators: Indicator[]): void {
+    if (!this.eventEmitter || indicators.length === 0) {
+      return;
+    }
+
+    const payload: DataSourceEventPayload = {
+      dataSource: DataSource.DHM,
+      sourceType: SourceType.RAINFALL,
+      indicators,
+      fetchedAt: new Date().toISOString(),
+    };
+    this.eventEmitter.emit(DATA_SOURCE_EVENTS.DHM.RAINFALL, payload);
   }
 }

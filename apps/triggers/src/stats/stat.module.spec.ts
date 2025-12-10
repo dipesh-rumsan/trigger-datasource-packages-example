@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '@lib/database';
+import { ConfigModule } from '@nestjs/config';
+import { PrismaModule, PrismaService } from '@lib/database';
 import { ActivityService } from 'src/activity/activity.service';
 import { StatsModule } from './stat.module';
 import { StatsService } from './stat.service';
@@ -20,7 +21,13 @@ describe('StatsModule', () => {
 
   beforeEach(async () => {
     module = await Test.createTestingModule({
-      imports: [StatsModule],
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true }),
+        PrismaModule.forRootWithConfig({
+          isGlobal: true,
+        }),
+        StatsModule,
+      ],
     })
       .overrideProvider(PrismaService)
       .useValue(mockPrismaService)

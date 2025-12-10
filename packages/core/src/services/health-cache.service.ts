@@ -6,6 +6,8 @@ import {
   ItemError,
   ItemStatistics,
   HealthCacheInterface,
+  HealthStatus,
+  HealthDataResult,
 } from '../types/health.type';
 
 @Injectable()
@@ -92,38 +94,25 @@ export class HealthCacheService implements HealthCacheInterface {
     }
   }
 
-  async getAllHealthStatuses(): Promise<AdapterHealthStatus[]> {
+  async getAllHealthStatuses(): Promise<HealthDataResult> {
     try {
-      const pattern = `${this.ADAPTER_STATUS_KEY}:*`;
-      const keys = await this.redis.keys(pattern);
+      const sources = await this.getAllSourcesHealth();
+      const overallStatus = this.calculateOverallStatus(sources);
 
-      if (keys.length === 0) {
-        return [];
-      }
+      const summary: HealthDataResult = {
+        overall_status: overallStatus,
+        last_updated: new Date().toISOString(),
+        sources,
+      };
 
-      const pipeline = this.redis.pipeline();
-      keys.forEach((key: string) => pipeline.get(key));
-
-      const results = await pipeline.exec();
-
-      return (results ?? [])
-        .filter(([err, data]: [Error | null, unknown]) => !err && data)
-        .map(([, data]: [Error | null, unknown]) => {
-          const status = JSON.parse(data as string);
-          if (status.lastSuccessAt) {
-            status.lastSuccessAt = new Date(status.lastSuccessAt);
-          }
-          if (status.lastFailureAt) {
-            status.lastFailureAt = new Date(status.lastFailureAt);
-          }
-          return status;
-        })
-        .sort((a: AdapterHealthStatus, b: AdapterHealthStatus) =>
-          a.adapterId.localeCompare(b.adapterId),
-        );
+      return summary;
     } catch (error: any) {
       this.logger.error('Failed to get all health statuses:', error);
-      return [];
+      return {
+        overall_status: 'UNHEALTHY',
+        last_updated: new Date().toISOString(),
+        sources: [],
+      };
     }
   }
 
@@ -210,5 +199,63 @@ export class HealthCacheService implements HealthCacheInterface {
       );
       return null;
     }
+  }
+
+  /**
+   * Get all sources health data
+   */
+  async getAllSourcesHealth(): Promise<AdapterHealthStatus[]> {
+    try {
+      const pattern = `${this.ADAPTER_STATUS_KEY}:*`;
+      const keys = await this.redis.keys(pattern);
+      if (keys.length === 0) {
+        return [];
+      }
+
+      const pipeline = this.redis.pipeline();
+      keys.forEach((key: string) => pipeline.get(key));
+
+      const results = await pipeline.exec();
+
+      return (results ?? [])
+        .filter(([err, data]: [Error | null, unknown]) => !err && data)
+        .map(([, data]: [Error | null, unknown]) => {
+          const status = JSON.parse(data as string);
+          if (status.lastSuccessAt) {
+            status.lastSuccessAt = new Date(status.lastSuccessAt);
+          }
+          if (status.lastFailureAt) {
+            status.lastFailureAt = new Date(status.lastFailureAt);
+          }
+          return status;
+        })
+        .sort((a: AdapterHealthStatus, b: AdapterHealthStatus) =>
+          a.adapterId.localeCompare(b.adapterId),
+        );
+    } catch (error: any) {
+      this.logger.error('Failed to get all source health:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Calculate overall system health status
+   */
+  private calculateOverallStatus(sources: AdapterHealthStatus[]): HealthStatus {
+    if (sources.length === 0) return 'UNHEALTHY';
+
+    const upCount = sources.filter((s) => s.currentStatus === 'HEALTHY').length;
+    const downCount = sources.filter(
+      (s) => s.currentStatus === 'UNHEALTHY',
+    ).length;
+
+    // All sources are UP
+    if (upCount === sources.length) return 'HEALTHY';
+
+    // More than half are DOWN
+    if (downCount > sources.length / 2) return 'UNHEALTHY';
+
+    // Some issues but not critical
+    return 'DEGRADED';
   }
 }

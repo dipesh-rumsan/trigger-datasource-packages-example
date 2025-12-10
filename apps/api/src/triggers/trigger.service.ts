@@ -13,11 +13,14 @@ export class TriggersService {
     cmd: 'ms.jobs.triggers.activate',
   };
   private static readonly TRIGGERS_MICROSERVICE = 'TRIGGERS_MICROSERVICE';
+  private static readonly ORACLE_MICROSERVICE = 'ORACLE_MICROSERVICE';
 
   constructor(
     private readonly prismaService: PrismaService,
     @Inject(TriggersService.TRIGGERS_MICROSERVICE)
     private readonly triggersClient: ClientProxy,
+    @Inject(TriggersService.ORACLE_MICROSERVICE)
+    private readonly oracleClient: ClientProxy,
   ) {}
 
   async findAll() {
@@ -35,6 +38,14 @@ export class TriggersService {
   async create(payload: Record<string, any>) {
     this.logger.log('Forwarding trigger creation request to microservice');
     return this.triggersClient.send(
+      TriggersService.TRIGGER_CREATE_PATTERN,
+      payload,
+    );
+  }
+
+  async createSource(payload: Record<string, any>) {
+    this.logger.log('Forwarding trigger creation request to microservice');
+    return this.oracleClient.send(
       TriggersService.TRIGGER_CREATE_PATTERN,
       payload,
     );

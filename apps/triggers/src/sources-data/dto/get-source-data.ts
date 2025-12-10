@@ -21,8 +21,9 @@ export class GetSouceDataDto extends PartialType(PaginationDto) {
     example: DataSource.DHM,
   })
   @IsEnum(DataSource)
+  @IsOptional()
   @IsString()
-  source: DataSource;
+  source?: DataSource;
 
   @ApiProperty({
     example: SourceDataType.Point,

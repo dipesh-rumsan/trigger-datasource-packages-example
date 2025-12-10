@@ -32,6 +32,14 @@ export class TriggersController {
     return this.triggersService.create(data);
   }
 
+  @Post('source')
+  @ApiOperation({ summary: 'Create a new trigger' })
+  @ApiResponse({ status: 201, description: 'Trigger created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  createSrouce(@Body() data: any) {
+    return this.triggersService.createSource(data);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update a trigger by ID' })
   @ApiResponse({ status: 200, description: 'Trigger updated successfully' })

@@ -12,18 +12,23 @@ import { CORE_MODULE } from 'src/constant';
 import { NotificationProcessor } from './notification.processor';
 import { BlockchainProcessor } from './blockchain.processor';
 import { TriggerModule } from '../trigger/trigger.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: CORE_MODULE,
-        transport: Transport.REDIS,
-        options: {
-          host: process.env.REDIS_HOST,
-          port: +process.env.REDIS_PORT,
-          password: process.env.REDIS_PASSWORD,
-        },
+        imports: [ConfigModule],
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.REDIS,
+          options: {
+            host: configService.get('REDIS_HOST'),
+            port: configService.get('REDIS_PORT'),
+            password: configService.get('REDIS_PASSWORD'),
+          },
+        }),
+        inject: [ConfigService],
       },
     ]),
     PhasesModule,

@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import triggerContractData from "../abi/TriggerContract.json";
+import { TriggerContract, SourceOracle } from "../shared-artifacts";
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -24,8 +24,8 @@ export const deployTriggerContract = async () => {
   console.log("Deploying TriggerContract...");
 
   const triggerFactory = new ethers.ContractFactory(
-    triggerContractData.abi,
-    triggerContractData.bytecode,
+    TriggerContract.abi,
+    TriggerContract.bytecode,
     wallet
   );
 
@@ -33,7 +33,18 @@ export const deployTriggerContract = async () => {
   const triggerAddress = await triggerContract.getAddress();
   await triggerContract.waitForDeployment();
 
-  console.log("TriggerContract deployed at:", triggerAddress);
+  console.log("Deployment complete!");
+
+  console.log("Deploying oracle contract...");
+  const oracleFactory = new ethers.ContractFactory(
+    SourceOracle.abi,
+    SourceOracle.bytecode,
+    wallet
+  );
+
+  const oracleContract = await oracleFactory.deploy();
+  const oracleAddress = await oracleContract.getAddress();
+  await oracleContract.waitForDeployment();
 
   const addrOutputPath = path.join(__dirname, "deployments.json");
 
@@ -44,11 +55,10 @@ export const deployTriggerContract = async () => {
   }
 
   deployments.triggerContract = triggerAddress;
+  deployments.oracleContract = oracleAddress;
 
   writeFileSync(addrOutputPath, JSON.stringify(deployments, null, 2));
   console.log("Contract address saved to:", addrOutputPath);
-
-  console.log("Deployment complete!");
 };
 
 // Run script

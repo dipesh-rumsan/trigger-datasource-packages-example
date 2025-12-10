@@ -26,14 +26,16 @@ services:
       - redis_data:/data
 
   api:
-    container_name: api
-    image: triggers:latest-1
+    container_name: test-triggers
+    image: test-triggers:test-1
     build:
       context: .
-      dockerfile: ./apps/api/Dockerfile
+      dockerfile: ./apps/triggers/Dockerfile.triggers
     restart: always
     env_file:
-      - ./apps/api/.env
+      - ./apps/triggers/.env
+    # command: >
+    #   sh -c "npx prisma migrate deploy"
     ports:
       - "3003:8000"
     depends_on:

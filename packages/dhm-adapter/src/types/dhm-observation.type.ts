@@ -1,7 +1,9 @@
+import { Result } from "@lib/core";
 import axios from "axios";
 
 export interface DhmObservation {
   data: DhmNormalizedItem[];
+  stationDetail: RiverStationItem | RainfallStationItem;
   seriesId: number;
   location?: string;
 }
@@ -52,6 +54,11 @@ export enum DhmSourceDataTypeEnum {
   DAILY = 3,
 }
 
+type WaterLevelType = {
+  value: number;
+  datetime: string | Date;
+};
+
 export interface RiverStationItem {
   name: string;
   id: number;
@@ -61,7 +68,7 @@ export interface RiverStationItem {
   latitude: number | null;
   longitude: number | null;
   series_id: number;
-  waterLevel: number | null;
+  waterLevel: WaterLevelType;
   status: string;
   warning_level: string;
   danger_level: string;
@@ -71,9 +78,16 @@ export interface RiverStationItem {
   elevation: number;
   images: Array<Record<string, any>>;
   tags: string[];
+  indicator: string;
+  units: string;
+  value: number;
 }
 
 export type RainfallStationItem = {
+  latest_observation?: {
+    value: number;
+    datetime: string;
+  };
   id: number;
   series_id: number;
   stationIndex: string;
@@ -87,6 +101,8 @@ export type RainfallStationItem = {
   value: number | null;
   interval: number | null;
   blink: boolean;
+  indicator: string;
+  units: string;
 };
 
 export interface RiverWaterHistoryItem {
@@ -102,4 +118,10 @@ export interface RiverStationData extends RiverStationItem {
 
 export interface RainfallStationData extends RainfallStationItem {
   history?: RiverWaterHistoryItem[];
+}
+
+export interface DhmStationResponse {
+  type: number;
+  rainfall_watch: RainfallStationItem[];
+  river_watch: RiverStationItem[];
 }

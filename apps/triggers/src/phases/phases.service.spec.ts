@@ -7,7 +7,12 @@ jest.mock('cheerio', () => ({
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { PrismaService } from '@lib/database';
+import {
+  PrismaService,
+  ActivityStatus,
+  DataSource,
+  Phases,
+} from '@lib/database';
 import type { Queue } from 'bull';
 import { BadRequestException } from '@nestjs/common';
 import { PhasesService } from './phases.service';
@@ -20,7 +25,6 @@ import {
   GetPhaseByName,
   ConfigureThresholdPhaseDto,
 } from './dto';
-import { ActivityStatus, DataSource, Phases } from '@prisma/client';
 import { of } from 'rxjs';
 
 describe('PhasesService', () => {

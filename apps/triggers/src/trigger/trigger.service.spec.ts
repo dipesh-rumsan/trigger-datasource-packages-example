@@ -12,8 +12,8 @@ import { ConfigService } from '@nestjs/config';
 import { getContractWithSigner } from '@lib/contracts';
 
 // Mock the paginator function
-jest.mock('@rumsan/prisma', () => ({
-  ...jest.requireActual('@rumsan/prisma'),
+jest.mock('@lib/database', () => ({
+  ...jest.requireActual('@lib/database'),
   paginator: () => jest.fn(),
 }));
 

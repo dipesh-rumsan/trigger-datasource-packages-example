@@ -14,7 +14,32 @@ type PointForecast = {
   data: string;
 };
 
+type GlofasLocation = {
+  type: string;
+  basinId: string;
+};
+
+type GlofasSource = {
+  key: string;
+  metadata: GlofasMetadate;
+};
+
+type GlofasMetadate = {
+  originalUnit: string;
+};
+
 export interface GlofasDataObject {
+  kind: string;
+  issuedAt: Date;
+  location: GlofasLocation;
+  source: GlofasSource;
+  info: GlofasInfoObject;
+  indicator: string;
+  unit: string;
+  value: number;
+}
+
+export interface GlofasInfoObject {
   pointForecastData: {
     forecastDate: PointForecast;
     maxProbability: PointForecast;

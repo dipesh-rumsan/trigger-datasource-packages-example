@@ -2,13 +2,25 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TriggerHistoryModule } from './trigger-history.module';
 import { TriggerHistoryController } from './trigger-history.controller';
 import { TriggerHistoryService } from './trigger-history.service';
-import { PrismaService } from '@lib/database';
+import { PrismaModule, PrismaService } from '@lib/database';
+import { ConfigModule } from '@nestjs/config';
 
 describe('TriggerHistoryModule', () => {
   let triggerHistoryModule: TriggerHistoryModule;
 
   beforeEach(async () => {
-    triggerHistoryModule = new TriggerHistoryModule();
+    triggerHistoryModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true }),
+        PrismaModule.forRootWithConfig({
+          isGlobal: true,
+        }),
+        TriggerHistoryModule,
+      ],
+    })
+      .overrideProvider(PrismaService)
+      .useValue({})
+      .compile();
   });
 
   it('should be defined', () => {

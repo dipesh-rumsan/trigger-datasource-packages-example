@@ -25,10 +25,10 @@ import { SettingsModule } from '@lib/core';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    EventEmitterModule.forRoot({
-      global: true,
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
+    EventEmitterModule.forRoot({}),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -40,15 +40,19 @@ import { SettingsModule } from '@lib/core';
       }),
       inject: [ConfigService],
     }),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: MS_TRIGGER_CLIENTS.RAHAT,
-        transport: Transport.REDIS,
-        options: {
-          host: process.env.REDIS_HOST,
-          port: +process.env.REDIS_PORT,
-          password: process.env.REDIS_PASSWORD,
-        },
+        imports: [ConfigModule],
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.REDIS,
+          options: {
+            host: configService.get('REDIS_HOST'),
+            port: configService.get('REDIS_PORT'),
+            password: configService.get('REDIS_PASSWORD'),
+          },
+        }),
+        inject: [ConfigService],
       },
     ]),
     PrismaModule.forRootWithConfig({

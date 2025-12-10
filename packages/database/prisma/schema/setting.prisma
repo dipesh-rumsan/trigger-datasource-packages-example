@@ -3,6 +3,7 @@ enum SettingDataType {
   NUMBER
   BOOLEAN
   OBJECT
+  @@schema("public")
 }
 
 // ++++++++++++++++++ START: @rumsan/settings +++++++++++++++++++++++++++
@@ -15,4 +16,5 @@ model Setting {
   isPrivate      Boolean         @default(true)
 
   @@map("tbl_settings")
+    @@schema("public")
 }

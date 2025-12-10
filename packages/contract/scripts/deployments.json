@@ -1,3 +1,4 @@
 {
-  "triggerContract": "0x68E8BcF96aB1160C93a753b88C54E63a9A49F072"
+  "triggerContract": "0x71651211d45a86be607FDbFe01d62c4fC6d2Af2e",
+  "oracleContract": "0xEA45F5c5B6ca464b16710ccD3C8A2D94A3eE414F"
 }
