@@ -1,6 +1,7 @@
 import {
   DataSource,
   DataSourceValue,
+  Prisma,
   PrismaService,
   SourceType,
 } from "@lib/database";
@@ -87,18 +88,24 @@ export class DhmService {
     }
   }
 
-  async getDataSource() {
+  async getSourceData(
+    type: SourceType,
+    riverBasin: string
+  ): Promise<Array<{ info: Prisma.JsonValue }>> {
     try {
-      const sourceData = await this.prisma.setting.findFirst({
+      const sourceData = await this.prisma.sourcesData.findMany({
         where: {
-          name: "DATASOURCE",
+          dataSource: DataSource.DHM,
+          source: {
+            riverBasin,
+          },
+          type,
         },
         select: {
-          value: true,
+          info: true,
         },
       });
-      const dhm = (sourceData?.value as Record<string, any>)["DHM"];
-      return dhm;
+      return sourceData;
     } catch (error: any) {
       this.logger.error("Error while fetching source data", error);
       throw error;

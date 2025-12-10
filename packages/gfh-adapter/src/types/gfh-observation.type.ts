@@ -1,3 +1,5 @@
+import { Prisma } from "@lib/database";
+
 export type GfhStationDetails = {
   RIVER_BASIN: string;
   STATION_LOCATIONS_DETAILS: StationLoacationDetails[];
@@ -150,3 +152,7 @@ export interface GfhTransformedResult {
   forecastDate: string;
   history: GfhHistoryItem[];
 }
+
+export type SourceInfo = {
+  info: Prisma.JsonObject;
+};

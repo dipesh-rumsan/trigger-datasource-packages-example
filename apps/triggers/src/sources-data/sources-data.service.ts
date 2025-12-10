@@ -104,29 +104,42 @@ export class SourcesDataService {
 
   async findSeriesByDataSource(payload: GetSeriesDto) {
     try {
-      if (payload.dataSource === DataSource.DHM) {
-        const dhm = await this.dhm.getDataSource();
-        const dhmTypeData = dhm[0][payload.type];
+      const { dataSource, type, riverBasin } = payload;
 
-        return [
-          {
-            seriesId: Array.isArray(dhmTypeData.SERIESID)
-              ? dhmTypeData.SERIESID?.toString()
-              : dhmTypeData.SERIESID,
-            stationName: dhmTypeData.LOCATION,
-          },
-        ];
-      }
-      if (payload.dataSource === DataSource.GLOFAS) {
-        const glofas = await this.glofasServices.getDataSource();
-        return glofas;
-      }
-      if (payload.dataSource === DataSource.GFH) {
-        const gfh = await this.gfhServices.getDataSource();
-        return gfh[0].STATION_LOCATIONS_DETAILS.map((station) => ({
-          seriesId: station.STATION_ID,
-          stationName: station.STATION_NAME,
-        }));
+      switch (dataSource) {
+        case DataSource.DHM: {
+          const dhm = await this.dhm.getSourceData(type, riverBasin);
+          return dhm.map((value) => ({
+            seriesId: value.info['series_id'],
+            stationName: value.info['name'],
+          }));
+        }
+
+        case DataSource.GLOFAS: {
+          const glofas = await this.glofasServices.getSourceData(
+            type || SourceType.WATER_LEVEL,
+            riverBasin,
+          );
+
+          return glofas.map((value) => ({
+            seriesId: value.info['location'].basinId,
+            stationName: value.info['location'].basinId,
+          }));
+        }
+
+        case DataSource.GFH: {
+          const gfh = await this.gfhServices.getSourceData(
+            type || SourceType.WATER_LEVEL,
+            riverBasin,
+          );
+
+          return gfh.map((value) => ({
+            seriesId: value.info['info'].riverGaugeId,
+            stationName: value.info['info'].stationName,
+          }));
+        }
+        default:
+          return [];
       }
     } catch (error: any) {
       this.logger.error('Error while fetching source data', error);
