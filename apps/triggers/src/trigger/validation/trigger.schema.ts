@@ -117,19 +117,14 @@ export const triggerPayloadSchema = z.object({
     .transform((val) => (val === null ? undefined : val)),
   notes: z.string().trim().max(500).optional().default(''),
   title: z.string().trim().min(3).max(120),
-  description: z.string().trim().min(3).max(500),
+  description: z.string().trim().min(3).max(500).optional(),
   isMandatory: z.boolean().optional().default(false),
   isTriggered: z.boolean().optional().default(false),
   isDeleted: z.boolean().optional().default(false),
   phaseId: z.string().trim().min(1, 'phaseId is required'),
-  riverBasin: z.string().trim().min(1, 'riverBasin is required'),
+  riverBasin: z.string().trim().min(1, 'riverBasin is required').optional(),
   source: z.nativeEnum(DataSource),
 });
 
-export const bulkTriggerPayloadSchema = z
-  .array(triggerPayloadSchema)
-  .min(1, 'At least one trigger is required');
-
 export type TriggerPayload = z.infer<typeof triggerPayloadSchema>;
 export type TriggerStatement = z.infer<typeof triggerStatementSchema>;
-export type BulkTriggerPayload = z.infer<typeof bulkTriggerPayloadSchema>;
