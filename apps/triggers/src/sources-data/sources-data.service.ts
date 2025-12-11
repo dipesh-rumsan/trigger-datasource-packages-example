@@ -104,7 +104,7 @@ export class SourcesDataService {
 
   async findSeriesByDataSource(payload: GetSeriesDto) {
     try {
-      const { dataSource, type, riverBasin } = payload;
+      const { dataSource, type, riverBasin, stationName } = payload;
 
       switch (dataSource) {
         case DataSource.DHM: {
@@ -123,6 +123,7 @@ export class SourcesDataService {
           const gfh = await this.gfhServices.getSourceData(
             type || SourceType.WATER_LEVEL,
             riverBasin,
+            stationName,
           );
           return gfh;
         }

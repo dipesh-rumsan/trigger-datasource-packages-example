@@ -82,7 +82,8 @@ export class GfhService {
   }
   async getSourceData(
     type: SourceType,
-    riverBasin: string
+    riverBasin: string,
+    stationName?: string
   ): Promise<Array<{ seriesId: string; stationName: string }>> {
     try {
       const sourceData = await this.prisma.sourcesData.findMany({
@@ -92,6 +93,12 @@ export class GfhService {
             riverBasin,
           },
           type,
+          ...(stationName && {
+            info: {
+              path: ["stationName"],
+              equals: stationName,
+            },
+          }),
         },
         select: {
           info: true,

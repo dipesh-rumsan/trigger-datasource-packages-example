@@ -16,4 +16,17 @@ export class GetSeriesDto {
   @IsEnum(DataSource)
   @IsString()
   dataSource: DataSource;
+
+  @ApiProperty({
+    example: 'karnali',
+  })
+  @IsString()
+  riverBasin: string;
+
+  @ApiProperty({
+    example: 'karnali',
+  })
+  @IsOptional()
+  @IsString()
+  stationName?: string;
 }
