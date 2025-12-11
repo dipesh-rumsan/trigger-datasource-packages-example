@@ -43,6 +43,7 @@ export class GetPhaseByName {
   })
   @IsEnum(Phases)
   @IsNotEmpty()
+  @IsOptional()
   phase?: Phases;
 
   @ApiProperty({
@@ -68,6 +69,7 @@ export class GetPhaseByName {
   @ApiProperty({
     example: 'sfs-sfs-sfs-sfs-sfs',
   })
+  @IsOptional()
   @IsString()
   appId?: string;
 }

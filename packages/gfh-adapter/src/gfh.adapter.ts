@@ -1,5 +1,7 @@
 import {
   chainAsync,
+  DATA_SOURCE_EVENTS,
+  DataSourceEventPayload,
   Err,
   ExecutionContext,
   HealthMonitoringService,
@@ -10,9 +12,10 @@ import {
   Result,
   SettingsService,
 } from "@lib/core";
-import { DataSource } from "@lib/database";
+import { DataSource, SourceType } from "@lib/database";
 import { HttpService } from "@nestjs/axios";
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { getFormattedDate } from "./utils";
 import {
   BatchGetResponse,
@@ -45,7 +48,10 @@ export class GfhAdapter extends ObservationAdapter {
   constructor(
     @Inject(HttpService) httpService: HttpService,
     @Inject(SettingsService) settingsService: SettingsService,
-    @Inject(HealthMonitoringService) healthService: HealthMonitoringService
+    @Inject(HealthMonitoringService) healthService: HealthMonitoringService,
+    @Optional()
+    @Inject(EventEmitter2)
+    private readonly eventEmitter?: EventEmitter2
   ) {
     super(httpService, settingsService, {
       dataSource: DataSource.GFH,
@@ -317,7 +323,7 @@ export class GfhAdapter extends ObservationAdapter {
           },
           source: {
             key: "GFH",
-            metadata: { originalUnit: "" },
+            metadata: { originalUnit: "m³/s" },
           },
           info: {
             ...stationDetails,
@@ -329,13 +335,14 @@ export class GfhAdapter extends ObservationAdapter {
 
         results.push({
           ...baseIndicator,
-          indicator: "prob_flood",
-          units: "",
+          indicator: "discharge_m3s",
+          units: "m³/s",
           value: (obs.stationData?.forecasts?.[0] as any)?.value || 0,
         });
 
         return results;
       });
+      this.emitDataSourceEvent(indicators);
 
       this.logger.log(`Transformed to ${indicators.length} indicators`);
       return Ok(indicators);
@@ -726,5 +733,20 @@ export class GfhAdapter extends ObservationAdapter {
     }
 
     return output;
+  }
+
+  private emitDataSourceEvent(indicators: Indicator[]): void {
+    if (!this.eventEmitter || indicators.length === 0) {
+      return;
+    }
+
+    const payload: DataSourceEventPayload = {
+      dataSource: DataSource.GFH,
+      sourceType: SourceType.WATER_LEVEL,
+      indicators,
+      fetchedAt: new Date().toISOString(),
+    };
+
+    this.eventEmitter.emit(DATA_SOURCE_EVENTS.GFH.WATER_LEVEL, payload);
   }
 }

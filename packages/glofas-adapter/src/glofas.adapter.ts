@@ -211,19 +211,22 @@ export class GlofasAdapter extends ObservationAdapter {
             basinId: obs.location,
           },
           source: {
-            key: 'Glofas',
-            metadata: { originalUnit: 'mm' },
+            key: obs.location,
+            metadata: { originalUnit: 'percentage' },
           },
           info: obs.data,
         };
+
+        const pointForecastData = obs.data?.pointForecastData;
+        const maxProbability = pointForecastData.maxProbability.data;
 
         const results: Indicator[] = [];
 
         results.push({
           ...baseIndicator,
           indicator: 'prob_flood',
-          units: 'mm',
-          value: obs.data[0]?.value || 0,
+          units: 'percentage',
+          value: maxProbability || '0 / 0 / 0',
         });
 
         return results;
