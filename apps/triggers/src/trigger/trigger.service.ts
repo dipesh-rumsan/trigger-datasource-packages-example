@@ -5,7 +5,15 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { CreateTriggerDto, GetTriggersDto, UpdateTriggerDto } from './dto';
+import {
+  ActivateTriggerPayloadDto,
+  CreateTriggerDto,
+  CreateTriggerPayloadDto,
+  GetTriggersDto,
+  RemoveTriggerPayloadDto,
+  UpdateTriggerPayloadDto,
+  UpdateTriggerTransactionDto,
+} from './dto';
 import {
   paginator,
   PaginatorTypes,
@@ -23,7 +31,7 @@ import { AddTriggerJobDto, UpdateTriggerParamsJobDto } from 'src/common/dto';
 import { catchError, lastValueFrom, of, timeout } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { triggerPayloadSchema } from './validation/trigger.schema';
-import { tryCatch } from '@lib/core';
+import { TRIGGER_CONSTANTS } from './trigger.constants';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
 
@@ -40,178 +48,66 @@ export class TriggerService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async create(appId: string, dto: CreateTriggerDto, createdBy: string) {
-    this.logger.log(`Creating trigger for app: ${appId}`);
-    try {
-      /*
-      We don't need to create a trigger sperately if source is manual, because,
-      we are creating a trigger in the phase itself. and phase is linked with datasource
-      */
+  async create(payload: CreateTriggerPayloadDto) {
+    const { user, appId, triggers } = payload;
 
-      let trigger = null;
-
-      if (dto.source === 'MANUAL') {
-        this.logger.log(
-          `User requested MANUAL Trigger, So creating manul trigger`,
-        );
-        delete dto.triggerDocuments?.type;
-        trigger = await this.createManualTrigger(appId, dto, createdBy);
-      } else {
-        const result = triggerPayloadSchema.safeParse(dto);
-        console.log(result);
-        if (!result.success) {
-          throw new BadRequestException({
-            message: `Invalid trigger payload: ${JSON.stringify(result.error.flatten())}`,
-          });
-        }
-
-        const sanitizedPayload = {
-          title: dto.title,
-          description: dto.description,
-          triggerStatement: dto.triggerStatement,
-          phaseId: dto.phaseId,
-          isMandatory: dto.isMandatory,
-          dataSource: dto.source,
-          riverBasin: dto.riverBasin,
-          repeatEvery: '30000',
-          notes: dto.notes,
-          createdBy,
-        };
-        trigger = await this.scheduleJob(sanitizedPayload);
-      }
-
-      const queueData: AddTriggerJobDto = {
-        id: trigger.uuid,
-        trigger_type: trigger.isMandatory ? 'MANDATORY' : 'OPTIONAL',
-        phase: trigger.phase.name,
-        title: trigger.title,
-        description: trigger.description,
-        source: trigger.source,
-        river_basin: trigger.phase.riverBasin,
-        params: JSON.parse(JSON.stringify(trigger.triggerStatement)),
-        is_mandatory: trigger.isMandatory,
-        notes: trigger.notes,
-      };
-
-      const res = await lastValueFrom(
-        this.client
-          .send(
-            { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
-            { triggers: [queueData] },
-          )
-          .pipe(
-            timeout(3000),
-            catchError((error) => {
-              if (error.name === 'TimeoutError') {
-                // Handle timeout specifically
-                this.logger.error(
-                  `Error while adding trigger onChain, action ${JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE} for AA ${appId}, timeout in 3 Seconds`,
-                );
-                return of(null);
-              }
-
-              this.logger.error(
-                `Error while adding trigger onChain. Action ${JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE} for AA ${appId}, error: ${error.message}`,
-              );
-
-              return of(null);
-            }),
-          ),
-      );
-      if (!res) {
-        this.logger.warn(`Trigger Statement onChain not added for AA ${appId}`);
-      } else {
-        this.logger.log(`
-        Trigger added to stellar queue action: ${res?.name} with id: ${queueData.id} for AA ${appId}
-        `);
-      }
-
-      return trigger;
-    } catch (error: any) {
-      console.log(error);
-      this.logger.error(error);
-      throw new RpcException(error.message);
+    if (!appId) {
+      throw new BadRequestException('appId is required');
     }
-  }
 
-  async bulkCreate(appId: string, payload, createdBy: string) {
     try {
-      const k = await Promise.all(
-        payload.map(async (item) => {
-          if (item.source === 'MANUAL') {
-            this.logger.log(
-              `User requested MANUAL Trigger, So creating manul trigger`,
-            );
-            return await this.createManualTrigger(appId, item, createdBy);
-          }
-
-          const sanitizedPayload = {
-            title: item.title,
-            triggerStatement: item.triggerStatement,
-            phaseId: item.phaseId,
-            isMandatory: item.isMandatory,
-            source: item.source,
-            riverBasin: item.riverBasin,
-            repeatEvery: '30000',
-            notes: item.notes,
-            createdBy,
-            description: item.description,
-          };
-
-          return await this.scheduleJob(sanitizedPayload);
-        }),
+      const triggersData = await Promise.all(
+        triggers.map((item) => this.createTriggerItem(appId, item, user?.name)),
       );
-      const queueData: AddTriggerJobDto[] = k.map((trigger) => {
-        return {
-          id: trigger.uuid,
-          trigger_type: trigger.isMandatory ? 'MANDATORY' : 'OPTIONAL',
-          phase: trigger.phase.name,
-          title: trigger.title,
-          description: trigger.description,
-          source: trigger.source,
-          river_basin: trigger.phase.riverBasin,
-          params: JSON.parse(JSON.stringify(trigger.triggerStatement)),
-          is_mandatory: trigger.isMandatory,
-          notes: trigger.notes,
-        };
-      });
 
-      const res = await lastValueFrom(
-        this.client
-          .send(
-            { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
-            { triggers: queueData },
-          )
-          .pipe(
-            timeout(30000),
-            catchError((error) => {
-              this.logger.error(
-                `Microservice call failed for add trigger onChain:`,
-                error,
-              );
-              throw error;
-            }),
-          ),
-      ).catch((error) => {
-        this.logger.error(
-          `Microservice call failed for add trigger onChain queue:`,
-          error,
-        );
-        throw error;
-      });
+      const queueData: AddTriggerJobDto[] = triggersData.map((trigger) =>
+        this.buildAddTriggerJobDto(trigger),
+      );
+
+      const res = await this.sendAddTriggerToOnChain(appId, queueData);
 
       this.logger.log(`
-        Total ${k.length} triggers added for action: ${res?.name} to stellar queue for AA ${appId}
+        Total ${triggersData.length} triggers added for action: ${res?.name} to stellar queue for AA ${appId}
         `);
-      return k;
+      return triggersData;
     } catch (error: any) {
-      console.log(error);
+      this.logger.error(`Error in create triggers for app ${appId}:`, error);
       throw new RpcException(error.message);
     }
   }
 
-  async updateTransaction(uuid: string, transactionHash: string) {
-    this.logger.log(`Updating trigger trasaction with uuid: ${uuid}`);
+  private async createTriggerItem(
+    appId: string,
+    dto: CreateTriggerDto,
+    createdBy: string,
+  ) {
+    if (dto.source === DataSource.MANUAL) {
+      this.logger.log(
+        `User requested MANUAL Trigger, So creating manual trigger`,
+      );
+      // const dtoCopy = { ...dto };
+      // delete dtoCopy.triggerDocuments?.type;
+      return await this.createTrigger(appId, dto, createdBy);
+    }
+
+    const result = triggerPayloadSchema.safeParse(dto);
+    if (!result.success) {
+      this.logger.warn(
+        `Invalid trigger payload: ${JSON.stringify(result.error.flatten())}`,
+      );
+      throw new BadRequestException({
+        message: `Invalid trigger payload: ${JSON.stringify(result.error.flatten())}`,
+      });
+    }
+
+    return await this.createTrigger(appId, dto, createdBy);
+  }
+
+  async updateTransaction(payload: UpdateTriggerTransactionDto) {
+    const { uuid, transactionHash } = payload;
+    this.logger.log(
+      `Updating trigger transaction hash on trigger with uuid: ${uuid}`,
+    );
 
     try {
       const trigger = await this.prisma.trigger.findUnique({
@@ -236,13 +132,25 @@ export class TriggerService {
 
       return updatedTrigger;
     } catch (error: any) {
-      this.logger.error(error);
+      this.logger.error(
+        `Error in updating trigger transaction hash on trigger with uuid: ${uuid}:`,
+        error,
+      );
       throw new RpcException(error.message);
     }
   }
 
-  async update(uuid: string, appId: string, payload: UpdateTriggerDto) {
+  async update(payload: UpdateTriggerPayloadDto) {
+    const { uuid, appId, ...dto } = payload;
+
     this.logger.log(`Updating trigger with uuid: ${uuid}`);
+
+    if (!uuid) {
+      throw new BadRequestException('uuid is required');
+    }
+    if (!appId) {
+      throw new BadRequestException('appId is required');
+    }
 
     try {
       const trigger = await this.prisma.trigger.findUnique({
@@ -258,17 +166,17 @@ export class TriggerService {
 
       if (trigger.isTriggered) {
         this.logger.warn(
-          'Trigger has already been activated. Connot update, Activated trigger.',
+          'Trigger has already been activated. Cannot update an activated trigger.',
         );
         throw new RpcException('Trigger has already been activated.');
       }
 
       const fields = {
-        title: payload.title || trigger.title,
-        triggerStatement: payload.triggerStatement || trigger.triggerStatement,
-        notes: payload.notes ?? trigger.notes,
-        description: payload.description ?? trigger.description,
-        isMandatory: payload.isMandatory ?? trigger.isMandatory,
+        title: dto.title || trigger.title,
+        triggerStatement: dto.triggerStatement || trigger.triggerStatement,
+        notes: dto.notes ?? trigger.notes,
+        description: dto.description ?? trigger.description,
+        isMandatory: dto.isMandatory ?? trigger.isMandatory,
       };
 
       const updatedTrigger = await this.prisma.trigger.update({
@@ -280,42 +188,9 @@ export class TriggerService {
         },
       });
 
-      // Add job in queue to update trigger onChain hash
-      const queueData: UpdateTriggerParamsJobDto = {
-        id: updatedTrigger.uuid,
-        isTriggered: updatedTrigger.isTriggered,
-        params: JSON.parse(JSON.stringify(updatedTrigger.triggerStatement)),
-        source: updatedTrigger.source,
-      };
+      const queueData = this.buildUpdateTriggerParamsJobDto(updatedTrigger);
 
-      const res = await lastValueFrom(
-        this.client
-          .send(
-            {
-              cmd: JOBS.STELLAR.UPDATE_ONCHAIN_TRIGGER_PARAMS_QUEUE,
-              uuid: appId,
-            },
-            {
-              trigger: queueData,
-            },
-          )
-          .pipe(
-            timeout(30000),
-            catchError((error) => {
-              this.logger.error(
-                `Microservice call failed for update trigger onChain:`,
-                error,
-              );
-              throw error;
-            }),
-          ),
-      ).catch((error) => {
-        this.logger.error(
-          `Microservice call failed for update trigger onChain queue:`,
-          error,
-        );
-        throw error;
-      });
+      const res = await this.sendUpdateTriggerToOnChain(appId, queueData);
 
       this.logger.log(`
         Trigger added to stellar queue with id: ${res?.name} for AA ${appId}
@@ -396,18 +271,8 @@ export class TriggerService {
     }
   }
 
-  isValidDataSource(value: string): value is DataSource {
-    return (Object.values(DataSource) as DataSource[]).includes(
-      value as DataSource,
-    );
-  }
-
-  async createManualTrigger(
-    appId: string,
-    dto: CreateTriggerDto,
-    createdBy: string,
-  ) {
-    this.logger.log(`Creating manual trigger for app: ${appId}`);
+  async createTrigger(appId: string, dto: CreateTriggerDto, createdBy: string) {
+    this.logger.log(`Creating ${dto.source} trigger for app: ${appId}`);
     try {
       const { phaseId, ...rest } = dto;
       const phase = await this.phasesService.getOne(phaseId);
@@ -424,7 +289,7 @@ export class TriggerService {
             uuid: phaseId,
           },
         },
-        source: DataSource.MANUAL,
+        source: dto.source,
         isDeleted: false,
         repeatKey: randomUUID(),
         createdBy,
@@ -444,8 +309,15 @@ export class TriggerService {
     }
   }
 
-  async remove(repeatKey: string) {
+  async remove(payload: RemoveTriggerPayloadDto) {
+    const { repeatKey } = payload;
+
     this.logger.log(`Removing trigger with repeatKey: ${repeatKey}`);
+
+    if (!repeatKey) {
+      throw new BadRequestException('repeatKey is required');
+    }
+
     try {
       const trigger = await this.prisma.trigger.findUnique({
         where: {
@@ -456,19 +328,21 @@ export class TriggerService {
       });
 
       if (!trigger) {
-        this.logger.error(`Active trigger with id: ${repeatKey} not found.`);
-        throw new RpcException(
-          `Active trigger with id: ${repeatKey} not found.`,
-        );
+        this.logger.error(`Trigger with id: ${repeatKey} not found.`);
+        throw new RpcException(`Trigger with id: ${repeatKey} not found.`);
       }
 
       if (trigger.isTriggered) {
-        this.logger.error(`Active trigger with id: ${repeatKey} not found.`);
+        this.logger.error(
+          `Trigger with id: ${repeatKey} is activated. Cannot remove an activated trigger.`,
+        );
         throw new RpcException(`Cannot remove an activated trigger.`);
       }
 
       if (trigger.phase.isActive) {
-        this.logger.error(`Active trigger with id: ${repeatKey} not found.`);
+        this.logger.error(
+          `Trigger with id: ${repeatKey} is in an active phase. Cannot remove triggers from an active phase.`,
+        );
         throw new RpcException(`Cannot remove triggers from an active phase.`);
       }
 
@@ -492,7 +366,6 @@ export class TriggerService {
       //   }
       // }
 
-      await this.scheduleQueue.removeRepeatableByKey(repeatKey);
       const updatedTrigger = await this.prisma.trigger.update({
         where: {
           repeatKey: repeatKey,
@@ -502,77 +375,7 @@ export class TriggerService {
         },
       });
 
-      this.triggerQueue.add(JOBS.TRIGGER.REACHED_THRESHOLD, trigger, {
-        attempts: 3,
-        removeOnComplete: true,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
-      });
-
       return updatedTrigger;
-    } catch (error: any) {
-      this.logger.error(error);
-      throw new RpcException(error.message);
-    }
-  }
-
-  private async scheduleJob(payload: any) {
-    this.logger.log(
-      `Scheduling trigger with payload: ${JSON.stringify(payload)}`,
-    );
-    try {
-      const uuid = randomUUID();
-      const { app, source, ...rest } = payload;
-
-      const jobPayload = {
-        ...rest,
-        uuid,
-      };
-
-      const repeatable = await this.scheduleQueue.add(
-        JOBS.SCHEDULE.ADD,
-        jobPayload,
-        {
-          jobId: uuid,
-          attempts: 3,
-          removeOnComplete: true,
-          backoff: {
-            type: 'exponential',
-            delay: 1000,
-          },
-          repeat: {
-            every: Number(payload.repeatEvery),
-          },
-          removeOnFail: true,
-        },
-      );
-      const repeatableKey = repeatable.opts.repeat.key;
-      const { phaseId, ...restJob } = jobPayload;
-
-      const createData = {
-        ...restJob,
-        repeatKey: repeatableKey,
-        phase: {
-          connect: {
-            uuid: phaseId,
-          },
-        },
-        source,
-        createdBy: payload.createdBy,
-        isDeleted: false,
-      };
-      const trigger = await this.prisma.trigger.create({
-        data: createData,
-        include: {
-          phase: true,
-        },
-      });
-      this.logger.log(`Trigger created with repeatKey: ${repeatableKey}`);
-
-      return trigger;
-      return trigger;
     } catch (error: any) {
       this.logger.error(error);
       throw new RpcException(error.message);
@@ -695,12 +498,19 @@ export class TriggerService {
     }
   }
 
-  async activateTrigger(uuid: string, appId: string, payload: any) {
+  async activateTrigger(data: ActivateTriggerPayloadDto) {
+    const { uuid, appId, ...payload } = data;
     this.logger.log(`Activating trigger with uuid: ${uuid}`);
 
+    if (!uuid && !payload.repeatKey) {
+      throw new BadRequestException('uuid or repeatKey is required');
+    }
+
     try {
-      const { triggeredBy, triggerDocuments, user } = payload;
-      console.log('payload', payload);
+      const { triggerDocuments, user } = payload;
+      this.logger.debug(
+        `Activating trigger with payload: ${JSON.stringify(payload)}`,
+      );
 
       const trigger = await this.prisma.trigger.findUnique({
         where: {
@@ -726,7 +536,7 @@ export class TriggerService {
         throw new RpcException('Trigger has already been activated.');
       }
 
-      if (trigger.source !== DataSource.MANUAL && false) {
+      if (trigger.source !== DataSource.MANUAL) {
         this.logger.warn('Cannot activate an automated trigger.');
         throw new RpcException('Cannot activate an automated trigger.');
       }
@@ -751,12 +561,7 @@ export class TriggerService {
         },
       });
 
-      const jobDetails: UpdateTriggerParamsJobDto = {
-        id: updatedTrigger.uuid,
-        isTriggered: updatedTrigger.isTriggered,
-        params: JSON.parse(JSON.stringify(updatedTrigger.triggerStatement)),
-        source: updatedTrigger.source,
-      };
+      const jobDetails = this.buildUpdateTriggerParamsJobDto(updatedTrigger);
 
       if (trigger.isMandatory) {
         await this.prisma.phase.update({
@@ -813,34 +618,10 @@ export class TriggerService {
         return updatedTrigger;
       }
 
-      const res = await lastValueFrom(
-        this.client
-          .send(
-            {
-              cmd: JOBS.STELLAR.UPDATE_ONCHAIN_TRIGGER_PARAMS_QUEUE,
-              uuid: appId ? appId : appIds?.app,
-            },
-            {
-              trigger: jobDetails,
-            },
-          )
-          .pipe(
-            timeout(30000),
-            catchError((error) => {
-              this.logger.error(
-                `Microservice call failed for update trigger onChain:`,
-                error,
-              );
-              throw error;
-            }),
-          ),
-      ).catch((error) => {
-        this.logger.error(
-          `Microservice call failed for update trigger onChain queue:`,
-          error,
-        );
-        throw error;
-      });
+      const res = await this.sendUpdateTriggerToOnChain(
+        appId ? appId : appIds?.app,
+        jobDetails,
+      );
 
       this.logger.log(`
         Trigger added to stellar queue with id: ${jobDetails.id}, action: ${res?.name} for appId ${appId}
@@ -879,7 +660,6 @@ export class TriggerService {
         );
       }
 
-      await this.scheduleQueue.removeRepeatableByKey(repeatKey);
       const updatedTrigger = await this.prisma.trigger.update({
         where: {
           repeatKey: repeatKey,
@@ -946,9 +726,6 @@ export class TriggerService {
     }
   }
 
-  /**
-   * Find triggers for a specific source and indicator
-   */
   async findTriggersBySourceAndIndicator(
     source: DataSource,
     indicator: string,
@@ -966,6 +743,101 @@ export class TriggerService {
       include: {
         phase: true,
       },
+    });
+  }
+
+  private buildAddTriggerJobDto(trigger: any): AddTriggerJobDto {
+    return {
+      id: trigger.uuid,
+      trigger_type: trigger.isMandatory ? 'MANDATORY' : 'OPTIONAL',
+      phase: trigger.phase.name,
+      title: trigger.title,
+      description: trigger.description,
+      source: trigger.source,
+      river_basin: trigger.phase.riverBasin,
+      params: JSON.parse(JSON.stringify(trigger.triggerStatement)),
+      is_mandatory: trigger.isMandatory,
+      notes: trigger.notes,
+    };
+  }
+
+  private buildUpdateTriggerParamsJobDto(
+    trigger: any,
+  ): UpdateTriggerParamsJobDto {
+    return {
+      id: trigger.uuid,
+      isTriggered: trigger.isTriggered,
+      params: JSON.parse(JSON.stringify(trigger.triggerStatement)),
+      source: trigger.source,
+    };
+  }
+
+  private async sendAddTriggerToOnChain(
+    appId: string,
+    triggers: AddTriggerJobDto[],
+  ): Promise<any> {
+    const timeoutMs =
+      triggers.length > 1
+        ? TRIGGER_CONSTANTS.MICROSERVICE_TIMEOUT_LONG_MS
+        : TRIGGER_CONSTANTS.MICROSERVICE_TIMEOUT_SHORT_MS;
+
+    return lastValueFrom(
+      this.client
+        .send(
+          { cmd: JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE, uuid: appId },
+          { triggers },
+        )
+        .pipe(
+          timeout(timeoutMs),
+          catchError((error) => {
+            if (error.name === 'TimeoutError') {
+              this.logger.error(
+                `Error while adding trigger onChain, action ${JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE} for AA ${appId}, timeout in ${timeoutMs}ms`,
+              );
+              return of(null);
+            }
+
+            this.logger.error(
+              `Error while adding trigger onChain. Action ${JOBS.STELLAR.ADD_ONCHAIN_TRIGGER_QUEUE} for AA ${appId}, error: ${error.message}`,
+            );
+
+            return of(null);
+          }),
+        ),
+    );
+  }
+
+  private async sendUpdateTriggerToOnChain(
+    appId: string,
+    trigger: UpdateTriggerParamsJobDto,
+  ): Promise<any> {
+    return lastValueFrom(
+      this.client
+        .send(
+          {
+            cmd: JOBS.STELLAR.UPDATE_ONCHAIN_TRIGGER_PARAMS_QUEUE,
+            uuid: appId,
+          },
+          {
+            trigger,
+          },
+        )
+        .pipe(
+          timeout(TRIGGER_CONSTANTS.MICROSERVICE_TIMEOUT_LONG_MS),
+          catchError((error) => {
+            this.logger.error(
+              `Microservice call failed for update trigger onChain:`,
+              error,
+            );
+            throw error;
+          }),
+        ),
+    ).catch((error) => {
+      this.logger.error(
+        `Microservice call failed for update trigger onChain queue:`,
+        error,
+      );
+      throw error;
     });
   }
 }

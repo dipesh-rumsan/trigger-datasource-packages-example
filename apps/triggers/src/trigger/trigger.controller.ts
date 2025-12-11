@@ -1,35 +1,28 @@
-import { BadRequestException, Controller } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { MS_TRIGGERS_JOBS } from 'src/constant';
-import { GetTriggersDto, UpdateTriggerTransactionDto } from './dto';
-import { TriggerService } from './trigger.service';
 import {
-  triggerPayloadSchema,
-  bulkTriggerPayloadSchema,
-} from './validation/trigger.schema';
+  GetTriggersDto,
+  UpdateTriggerTransactionDto,
+  CreateTriggerPayloadDto,
+  ActivateTriggerPayloadDto,
+  UpdateTriggerPayloadDto,
+  GetByLocationPayloadDto,
+  RemoveTriggerPayloadDto,
+} from './dto';
+import { TriggerService } from './trigger.service';
 
 @Controller('trigger')
 export class TriggerController {
+  private readonly logger = new Logger(TriggerController.name);
+
   constructor(private readonly triggerService: TriggerService) {}
 
   @MessagePattern({
     cmd: MS_TRIGGERS_JOBS.TRIGGER.ADD,
   })
-  async create(payload: any) {
-    // here we are checking if the payload is an array  for bulk create
-    // also we are  checking if the payload  is an object as it is may be use for single create in others modules
-    // we are using  here at once because we have to use the same method for different  moddules that is job schedule
-
-    const { user, appId, ...rest } = payload;
-    if (Array.isArray(payload?.triggers)) {
-      return await this.triggerService.bulkCreate(
-        appId,
-        payload.triggers,
-        user?.name,
-      );
-    }
-
-    return await this.triggerService.create(appId, rest, user?.name);
+  async create(payload: CreateTriggerPayloadDto) {
+    return this.triggerService.create(payload as CreateTriggerPayloadDto);
   }
 
   @MessagePattern({
@@ -49,41 +42,35 @@ export class TriggerController {
   @MessagePattern({
     cmd: MS_TRIGGERS_JOBS.TRIGGER.GET_BY_LOCATION,
   })
-  getByLocation(payload): Promise<any> {
+  getByLocation(payload: GetByLocationPayloadDto): Promise<any> {
     return this.triggerService.findByLocation(payload);
   }
 
   @MessagePattern({
     cmd: MS_TRIGGERS_JOBS.TRIGGER.ACTIVATE,
   })
-  activateTrigger(payload) {
-    const { uuid, appId, ...dto } = payload;
-    return this.triggerService.activateTrigger(uuid, appId, dto);
+  activateTrigger(payload: ActivateTriggerPayloadDto) {
+    return this.triggerService.activateTrigger(payload);
   }
 
   @MessagePattern({
     cmd: MS_TRIGGERS_JOBS.TRIGGER.UPDATE,
   })
-  updateTrigger(payload) {
-    const { uuid, appId, ...dto } = payload;
-    return this.triggerService.update(uuid, appId, dto);
+  updateTrigger(payload: UpdateTriggerPayloadDto) {
+    return this.triggerService.update(payload);
   }
 
   @MessagePattern({
     cmd: MS_TRIGGERS_JOBS.TRIGGER.UPDATE_TRANSCTION,
   })
   updateTriggerTransaction(payload: UpdateTriggerTransactionDto) {
-    return this.triggerService.updateTransaction(
-      payload.uuid,
-      payload.transactionHash,
-    );
+    return this.triggerService.updateTransaction(payload);
   }
 
   @MessagePattern({
     cmd: MS_TRIGGERS_JOBS.TRIGGER.REMOVE,
   })
-  remove(payload) {
-    const { repeatKey } = payload;
-    return this.triggerService.remove(repeatKey);
+  remove(payload: RemoveTriggerPayloadDto) {
+    return this.triggerService.remove(payload);
   }
 }

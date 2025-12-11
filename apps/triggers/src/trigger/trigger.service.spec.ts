@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { TriggerService } from './trigger.service';
 import { PhasesService } from 'src/phases/phases.service';
 import { CORE_MODULE, JOBS, EVENTS } from 'src/constant';
-import { CreateTriggerDto, GetTriggersDto, UpdateTriggerDto } from './dto';
+import { GetTriggersDto } from './dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 // Mock the paginator function
@@ -22,9 +22,7 @@ describe('TriggerService', () => {
   let mockPhasesService: jest.Mocked<PhasesService>;
   let eventEmitter: jest.Mocked<EventEmitter2>;
 
-  let mockScheduleQueue: jest.Mocked<Queue>;
   let mockTriggerQueue: jest.Mocked<Queue>;
-  let mockStellarQueue: jest.Mocked<Queue>;
 
   const mockPrismaServiceImplementation = {
     trigger: {
@@ -32,6 +30,7 @@ describe('TriggerService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
       findFirst: jest.fn(),
@@ -75,6 +74,7 @@ describe('TriggerService', () => {
 
   const mockTriggerQueueImplementation = {
     add: jest.fn(),
+    addBulk: jest.fn(),
     process: jest.fn(),
     getJob: jest.fn(),
     removeJobs: jest.fn(),
@@ -129,9 +129,7 @@ describe('TriggerService', () => {
     mockClientProxy = module.get(CORE_MODULE);
     mockPhasesService = module.get(PhasesService);
     eventEmitter = module.get(EventEmitter2);
-    mockScheduleQueue = module.get('BullQueue_SCHEDULE');
     mockTriggerQueue = module.get('BullQueue_TRIGGER');
-    mockStellarQueue = module.get('BullQueue_STELLAR');
   });
 
   afterEach(() => {
@@ -143,15 +141,21 @@ describe('TriggerService', () => {
   });
 
   describe('create', () => {
-    const mockCreateTriggerDto: CreateTriggerDto = {
-      title: 'Test Trigger',
-      description: 'Test Description',
-      triggerStatement: { condition: 'test' },
-      phaseId: 'phase-uuid',
-      isMandatory: true,
-      source: DataSource.MANUAL,
-      riverBasin: 'Test Basin',
-      notes: 'Test Notes',
+    const mockCreateTriggerPayload = {
+      user: { name: 'user-name' },
+      appId: 'app-id',
+      triggers: [
+        {
+          title: 'Test Trigger',
+          description: 'Test Description',
+          triggerStatement: { condition: 'test' },
+          phaseId: 'phase-uuid',
+          isMandatory: true,
+          source: DataSource.MANUAL,
+          riverBasin: 'Test Basin',
+          notes: 'Test Notes',
+        },
+      ],
     };
 
     const mockCreatedTrigger = {
@@ -180,11 +184,7 @@ describe('TriggerService', () => {
       mockPrismaService.trigger.create.mockResolvedValue(mockCreatedTrigger);
       mockClientProxy.send.mockReturnValue(of({ name: 'test-action' }));
 
-      const result = await service.create(
-        'app-id',
-        mockCreateTriggerDto,
-        'user-name',
-      );
+      const result = await service.create(mockCreateTriggerPayload);
 
       expect(mockPrismaService.trigger.create).toHaveBeenCalled();
       expect(mockClientProxy.send).toHaveBeenCalledWith(
@@ -195,82 +195,29 @@ describe('TriggerService', () => {
           ]),
         }),
       );
-      expect(result).toEqual(mockCreatedTrigger);
+      expect(result).toEqual([mockCreatedTrigger]);
     });
 
     it('should successfully create a non-manual trigger', async () => {
-      const nonManualDto = {
-        ...mockCreateTriggerDto,
-        source: DataSource.DHM,
-      };
-
-      // Mock the schedule queue to return a job with repeat key
-      const mockJob = {
-        opts: {
-          repeat: {
-            key: 'repeat-key-123',
+      const nonManualPayload = {
+        ...mockCreateTriggerPayload,
+        triggers: [
+          {
+            ...mockCreateTriggerPayload.triggers[0],
+            source: DataSource.DHM,
+            triggerStatement: {
+              source: 'water_level_m',
+              sourceSubType: 'warning_level',
+              operator: '>',
+              value: 10,
+              expression: 'warning_level > 10',
+            },
+            riverBasin: 'Test Basin',
           },
-        },
+        ],
       };
-      mockScheduleQueue.add.mockResolvedValue(mockJob as any);
 
-      mockPrismaService.trigger.create.mockResolvedValue(mockCreatedTrigger);
-      mockClientProxy.send.mockReturnValue(of({ name: 'test-action' }));
-
-      const result = await service.create('app-id', nonManualDto, 'user-name');
-
-      expect(mockScheduleQueue.add).toHaveBeenCalled();
-      expect(mockClientProxy.send).toHaveBeenCalled();
-      expect(result).toEqual(mockCreatedTrigger);
-    });
-
-    it('should handle create error', async () => {
-      const error = new Error('Database error');
-      mockPrismaService.trigger.create.mockRejectedValue(error);
-
-      await expect(
-        service.create('app-id', mockCreateTriggerDto, 'user-name'),
-      ).rejects.toThrow(RpcException);
-    });
-  });
-
-  describe('bulkCreate', () => {
-    const mockTriggers = [
-      {
-        title: 'Trigger 1',
-        source: DataSource.MANUAL,
-        phaseId: 'phase-uuid',
-      },
-      {
-        title: 'Trigger 2',
-        source: DataSource.DHM,
-        phaseId: 'phase-uuid',
-      },
-    ];
-
-    it('should successfully create multiple triggers', async () => {
-      const mockCreatedTriggers = [
-        {
-          uuid: 'trigger-1',
-          title: 'Trigger 1',
-          isMandatory: true,
-          source: DataSource.MANUAL,
-          phase: { name: 'Test Phase', riverBasin: 'Test Basin' },
-          triggerStatement: { condition: 'test' },
-          notes: 'Test notes',
-        },
-        {
-          uuid: 'trigger-2',
-          title: 'Trigger 2',
-          isMandatory: false,
-          source: DataSource.DHM,
-          phase: { name: 'Test Phase', riverBasin: 'Test Basin' },
-          triggerStatement: { condition: 'test' },
-          notes: 'Test notes',
-        },
-      ];
-
-      // Mock phase service for manual triggers
+      // Mock phase service to return a valid phase
       mockPhasesService.getOne.mockResolvedValue({
         id: 1,
         uuid: 'phase-uuid',
@@ -278,55 +225,40 @@ describe('TriggerService', () => {
         riverBasin: 'Test Basin',
       } as any);
 
-      // Mock schedule queue for non-manual triggers
-      const mockJob = {
-        opts: {
-          repeat: {
-            key: 'repeat-key-456',
-          },
-        },
-      };
-      mockScheduleQueue.add.mockResolvedValue(mockJob as any);
-
-      // Mock trigger creation for both manual and non-manual triggers
-      mockPrismaService.trigger.create
-        .mockResolvedValueOnce(mockCreatedTriggers[0])
-        .mockResolvedValueOnce(mockCreatedTriggers[1]);
-
+      mockPrismaService.trigger.create.mockResolvedValue(mockCreatedTrigger);
       mockClientProxy.send.mockReturnValue(of({ name: 'test-action' }));
 
-      const result = await service.bulkCreate(
-        'app-id',
-        mockTriggers,
-        'user-name',
-      );
+      const result = await service.create(nonManualPayload);
 
-      expect(result).toEqual(mockCreatedTriggers);
+      expect(mockClientProxy.send).toHaveBeenCalled();
+      expect(result).toEqual([mockCreatedTrigger]);
     });
 
-    it('should handle bulk create error', async () => {
-      const error = new Error('Bulk create error');
+    it('should handle create error', async () => {
+      const error = new Error('Database error');
       mockPrismaService.trigger.create.mockRejectedValue(error);
 
-      await expect(
-        service.bulkCreate('app-id', mockTriggers, 'user-name'),
-      ).rejects.toThrow(RpcException);
+      await expect(service.create(mockCreateTriggerPayload)).rejects.toThrow(
+        RpcException,
+      );
     });
   });
 
   describe('updateTransaction', () => {
-    const mockUuid = 'trigger-uuid';
-    const mockTransactionHash = 'tx-hash-123';
+    const mockPayload = {
+      uuid: 'trigger-uuid',
+      transactionHash: 'tx-hash-123',
+    };
 
     it('should successfully update transaction hash', async () => {
       const mockExistingTrigger = {
-        uuid: mockUuid,
+        uuid: 'trigger-uuid',
         title: 'Existing Trigger',
       };
 
       const mockUpdatedTrigger = {
-        uuid: mockUuid,
-        transactionHash: mockTransactionHash,
+        uuid: 'trigger-uuid',
+        transactionHash: 'tx-hash-123',
       };
 
       mockPrismaService.trigger.findUnique.mockResolvedValue(
@@ -334,17 +266,14 @@ describe('TriggerService', () => {
       );
       mockPrismaService.trigger.update.mockResolvedValue(mockUpdatedTrigger);
 
-      const result = await service.updateTransaction(
-        mockUuid,
-        mockTransactionHash,
-      );
+      const result = await service.updateTransaction(mockPayload);
 
       expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
-        where: { uuid: mockUuid },
+        where: { uuid: 'trigger-uuid' },
       });
       expect(mockPrismaService.trigger.update).toHaveBeenCalledWith({
-        where: { uuid: mockUuid },
-        data: { transactionHash: mockTransactionHash },
+        where: { uuid: 'trigger-uuid' },
+        data: { transactionHash: 'tx-hash-123' },
       });
       expect(result).toEqual(mockUpdatedTrigger);
     });
@@ -352,23 +281,23 @@ describe('TriggerService', () => {
     it('should handle trigger not found', async () => {
       mockPrismaService.trigger.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.updateTransaction(mockUuid, mockTransactionHash),
-      ).rejects.toThrow(RpcException);
+      await expect(service.updateTransaction(mockPayload)).rejects.toThrow(
+        RpcException,
+      );
     });
   });
 
   describe('update', () => {
-    const mockUuid = 'trigger-uuid';
-    const mockAppId = 'app-id';
-    const mockUpdateTriggerDto: UpdateTriggerDto = {
+    const mockUpdateTriggerPayload = {
+      uuid: 'trigger-uuid',
+      appId: 'app-id',
       title: 'Updated Trigger',
       description: 'Updated Description',
     };
 
     it('should successfully update a trigger', async () => {
       const mockExistingTrigger = {
-        uuid: mockUuid,
+        uuid: 'trigger-uuid',
         title: 'Existing Trigger',
         isTriggered: false,
         triggerStatement: { condition: 'existing' },
@@ -379,7 +308,7 @@ describe('TriggerService', () => {
       };
 
       const mockUpdatedTrigger = {
-        uuid: mockUuid,
+        uuid: 'trigger-uuid',
         title: 'Updated Trigger',
         description: 'Updated Description',
         triggerStatement: { condition: 'existing' },
@@ -393,17 +322,13 @@ describe('TriggerService', () => {
       mockPrismaService.trigger.update.mockResolvedValue(mockUpdatedTrigger);
       mockClientProxy.send.mockReturnValue(of({ name: 'test-action' }));
 
-      const result = await service.update(
-        mockUuid,
-        mockAppId,
-        mockUpdateTriggerDto,
-      );
+      const result = await service.update(mockUpdateTriggerPayload);
 
       expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
-        where: { uuid: mockUuid },
+        where: { uuid: 'trigger-uuid' },
       });
       expect(mockPrismaService.trigger.update).toHaveBeenCalledWith({
-        where: { uuid: mockUuid },
+        where: { uuid: 'trigger-uuid' },
         data: expect.objectContaining({
           title: 'Updated Trigger',
           description: 'Updated Description',
@@ -415,14 +340,14 @@ describe('TriggerService', () => {
     it('should handle trigger not found', async () => {
       mockPrismaService.trigger.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.update(mockUuid, mockAppId, mockUpdateTriggerDto),
-      ).rejects.toThrow(RpcException);
+      await expect(service.update(mockUpdateTriggerPayload)).rejects.toThrow(
+        RpcException,
+      );
     });
 
     it('should handle already triggered trigger', async () => {
       const mockTriggeredTrigger = {
-        uuid: mockUuid,
+        uuid: 'trigger-uuid',
         isTriggered: true,
       };
 
@@ -430,9 +355,9 @@ describe('TriggerService', () => {
         mockTriggeredTrigger,
       );
 
-      await expect(
-        service.update(mockUuid, mockAppId, mockUpdateTriggerDto),
-      ).rejects.toThrow(RpcException);
+      await expect(service.update(mockUpdateTriggerPayload)).rejects.toThrow(
+        RpcException,
+      );
     });
   });
 
@@ -457,8 +382,7 @@ describe('TriggerService', () => {
         },
       };
 
-      // Mock the paginate function directly
-      const mockPaginate = jest.fn().mockResolvedValue(mockPaginatedResult);
+      // Mock the getAll method directly
       jest
         .spyOn(service as any, 'getAll')
         .mockImplementation(async () => mockPaginatedResult);
@@ -500,100 +424,14 @@ describe('TriggerService', () => {
     });
   });
 
-  describe('isValidDataSource', () => {
-    it('should return true for valid data source', () => {
-      const result = service.isValidDataSource(DataSource.MANUAL);
-      expect(result).toBe(true);
-    });
-
-    it('should return false for invalid data source', () => {
-      const result = service.isValidDataSource('INVALID' as DataSource);
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('createManualTrigger', () => {
-    const mockCreateTriggerDto: CreateTriggerDto = {
-      title: 'Manual Trigger',
-      description: 'Manual Description',
-      triggerStatement: { condition: 'manual' },
-      phaseId: 'phase-uuid',
-      isMandatory: true,
-      source: DataSource.MANUAL,
-      notes: 'Manual Notes',
-    };
-
-    it('should successfully create manual trigger', async () => {
-      const mockManualTrigger = {
-        uuid: 'manual-trigger-uuid',
-        title: 'Manual Trigger',
-        description: 'Manual Description',
-        triggerStatement: { condition: 'manual' },
-        phase: {
-          name: 'Manual Phase',
-          riverBasin: 'Manual Basin',
-        },
-        isMandatory: true,
-        source: DataSource.MANUAL,
-        notes: 'Manual Notes',
-      };
-
-      mockPhasesService.getOne.mockResolvedValue({
-        id: 1,
-        uuid: 'phase-uuid',
-        name: 'Manual Phase',
-        riverBasin: 'Manual Basin',
-      } as any);
-
-      mockPrismaService.trigger.create.mockResolvedValue(mockManualTrigger);
-
-      const result = await service.createManualTrigger(
-        'app-id',
-        mockCreateTriggerDto,
-        'user-name',
-      );
-
-      expect(mockPhasesService.getOne).toHaveBeenCalledWith('phase-uuid');
-      expect(mockPrismaService.trigger.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          title: 'Manual Trigger',
-          description: 'Manual Description',
-          triggerStatement: { condition: 'manual' },
-          isMandatory: true,
-          source: DataSource.MANUAL,
-          notes: 'Manual Notes',
-          phase: {
-            connect: {
-              uuid: 'phase-uuid',
-            },
-          },
-        }),
-        include: {
-          phase: true,
-        },
-      });
-      expect(result).toEqual(mockManualTrigger);
-    });
-
-    it('should handle phase not found', async () => {
-      mockPhasesService.getOne.mockResolvedValue(null);
-
-      await expect(
-        service.createManualTrigger(
-          'app-id',
-          mockCreateTriggerDto,
-          'user-name',
-        ),
-      ).rejects.toThrow(RpcException);
-    });
-  });
-
   describe('remove', () => {
-    const mockRepeatKey = 'repeat-key-123';
+    const mockRemovePayload = {
+      repeatKey: 'repeat-key-123',
+    };
 
     it('should successfully remove trigger', async () => {
       const mockTrigger = {
-        repeatKey: mockRepeatKey,
+        repeatKey: 'repeat-key-123',
         isDeleted: false,
         isTriggered: false,
         isMandatory: true,
@@ -613,30 +451,26 @@ describe('TriggerService', () => {
       } as any;
 
       const mockRemovedTrigger = {
-        repeatKey: mockRepeatKey,
+        repeatKey: 'repeat-key-123',
         isDeleted: true,
       };
 
       mockPrismaService.trigger.findUnique.mockResolvedValue(mockTrigger);
       mockPhasesService.getOne.mockResolvedValue(mockPhaseDetail);
-      mockScheduleQueue.removeRepeatableByKey.mockResolvedValue(undefined);
       mockPrismaService.trigger.update.mockResolvedValue(mockRemovedTrigger);
       mockPrismaService.phase.update.mockResolvedValue({});
 
-      const result = await service.remove(mockRepeatKey);
+      const result = await service.remove(mockRemovePayload);
 
       expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
         where: {
-          repeatKey: mockRepeatKey,
+          repeatKey: 'repeat-key-123',
           isDeleted: false,
         },
         include: { phase: true },
       });
-      expect(mockScheduleQueue.removeRepeatableByKey).toHaveBeenCalledWith(
-        mockRepeatKey,
-      );
       expect(mockPrismaService.trigger.update).toHaveBeenCalledWith({
-        where: { repeatKey: mockRepeatKey },
+        where: { repeatKey: 'repeat-key-123' },
         data: { isDeleted: true },
       });
       expect(result).toEqual(mockRemovedTrigger);
@@ -645,12 +479,14 @@ describe('TriggerService', () => {
     it('should handle trigger not found', async () => {
       mockPrismaService.trigger.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove(mockRepeatKey)).rejects.toThrow(RpcException);
+      await expect(service.remove(mockRemovePayload)).rejects.toThrow(
+        RpcException,
+      );
     });
 
     it('should handle already triggered trigger', async () => {
       const mockTriggeredTrigger = {
-        repeatKey: mockRepeatKey,
+        repeatKey: 'repeat-key-123',
         isDeleted: false,
         isTriggered: true,
       };
@@ -659,12 +495,14 @@ describe('TriggerService', () => {
         mockTriggeredTrigger,
       );
 
-      await expect(service.remove(mockRepeatKey)).rejects.toThrow(RpcException);
+      await expect(service.remove(mockRemovePayload)).rejects.toThrow(
+        RpcException,
+      );
     });
 
     it('should throw error when trigger belongs to an active phase', async () => {
       const mockTrigger = {
-        repeatKey: mockRepeatKey,
+        repeatKey: 'repeat-key-123',
         isDeleted: false,
         isTriggered: false,
         isMandatory: true,
@@ -676,141 +514,36 @@ describe('TriggerService', () => {
 
       mockPrismaService.trigger.findUnique.mockResolvedValue(mockTrigger);
 
-      await expect(service.remove(mockRepeatKey)).rejects.toThrow(
+      await expect(service.remove(mockRemovePayload)).rejects.toThrow(
         new RpcException('Cannot remove triggers from an active phase.'),
       );
 
       expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
         where: {
-          repeatKey: mockRepeatKey,
+          repeatKey: 'repeat-key-123',
           isDeleted: false,
         },
         include: { phase: true },
       });
       // Ensure no further calls are made
       expect(mockPhasesService.getOne).not.toHaveBeenCalled();
-      expect(mockScheduleQueue.removeRepeatableByKey).not.toHaveBeenCalled();
       expect(mockPrismaService.trigger.update).not.toHaveBeenCalled();
-    });
-
-    it('should add job to trigger queue on successful removal', async () => {
-      const mockTrigger = {
-        repeatKey: mockRepeatKey,
-        isDeleted: false,
-        isTriggered: false,
-        isMandatory: true,
-        phaseId: 'phase-uuid',
-        phase: {
-          isActive: false,
-        },
-      };
-
-      const mockPhaseDetail: any = {
-        triggerRequirements: {
-          optionalTriggers: {
-            totalTriggers: 5,
-          },
-        },
-        requiredOptionalTriggers: 3,
-      };
-
-      const mockRemovedTrigger = {
-        repeatKey: mockRepeatKey,
-        isDeleted: true,
-      };
-
-      mockPrismaService.trigger.findUnique.mockResolvedValue(mockTrigger);
-      mockPhasesService.getOne.mockResolvedValue(mockPhaseDetail);
-      mockScheduleQueue.removeRepeatableByKey.mockResolvedValue(undefined);
-      mockPrismaService.trigger.update.mockResolvedValue(mockRemovedTrigger);
-      mockTriggerQueue.add.mockResolvedValue(undefined); // Mock triggerQueue.add
-
-      const result = await service.remove(mockRepeatKey);
-
-      expect(mockTriggerQueue.add).toHaveBeenCalledWith(
-        JOBS.TRIGGER.REACHED_THRESHOLD,
-        mockTrigger,
-        {
-          attempts: 3,
-          removeOnComplete: true,
-          backoff: {
-            type: 'exponential',
-            delay: 1000,
-          },
-        },
-      );
-      expect(result).toEqual(mockRemovedTrigger);
-    });
-  });
-
-  describe('scheduleJob', () => {
-    const mockPayload = {
-      title: 'Scheduled Trigger',
-      description: 'Scheduled Description',
-      triggerStatement: { condition: 'scheduled' },
-      phaseId: 'phase-uuid',
-      isMandatory: false,
-      dataSource: DataSource.DHM,
-      riverBasin: 'Scheduled Basin',
-      repeatEvery: '30000',
-      notes: 'Scheduled Notes',
-      createdBy: 'user-name',
-    };
-
-    it('should successfully schedule job', async () => {
-      const mockScheduledTrigger = {
-        uuid: 'scheduled-trigger-uuid',
-        title: 'Scheduled Trigger',
-        description: 'Scheduled Description',
-        triggerStatement: { condition: 'scheduled' },
-        phase: {
-          name: 'Scheduled Phase',
-          riverBasin: 'Scheduled Basin',
-        },
-        isMandatory: false,
-        source: DataSource.DHM,
-        notes: 'Scheduled Notes',
-      };
-
-      const mockJob = {
-        opts: {
-          repeat: {
-            key: 'repeat-key-789',
-          },
-        },
-      };
-
-      mockScheduleQueue.add.mockResolvedValue(mockJob as any);
-      mockPrismaService.trigger.create.mockResolvedValue(mockScheduledTrigger);
-
-      const result = await service['scheduleJob'](mockPayload);
-
-      expect(mockScheduleQueue.add).toHaveBeenCalledWith(
-        JOBS.SCHEDULE.ADD,
-        expect.objectContaining({
-          title: 'Scheduled Trigger',
-          description: 'Scheduled Description',
-        }),
-        expect.any(Object),
-      );
-      expect(result).toEqual(mockScheduledTrigger);
     });
   });
 
   describe('activateTrigger', () => {
-    const mockUuid = 'trigger-uuid';
-    const mockAppId = 'app-id';
-    const mockPayload = {
-      triggeredBy: 'user-name',
-      activatedAt: new Date(),
+    const mockActivatePayload = {
+      uuid: 'trigger-uuid',
+      appId: 'app-id',
       user: { name: 'user-name' },
+      notes: 'Test notes',
     };
 
     it('should successfully activate trigger', async () => {
       const uuid = 'test-uuid';
 
       const mockTrigger = {
-        uuid: mockUuid,
+        uuid: 'trigger-uuid',
         isTriggered: false,
         source: DataSource.MANUAL,
         isMandatory: true,
@@ -820,7 +553,7 @@ describe('TriggerService', () => {
       };
 
       const mockActivatedTrigger = {
-        uuid: mockUuid,
+        uuid: 'trigger-uuid',
         isTriggered: true,
         triggeredBy: 'user-name',
         triggeredAt: new Date(),
@@ -840,14 +573,10 @@ describe('TriggerService', () => {
       mockPrismaService.activity.findFirst.mockResolvedValue({ app: 'app-id' });
       mockClientProxy.send.mockReturnValue(of({ name: 'test-action' }));
 
-      const result = await service.activateTrigger(
-        mockUuid,
-        mockAppId,
-        mockPayload,
-      );
+      const result = await service.activateTrigger(mockActivatePayload);
 
       expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
-        where: { uuid: mockUuid },
+        where: { uuid: 'trigger-uuid' },
         include: {
           phase: {
             include: {
@@ -877,13 +606,13 @@ describe('TriggerService', () => {
       mockPrismaService.trigger.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.activateTrigger(mockUuid, mockAppId, mockPayload),
+        service.activateTrigger(mockActivatePayload),
       ).rejects.toThrow(RpcException);
     });
 
     it('should handle already triggered trigger', async () => {
       const mockTriggeredTrigger = {
-        uuid: mockUuid,
+        uuid: 'trigger-uuid',
         isTriggered: true,
       };
 
@@ -892,13 +621,13 @@ describe('TriggerService', () => {
       );
 
       await expect(
-        service.activateTrigger(mockUuid, mockAppId, mockPayload),
+        service.activateTrigger(mockActivatePayload),
       ).rejects.toThrow(RpcException);
     });
 
     it('should handle automated trigger activation', async () => {
       const mockAutomatedTrigger = {
-        uuid: mockUuid,
+        uuid: 'trigger-uuid',
         isTriggered: false,
         source: DataSource.DHM,
       };
@@ -908,7 +637,7 @@ describe('TriggerService', () => {
       );
 
       await expect(
-        service.activateTrigger(mockUuid, mockAppId, mockPayload),
+        service.activateTrigger(mockActivatePayload),
       ).rejects.toThrow(RpcException);
     });
   });
@@ -928,7 +657,6 @@ describe('TriggerService', () => {
       };
 
       mockPrismaService.trigger.findUnique.mockResolvedValue(mockTrigger);
-      mockScheduleQueue.removeRepeatableByKey.mockResolvedValue(undefined);
       mockPrismaService.trigger.update.mockResolvedValue(mockArchivedTrigger);
 
       const result = await service.archive(mockRepeatKey);
@@ -939,9 +667,6 @@ describe('TriggerService', () => {
           isDeleted: false,
         },
       });
-      expect(mockScheduleQueue.removeRepeatableByKey).toHaveBeenCalledWith(
-        mockRepeatKey,
-      );
       expect(mockPrismaService.trigger.update).toHaveBeenCalledWith({
         where: { repeatKey: mockRepeatKey },
         data: { isDeleted: true },
@@ -990,6 +715,300 @@ describe('TriggerService', () => {
       const result = await service.findByLocation(mockPayload);
 
       expect(result).toEqual(mockPaginatedResult);
+    });
+  });
+
+  describe('activeAutomatedTriggers', () => {
+    const mockTriggerIds = [
+      'trigger-uuid-1',
+      'trigger-uuid-2',
+      'trigger-uuid-3',
+    ];
+
+    it('should successfully activate automated triggers', async () => {
+      const mockTriggers = [
+        {
+          uuid: 'trigger-uuid-1',
+          phaseId: 'phase-uuid-1',
+          isMandatory: true,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+        {
+          uuid: 'trigger-uuid-2',
+          phaseId: 'phase-uuid-1',
+          isMandatory: false,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+        {
+          uuid: 'trigger-uuid-3',
+          phaseId: 'phase-uuid-2',
+          isMandatory: true,
+          source: DataSource.GLOFAS,
+          isTriggered: false,
+          isDeleted: false,
+        },
+      ];
+
+      const mockPhase1 = {
+        uuid: 'phase-uuid-1',
+        name: 'Phase 1',
+        riverBasin: 'Test Basin 1',
+        activeYear: '2025',
+      };
+
+      const mockPhase2 = {
+        uuid: 'phase-uuid-2',
+        name: 'Phase 2',
+        riverBasin: 'Test Basin 2',
+        activeYear: '2025',
+      };
+
+      mockPrismaService.trigger.findMany.mockResolvedValue(mockTriggers as any);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 3 });
+      mockPrismaService.phase.update
+        .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({});
+      mockPrismaService.phase.findUnique
+        .mockResolvedValueOnce(mockPhase1 as any)
+        .mockResolvedValueOnce(mockPhase2 as any);
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalledWith({
+        where: {
+          uuid: { in: mockTriggerIds },
+          source: { not: DataSource.MANUAL },
+          isTriggered: false,
+          isDeleted: false,
+        },
+      });
+
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalledWith({
+        where: {
+          uuid: { in: mockTriggerIds },
+          source: { not: DataSource.MANUAL },
+          isTriggered: false,
+          isDeleted: false,
+        },
+        data: {
+          isTriggered: true,
+          triggeredAt: expect.any(Date),
+          triggeredBy: 'System',
+        },
+      });
+
+      expect(mockPrismaService.phase.update).toHaveBeenCalledTimes(2);
+      expect(mockPrismaService.phase.update).toHaveBeenCalledWith({
+        where: { uuid: 'phase-uuid-1' },
+        data: {
+          receivedMandatoryTriggers: { increment: 1 },
+          receivedOptionalTriggers: { increment: 1 },
+        },
+      });
+      expect(mockPrismaService.phase.update).toHaveBeenCalledWith({
+        where: { uuid: 'phase-uuid-2' },
+        data: {
+          receivedMandatoryTriggers: { increment: 1 },
+          receivedOptionalTriggers: { increment: 0 },
+        },
+      });
+
+      expect(mockTriggerQueue.addBulk).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: JOBS.TRIGGER.REACHED_THRESHOLD,
+            data: expect.objectContaining({ uuid: 'trigger-uuid-1' }),
+            opts: expect.objectContaining({
+              attempts: 3,
+              removeOnComplete: true,
+            }),
+          }),
+        ]),
+      );
+
+      expect(eventEmitter.emit).toHaveBeenCalledTimes(2);
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        EVENTS.NOTIFICATION.CREATE,
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            title: `Trigger Statement Met for ${mockPhase1.riverBasin}`,
+            description: `The trigger condition has been met for phase ${mockPhase1.name}, year ${mockPhase1.activeYear}, in the ${mockPhase1.riverBasin} river basin.`,
+            group: 'Trigger Statement',
+            notify: true,
+          }),
+        }),
+      );
+    });
+
+    it('should handle when some triggers are not found', async () => {
+      const mockTriggers = [
+        {
+          uuid: 'trigger-uuid-1',
+          phaseId: 'phase-uuid-1',
+          isMandatory: true,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+      ];
+
+      const mockPhase = {
+        uuid: 'phase-uuid-1',
+        name: 'Phase 1',
+        riverBasin: 'Test Basin',
+        activeYear: '2025',
+      };
+
+      mockPrismaService.trigger.findMany.mockResolvedValue(mockTriggers as any);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.phase.update.mockResolvedValue({});
+      mockPrismaService.phase.findUnique.mockResolvedValue(mockPhase as any);
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalled();
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalled();
+      expect(mockTriggerQueue.addBulk).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            data: expect.objectContaining({ uuid: 'trigger-uuid-1' }),
+          }),
+        ]),
+      );
+    });
+
+    it('should filter out manual triggers', async () => {
+      const mockTriggers = [
+        {
+          uuid: 'trigger-uuid-1',
+          phaseId: 'phase-uuid-1',
+          isMandatory: true,
+          source: DataSource.MANUAL,
+          isTriggered: false,
+          isDeleted: false,
+        },
+        {
+          uuid: 'trigger-uuid-2',
+          phaseId: 'phase-uuid-1',
+          isMandatory: false,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+      ];
+
+      const mockPhase = {
+        uuid: 'phase-uuid-1',
+        name: 'Phase 1',
+        riverBasin: 'Test Basin',
+        activeYear: '2025',
+      };
+
+      mockPrismaService.trigger.findMany.mockResolvedValue([
+        mockTriggers[1],
+      ] as any);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.phase.update.mockResolvedValue({});
+      mockPrismaService.phase.findUnique.mockResolvedValue(mockPhase as any);
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalledWith({
+        where: {
+          uuid: { in: mockTriggerIds },
+          source: { not: DataSource.MANUAL },
+          isTriggered: false,
+          isDeleted: false,
+        },
+      });
+
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalled();
+      expect(mockTriggerQueue.addBulk).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            data: expect.objectContaining({ uuid: 'trigger-uuid-2' }),
+          }),
+        ]),
+      );
+    });
+
+    it('should filter out already triggered triggers', async () => {
+      const mockTriggers = [
+        {
+          uuid: 'trigger-uuid-1',
+          phaseId: 'phase-uuid-1',
+          isMandatory: true,
+          source: DataSource.DHM,
+          isTriggered: true,
+          isDeleted: false,
+        },
+        {
+          uuid: 'trigger-uuid-2',
+          phaseId: 'phase-uuid-1',
+          isMandatory: false,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+      ];
+
+      const mockPhase = {
+        uuid: 'phase-uuid-1',
+        name: 'Phase 1',
+        riverBasin: 'Test Basin',
+        activeYear: '2025',
+      };
+
+      mockPrismaService.trigger.findMany.mockResolvedValue([
+        mockTriggers[1],
+      ] as any);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.phase.update.mockResolvedValue({});
+      mockPrismaService.phase.findUnique.mockResolvedValue(mockPhase as any);
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalledWith({
+        where: {
+          uuid: { in: mockTriggerIds },
+          source: { not: DataSource.MANUAL },
+          isTriggered: false,
+          isDeleted: false,
+        },
+      });
+
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalled();
+    });
+
+    it('should handle empty triggers array', async () => {
+      mockPrismaService.trigger.findMany.mockResolvedValue([]);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 0 });
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalled();
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalled();
+      expect(mockTriggerQueue.addBulk).toHaveBeenCalledWith([]);
+      expect(mockPrismaService.phase.update).not.toHaveBeenCalled();
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('should handle errors and throw RpcException', async () => {
+      const error = new Error('Database error');
+      mockPrismaService.trigger.findMany.mockRejectedValue(error);
+
+      await expect(
+        service.activeAutomatedTriggers(mockTriggerIds),
+      ).rejects.toThrow(RpcException);
     });
   });
 });

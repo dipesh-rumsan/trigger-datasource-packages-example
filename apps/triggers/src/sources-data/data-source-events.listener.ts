@@ -245,7 +245,7 @@ export class DataSourceEventsListener {
       if (meetsThreshold) {
         this.logger.log(`Trigger ${trigger.id} MET threshold`);
         // update trigger
-        await this.triggerService.activateTrigger(trigger.uuid, '', trigger);
+        // await this.triggerService.activateTrigger(trigger.uuid, '', trigger);
       } else {
         this.logger.log(`Trigger ${trigger.id} NOT met`);
       }
