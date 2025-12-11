@@ -9,15 +9,15 @@
 
 ---
 
+.
+
 ## Trigger Contract
 
 - Use `registerTrigger` to create a new trigger with parameters such as:
-
   - `triggerType`, `phase`, `title`, `source`, `riverBasin`, `paramsHash`
   - Optional: `actionContract` that will be called when triggered
 
 - Update triggers using:
-
   - `updateTrigger` → update phase or triggered status (backend-driven)
   - `setTriggered` → mark trigger as triggered and optionally pass `params` to the action contract
 
@@ -29,7 +29,6 @@
 
 - Generic interface `IAction` defines how any action is triggered by a Trigger contract.
 - **Mandatory function**: `executeAction(triggerId, params)`
-
   - `triggerId` identifies which trigger caused the action
   - `params` is flexible `bytes` and can encode any data (e.g., array of addresses and amounts for disbursement)
 

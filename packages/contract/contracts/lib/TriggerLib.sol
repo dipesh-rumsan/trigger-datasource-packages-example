@@ -5,6 +5,12 @@ pragma solidity ^0.8.30;
 /// @notice Defines trigger condition and lifecycle phases
 library TriggerLib {
 
+    struct Soruce {
+        uint64 id;
+        uint256 threshold;
+        string unit;
+    }
+
     /// @notice Trigger lifecycle phases
     enum Phase { Preparedness, Readiness, Activation }
 

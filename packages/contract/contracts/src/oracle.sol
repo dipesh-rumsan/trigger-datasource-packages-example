@@ -9,71 +9,68 @@ contract SourceOracle {
         owner = msg.sender;
     }
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "not owner");
-        _;
-    }
-
     struct Source {
         uint256 id;
-        string title;
-        string sourceSubType;
-        int256 val;
-        uint256 createdAt;
+        string name;
+        int256 value;
+        uint256 timestamp;
+        string unit;
+        uint8 decimal;
     }
 
     mapping(uint256 => Source) private sources;
 
     struct SourceInput {
-        string title;
-        string sourceSubType;
+        string name;
         int256 value;
+        string unit;
+        uint8 decimal;
     }
 
-    event SourceCreated(uint256 indexed id, string title);
+    event SourceCreated(uint256 indexed id, string name);
     event SourceValueUpdated(uint256 indexed id, int256 newValue);
 
-    /// @notice Create a new source using a single input struct
+    /// @notice Create a new source
     function createSource(SourceInput calldata input)
         external
-        onlyOwner
         returns (uint256)
     {
         uint256 id = nextSourceId++;
 
         sources[id] = Source({
             id: id,
-            title: input.title,
-            sourceSubType: input.sourceSubType,
-            val: input.value,
-            createdAt: block.timestamp
+            name: input.name,
+            value: input.value,
+            timestamp: block.timestamp,
+            unit: input.unit,
+            decimal: input.decimal
         });
 
-        emit SourceCreated(id, input.title);
+        emit SourceCreated(id, input.name);
         return id;
     }
 
     /// @notice Update only the value of a source
     function updateSourceValue(uint256 sourceId, int256 newValue)
         external
-        onlyOwner
     {
         Source storage s = sources[sourceId];
         require(s.id != 0, "source not found");
 
-        s.val = newValue;
+        s.value = newValue;
+        s.timestamp = block.timestamp;
 
         emit SourceValueUpdated(sourceId, newValue);
     }
 
     /// @notice Get a source by ID
-    function getSource(uint256 sourceId) external view returns (Source memory) {
+    function getSource(uint256 sourceId)
+        external
+        view
+        returns (Source memory)
+    {
         require(sources[sourceId].id != 0, "source not found");
         return sources[sourceId];
     }
 
-    function transferOwnership(address newOwner) external onlyOwner {
-        require(newOwner != address(0));
-        owner = newOwner;
-    }
 }
