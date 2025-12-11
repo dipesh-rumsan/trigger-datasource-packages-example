@@ -117,7 +117,7 @@ export const triggerPayloadSchema = z.object({
     .transform((val) => (val === null ? undefined : val)),
   notes: z.string().trim().max(500).optional().default(''),
   title: z.string().trim().min(3).max(120),
-  description: z.string().trim().min(3).max(500),
+  description: z.string().optional(),
   isMandatory: z.boolean().optional().default(false),
   isTriggered: z.boolean().optional().default(false),
   isDeleted: z.boolean().optional().default(false),

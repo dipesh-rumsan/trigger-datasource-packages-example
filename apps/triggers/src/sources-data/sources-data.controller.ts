@@ -5,6 +5,7 @@ import { DhmService } from './dhm.service';
 import { GlofasService } from './glofas.service';
 import { GetSouceDataDto } from './dto/get-source-data';
 import { SourcesDataService } from './sources-data.service';
+import { GetSeriesDto } from './dto/get-series';
 
 @Controller('sources-data')
 export class SourcesDataController {
@@ -54,6 +55,13 @@ export class SourcesDataController {
   })
   async getDhmStations() {
     return this.dhmService.getRiverStations();
+  }
+
+  @MessagePattern({
+    cmd: MS_TRIGGERS_JOBS.SOURCE_DATA.GET_SERIES_BY_DATA_SOURCE,
+  })
+  async getSeriesByDataSource(payload: GetSeriesDto) {
+    return this.sourceDataService.findSeriesByDataSource(payload);
   }
 
   @MessagePattern({

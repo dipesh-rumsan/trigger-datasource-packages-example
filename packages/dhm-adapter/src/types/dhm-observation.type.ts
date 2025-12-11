@@ -125,3 +125,8 @@ export interface DhmStationResponse {
   rainfall_watch: RainfallStationItem[];
   river_watch: RiverStationItem[];
 }
+
+export type DhmInfo = {
+  series_id: string;
+  name: string;
+};

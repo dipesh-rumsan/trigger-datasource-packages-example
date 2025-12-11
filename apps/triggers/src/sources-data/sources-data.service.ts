@@ -28,6 +28,10 @@ import { buildQueryParams, getFormattedDate } from 'src/common';
 import { SettingsService } from '@lib/core';
 import { DataSourceValue } from 'src/types/settings';
 import { DhmService } from './dhm.service';
+import { GetSeriesDto } from './dto/get-series';
+import { DhmService as DHM } from '@lib/dhm-adapter';
+import { GlofasServices } from '@lib/glofas-adapter';
+import { GfhService } from '@lib/gfh-adapter';
 
 const paginate: PaginatorTypes.PaginateFunction = paginator({ perPage: 10 });
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -38,6 +42,9 @@ export class SourcesDataService {
     private prisma: PrismaService,
     private readonly dhmService: DhmService,
     private readonly httpService: HttpService,
+    private readonly dhm: DHM,
+    private readonly glofasServices: GlofasServices,
+    private readonly gfhServices: GfhService,
   ) {}
 
   async create(dto: CreateSourcesDataDto) {
@@ -89,6 +96,40 @@ export class SourcesDataService {
           perPage: perPage,
         },
       );
+    } catch (error: any) {
+      this.logger.error('Error while fetching source data', error);
+      throw new RpcException(error);
+    }
+  }
+
+  async findSeriesByDataSource(payload: GetSeriesDto) {
+    try {
+      const { dataSource, type, riverBasin, stationName } = payload;
+
+      switch (dataSource) {
+        case DataSource.DHM: {
+          const dhm = await this.dhm.getSourceData(type, riverBasin);
+          return dhm;
+        }
+        case DataSource.GLOFAS: {
+          const glofas = await this.glofasServices.getSourceData(
+            type || SourceType.WATER_LEVEL,
+            riverBasin,
+          );
+          return glofas;
+        }
+
+        case DataSource.GFH: {
+          const gfh = await this.gfhServices.getSourceData(
+            type || SourceType.WATER_LEVEL,
+            riverBasin,
+            stationName,
+          );
+          return gfh;
+        }
+        default:
+          return [];
+      }
     } catch (error: any) {
       this.logger.error('Error while fetching source data', error);
       throw new RpcException(error);
