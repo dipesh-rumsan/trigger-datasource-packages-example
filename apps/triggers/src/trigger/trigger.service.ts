@@ -19,6 +19,7 @@ import {
   PaginatorTypes,
   PrismaService,
   DataSource,
+  Prisma,
 } from '@lib/database';
 import { randomUUID } from 'crypto';
 import { InjectQueue } from '@nestjs/bull';
@@ -381,6 +382,122 @@ export class TriggerService {
     }
   }
 
+  async activeAutomatedTriggers(ids: string[]) {
+    try {
+      const triggerWhereArgs: Prisma.TriggerWhereInput = {
+        uuid: {
+          in: ids,
+        },
+        source: {
+          not: DataSource.MANUAL,
+        },
+        isTriggered: false,
+        isDeleted: false,
+      };
+
+      const triggers = await this.prisma.trigger.findMany({
+        where: triggerWhereArgs,
+      });
+
+      if (triggers.length !== ids.length) {
+        const notfoundTriggers = ids.filter(
+          (id) => !triggers.some((trigger) => trigger.uuid === id),
+        );
+        this.logger.warn(
+          `Some triggers not found to activate: ${notfoundTriggers.join(', ')}`,
+        );
+      }
+
+      const phases: Record<
+        string,
+        { mandatoryTriggers: number; optionalTriggers: number }
+      > = triggers.reduce((acc, trigger) => {
+        if (!acc[trigger.phaseId as string]) {
+          acc[trigger.phaseId] = {
+            mandatoryTriggers: 0,
+            optionalTriggers: 0,
+          };
+        }
+
+        if (trigger.isMandatory) {
+          acc[trigger.phaseId].mandatoryTriggers++;
+        } else {
+          acc[trigger.phaseId].optionalTriggers++;
+        }
+
+        return acc;
+      }, {});
+
+      const updatedTriggers = await this.prisma.trigger.updateMany({
+        where: triggerWhereArgs,
+        data: {
+          isTriggered: true,
+          triggeredAt: new Date(),
+          triggeredBy: 'System',
+        },
+      });
+
+      this.logger.log(`Total ${updatedTriggers.count} triggers updated`);
+
+      for (const phaseId in phases) {
+        await this.prisma.phase.update({
+          where: {
+            uuid: phaseId,
+          },
+          data: {
+            receivedMandatoryTriggers: {
+              increment: phases[phaseId].mandatoryTriggers,
+            },
+            receivedOptionalTriggers: {
+              increment: phases[phaseId].optionalTriggers,
+            },
+          },
+        });
+      }
+
+      const jobs = triggers.map((trigger) => ({
+        name: JOBS.TRIGGER.REACHED_THRESHOLD,
+        data: trigger,
+        opts: {
+          attempts: 3,
+          removeOnComplete: true,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
+        },
+      }));
+
+      this.logger.log(
+        `Total ${jobs.length} triggers added to trigger threshold queue`,
+      );
+
+      this.triggerQueue.addBulk(jobs);
+
+      // TODO: Need to think about onchain queue update
+
+      for (const phaseId in phases) {
+        const phase = await this.prisma.phase.findUnique({
+          where: {
+            uuid: phaseId,
+          },
+        });
+
+        this.eventEmitter.emit(EVENTS.NOTIFICATION.CREATE, {
+          payload: {
+            title: `Trigger Statement Met for ${phase.riverBasin}`,
+            description: `The trigger condition has been met for phase ${phase.name}, year ${phase.activeYear}, in the ${phase.riverBasin} river basin.`,
+            group: 'Trigger Statement',
+            notify: true,
+          },
+        });
+      }
+    } catch (error: any) {
+      this.logger.error(error);
+      throw new RpcException(error.message);
+    }
+  }
+
   async activateTrigger(data: ActivateTriggerPayloadDto) {
     const { uuid, appId, ...payload } = data;
     this.logger.log(`Activating trigger with uuid: ${uuid}`);
@@ -607,6 +724,26 @@ export class TriggerService {
       this.logger.error(error);
       throw new RpcException(error.message);
     }
+  }
+
+  async findTriggersBySourceAndIndicator(
+    source: DataSource,
+    indicator: string,
+  ) {
+    return this.prisma.trigger.findMany({
+      where: {
+        source,
+        isTriggered: false,
+        isDeleted: false,
+        triggerStatement: {
+          path: ['source'],
+          equals: indicator,
+        },
+      },
+      include: {
+        phase: true,
+      },
+    });
   }
 
   private buildAddTriggerJobDto(trigger: any): AddTriggerJobDto {

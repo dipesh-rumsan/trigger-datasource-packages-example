@@ -22,7 +22,7 @@ describe('TriggerService', () => {
   let mockPhasesService: jest.Mocked<PhasesService>;
   let eventEmitter: jest.Mocked<EventEmitter2>;
 
-  let mockScheduleQueue: jest.Mocked<Queue>;
+  let mockTriggerQueue: jest.Mocked<Queue>;
 
   const mockPrismaServiceImplementation = {
     trigger: {
@@ -30,6 +30,7 @@ describe('TriggerService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
       findFirst: jest.fn(),
@@ -73,6 +74,7 @@ describe('TriggerService', () => {
 
   const mockTriggerQueueImplementation = {
     add: jest.fn(),
+    addBulk: jest.fn(),
     process: jest.fn(),
     getJob: jest.fn(),
     removeJobs: jest.fn(),
@@ -127,7 +129,7 @@ describe('TriggerService', () => {
     mockClientProxy = module.get(CORE_MODULE);
     mockPhasesService = module.get(PhasesService);
     eventEmitter = module.get(EventEmitter2);
-    mockScheduleQueue = module.get('BullQueue_SCHEDULE');
+    mockTriggerQueue = module.get('BullQueue_TRIGGER');
   });
 
   afterEach(() => {
@@ -713,6 +715,300 @@ describe('TriggerService', () => {
       const result = await service.findByLocation(mockPayload);
 
       expect(result).toEqual(mockPaginatedResult);
+    });
+  });
+
+  describe('activeAutomatedTriggers', () => {
+    const mockTriggerIds = [
+      'trigger-uuid-1',
+      'trigger-uuid-2',
+      'trigger-uuid-3',
+    ];
+
+    it('should successfully activate automated triggers', async () => {
+      const mockTriggers = [
+        {
+          uuid: 'trigger-uuid-1',
+          phaseId: 'phase-uuid-1',
+          isMandatory: true,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+        {
+          uuid: 'trigger-uuid-2',
+          phaseId: 'phase-uuid-1',
+          isMandatory: false,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+        {
+          uuid: 'trigger-uuid-3',
+          phaseId: 'phase-uuid-2',
+          isMandatory: true,
+          source: DataSource.GLOFAS,
+          isTriggered: false,
+          isDeleted: false,
+        },
+      ];
+
+      const mockPhase1 = {
+        uuid: 'phase-uuid-1',
+        name: 'Phase 1',
+        riverBasin: 'Test Basin 1',
+        activeYear: '2025',
+      };
+
+      const mockPhase2 = {
+        uuid: 'phase-uuid-2',
+        name: 'Phase 2',
+        riverBasin: 'Test Basin 2',
+        activeYear: '2025',
+      };
+
+      mockPrismaService.trigger.findMany.mockResolvedValue(mockTriggers as any);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 3 });
+      mockPrismaService.phase.update
+        .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({});
+      mockPrismaService.phase.findUnique
+        .mockResolvedValueOnce(mockPhase1 as any)
+        .mockResolvedValueOnce(mockPhase2 as any);
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalledWith({
+        where: {
+          uuid: { in: mockTriggerIds },
+          source: { not: DataSource.MANUAL },
+          isTriggered: false,
+          isDeleted: false,
+        },
+      });
+
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalledWith({
+        where: {
+          uuid: { in: mockTriggerIds },
+          source: { not: DataSource.MANUAL },
+          isTriggered: false,
+          isDeleted: false,
+        },
+        data: {
+          isTriggered: true,
+          triggeredAt: expect.any(Date),
+          triggeredBy: 'System',
+        },
+      });
+
+      expect(mockPrismaService.phase.update).toHaveBeenCalledTimes(2);
+      expect(mockPrismaService.phase.update).toHaveBeenCalledWith({
+        where: { uuid: 'phase-uuid-1' },
+        data: {
+          receivedMandatoryTriggers: { increment: 1 },
+          receivedOptionalTriggers: { increment: 1 },
+        },
+      });
+      expect(mockPrismaService.phase.update).toHaveBeenCalledWith({
+        where: { uuid: 'phase-uuid-2' },
+        data: {
+          receivedMandatoryTriggers: { increment: 1 },
+          receivedOptionalTriggers: { increment: 0 },
+        },
+      });
+
+      expect(mockTriggerQueue.addBulk).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: JOBS.TRIGGER.REACHED_THRESHOLD,
+            data: expect.objectContaining({ uuid: 'trigger-uuid-1' }),
+            opts: expect.objectContaining({
+              attempts: 3,
+              removeOnComplete: true,
+            }),
+          }),
+        ]),
+      );
+
+      expect(eventEmitter.emit).toHaveBeenCalledTimes(2);
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        EVENTS.NOTIFICATION.CREATE,
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            title: `Trigger Statement Met for ${mockPhase1.riverBasin}`,
+            description: `The trigger condition has been met for phase ${mockPhase1.name}, year ${mockPhase1.activeYear}, in the ${mockPhase1.riverBasin} river basin.`,
+            group: 'Trigger Statement',
+            notify: true,
+          }),
+        }),
+      );
+    });
+
+    it('should handle when some triggers are not found', async () => {
+      const mockTriggers = [
+        {
+          uuid: 'trigger-uuid-1',
+          phaseId: 'phase-uuid-1',
+          isMandatory: true,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+      ];
+
+      const mockPhase = {
+        uuid: 'phase-uuid-1',
+        name: 'Phase 1',
+        riverBasin: 'Test Basin',
+        activeYear: '2025',
+      };
+
+      mockPrismaService.trigger.findMany.mockResolvedValue(mockTriggers as any);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.phase.update.mockResolvedValue({});
+      mockPrismaService.phase.findUnique.mockResolvedValue(mockPhase as any);
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalled();
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalled();
+      expect(mockTriggerQueue.addBulk).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            data: expect.objectContaining({ uuid: 'trigger-uuid-1' }),
+          }),
+        ]),
+      );
+    });
+
+    it('should filter out manual triggers', async () => {
+      const mockTriggers = [
+        {
+          uuid: 'trigger-uuid-1',
+          phaseId: 'phase-uuid-1',
+          isMandatory: true,
+          source: DataSource.MANUAL,
+          isTriggered: false,
+          isDeleted: false,
+        },
+        {
+          uuid: 'trigger-uuid-2',
+          phaseId: 'phase-uuid-1',
+          isMandatory: false,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+      ];
+
+      const mockPhase = {
+        uuid: 'phase-uuid-1',
+        name: 'Phase 1',
+        riverBasin: 'Test Basin',
+        activeYear: '2025',
+      };
+
+      mockPrismaService.trigger.findMany.mockResolvedValue([
+        mockTriggers[1],
+      ] as any);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.phase.update.mockResolvedValue({});
+      mockPrismaService.phase.findUnique.mockResolvedValue(mockPhase as any);
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalledWith({
+        where: {
+          uuid: { in: mockTriggerIds },
+          source: { not: DataSource.MANUAL },
+          isTriggered: false,
+          isDeleted: false,
+        },
+      });
+
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalled();
+      expect(mockTriggerQueue.addBulk).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            data: expect.objectContaining({ uuid: 'trigger-uuid-2' }),
+          }),
+        ]),
+      );
+    });
+
+    it('should filter out already triggered triggers', async () => {
+      const mockTriggers = [
+        {
+          uuid: 'trigger-uuid-1',
+          phaseId: 'phase-uuid-1',
+          isMandatory: true,
+          source: DataSource.DHM,
+          isTriggered: true,
+          isDeleted: false,
+        },
+        {
+          uuid: 'trigger-uuid-2',
+          phaseId: 'phase-uuid-1',
+          isMandatory: false,
+          source: DataSource.DHM,
+          isTriggered: false,
+          isDeleted: false,
+        },
+      ];
+
+      const mockPhase = {
+        uuid: 'phase-uuid-1',
+        name: 'Phase 1',
+        riverBasin: 'Test Basin',
+        activeYear: '2025',
+      };
+
+      mockPrismaService.trigger.findMany.mockResolvedValue([
+        mockTriggers[1],
+      ] as any);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.phase.update.mockResolvedValue({});
+      mockPrismaService.phase.findUnique.mockResolvedValue(mockPhase as any);
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalledWith({
+        where: {
+          uuid: { in: mockTriggerIds },
+          source: { not: DataSource.MANUAL },
+          isTriggered: false,
+          isDeleted: false,
+        },
+      });
+
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalled();
+    });
+
+    it('should handle empty triggers array', async () => {
+      mockPrismaService.trigger.findMany.mockResolvedValue([]);
+      mockPrismaService.trigger.updateMany.mockResolvedValue({ count: 0 });
+      mockTriggerQueue.addBulk.mockResolvedValue(undefined);
+
+      await service.activeAutomatedTriggers(mockTriggerIds);
+
+      expect(mockPrismaService.trigger.findMany).toHaveBeenCalled();
+      expect(mockPrismaService.trigger.updateMany).toHaveBeenCalled();
+      expect(mockTriggerQueue.addBulk).toHaveBeenCalledWith([]);
+      expect(mockPrismaService.phase.update).not.toHaveBeenCalled();
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('should handle errors and throw RpcException', async () => {
+      const error = new Error('Database error');
+      mockPrismaService.trigger.findMany.mockRejectedValue(error);
+
+      await expect(
+        service.activeAutomatedTriggers(mockTriggerIds),
+      ).rejects.toThrow(RpcException);
     });
   });
 });

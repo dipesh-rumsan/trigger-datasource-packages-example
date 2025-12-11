@@ -68,6 +68,7 @@ export class GetPhaseByName {
   @ApiProperty({
     example: 'sfs-sfs-sfs-sfs-sfs',
   })
+  @IsOptional()
   @IsString()
   appId?: string;
 }

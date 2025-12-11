@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { SourcesDataService } from './sources-data.service';
 import { SourcesDataController } from './sources-data.controller';
 import { ScheduleSourcesDataService } from './schedule-sources-data.service';
@@ -13,6 +13,7 @@ import Redis from 'ioredis';
 import { DataSourceEventsListener } from './data-source-events.listener';
 import { HealthMonitoringService, HealthCacheService } from '@lib/core';
 import { GlofasModule, GlofasServices } from '@lib/glofas-adapter';
+import { TriggerModule } from 'src/trigger/trigger.module';
 import { GfhModule, GfhService } from '@lib/gfh-adapter';
 
 @Module({
@@ -23,6 +24,7 @@ import { GfhModule, GfhService } from '@lib/gfh-adapter';
     }),
     DhmModule.forRoot(),
     GlofasModule.forRoot(),
+    forwardRef(() => TriggerModule),
     GfhModule.forRoot(),
   ],
   controllers: [SourcesDataController],

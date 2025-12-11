@@ -1,3 +1,4 @@
+import { Prisma } from '@lib/database';
 import axios from 'axios';
 
 export interface GlofasObservation {
@@ -63,3 +64,7 @@ export interface GlofasInfoObject {
   };
   forecastDate: string;
 }
+
+export type GfofasInfo = {
+  location: { basinId: string };
+};
