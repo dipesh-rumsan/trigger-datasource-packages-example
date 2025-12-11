@@ -5,30 +5,26 @@ contract SourceOracle {
     address public owner;
     uint256 public nextSourceId = 1;
 
-    constructor() {
-        owner = msg.sender;
-    }
-
     struct Source {
         uint256 id;
         string name;
-        int256 value;
+        uint256 value;
         uint256 timestamp;
         string unit;
-        uint8 decimal;
+        uint256 decimal;
     }
 
     mapping(uint256 => Source) private sources;
 
     struct SourceInput {
         string name;
-        int256 value;
+        uint256 value;
         string unit;
-        uint8 decimal;
+        uint256 decimal;
     }
 
     event SourceCreated(uint256 indexed id, string name);
-    event SourceValueUpdated(uint256 indexed id, int256 newValue);
+    event SourceValueUpdated(uint256 indexed id, uint256 newValue);
 
     /// @notice Create a new source
     function createSource(SourceInput calldata input)
@@ -51,7 +47,7 @@ contract SourceOracle {
     }
 
     /// @notice Update only the value of a source
-    function updateSourceValue(uint256 sourceId, int256 newValue)
+    function updateSourceValue(uint256 sourceId, uint256 newValue)
         external
     {
         Source storage s = sources[sourceId];

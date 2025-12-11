@@ -1,82 +1,86 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../lib/TriggerLib.sol";
-import "../lib/TriggerUtils.sol";
-import "../interface/ITrigger.sol";
+import "../interface/IOracle.sol";
 
-/// @title Multi-phase Trigger Contract
-/// @notice Manages flood triggers with Preparedness → Readiness → Activation lifecycle
-contract TriggerContract is ITrigger {
-    using TriggerUtils for uint256;
+contract TriggerContract {
+    address public owner;
+    ISourceOracle public oracle;
 
-    uint256 private _triggerCounter;
-    mapping(uint256 => TriggerLib.Trigger) private _triggers;
-    mapping(uint256 => uint256) private _triggerValues;
+    constructor(address oracleAddress) {
+        owner = msg.sender;
+        oracle = ISourceOracle(oracleAddress);
+    }
 
-    /// @notice Add new trigger (phase = Preparedness)
-    function addTrigger(TriggerLib.Condition calldata condition)
+    modifier onlyOwner() {
+        require(msg.sender == owner, "not owner");
+        _;
+    }
+
+    struct Trigger {
+        uint256 id;
+        uint256 sourceId;
+        uint256 threshold;
+        bool triggered;
+        string name;
+    }
+
+    uint256 public nextTriggerId = 1;
+    mapping(uint256 => Trigger) public triggers;
+
+    event TriggerCreated(uint256 indexed id, uint256 sourceId, uint256 threshold, string name);
+    event TriggerActivated(uint256 indexed id);
+
+    /**
+     * @notice Create a trigger that fires when source value >= threshold
+     */
+    function createTrigger(
+        uint256 sourceId,
+        uint256 threshold,
+        string memory name
+    )
         external
-        override
+        onlyOwner
         returns (uint256)
     {
-        _triggerCounter++;
-        uint256 triggerId = _triggerCounter;
+        // Validate source exists
+        ISourceOracle.Source memory s = oracle.getSource(sourceId);
+        require(s.id != 0, "source doesn't exist");
 
-        _triggers[triggerId] = TriggerLib.Trigger({
-            id: triggerId,
-            condition: condition,
-            phase: TriggerLib.Phase.Preparedness,
-            isTriggered: false  
+        uint256 id = nextTriggerId++;
+
+        triggers[id] = Trigger({
+            id: id,
+            sourceId: sourceId,
+            threshold: threshold,
+            triggered: false,
+            name: name
         });
 
-        emit TriggerAdded(triggerId, condition, TriggerLib.Phase.Preparedness);
-        return triggerId;
+        emit TriggerCreated(id, sourceId, threshold, name);
+        return id;
     }
 
-    /// @notice Set a specific trigger to triggered state
-    function setTriggered(uint256 triggerId, uint256 observedValue)
-        external
-        override
-    {
-        require(triggerId > 0 && triggerId <= _triggerCounter, "Invalid trigger ID");
-        TriggerLib.Trigger storage t = _triggers[triggerId];
-        require(!t.isTriggered, "Trigger already activated");
+    /**
+     * @notice Activate trigger only if oracle value >= threshold
+     */
+    function activateTrigger(uint256 triggerId) external onlyOwner {
+        Trigger storage t = triggers[triggerId];
 
-        t.isTriggered = true;
-        _triggerValues[triggerId] = observedValue;
+        require(t.id != 0, "trigger not found");
+        require(!t.triggered, "already triggered");
 
-        emit TriggerPhaseChanged(triggerId, TriggerLib.Phase.Activation);
-        emit TriggerActivated(triggerId, observedValue);
+        // Get current oracle value
+        ISourceOracle.Source memory s = oracle.getSource(t.sourceId);
+
+        require(s.value >= t.threshold, "threshold not reached");
+
+        t.triggered = true;
+        emit TriggerActivated(triggerId);
     }
 
-    function getTrigger(uint256 triggerId)
-        external
-        view
-        override
-        returns (Trigger memory)
-    {
-        require(triggerId > 0 && triggerId <= _triggerCounter, "Invalid trigger ID");
-        TriggerLib.Trigger storage t = _triggers[triggerId];
-        return Trigger({
-            id: t.id,
-            condition: t.condition,
-            phase: t.phase,
-            isTriggered: t.isTriggered
-        });
-    }
-
-    function getTriggerValue(uint256 triggerId)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        require(triggerId > 0 && triggerId <= _triggerCounter, "Invalid trigger ID");
-        return _triggerValues[triggerId];
-    }
-
-    function totalTriggers() external view override returns (uint256) {
-        return _triggerCounter;
+    function transferOwnership(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "invalid owner");
+        owner = newOwner;
     }
 }
