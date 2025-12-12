@@ -4,6 +4,7 @@ import { network } from "hardhat";
 describe("Trigger Contract", async function () {
   let oracle: any;
   let trigger: any;
+  let phaseId: bigint;
   let triggerId: bigint;
 
   const { ethers } = await network.connect();
@@ -47,13 +48,44 @@ describe("Trigger Contract", async function () {
   });
 
   // ---------------------------------------------------------------------------
-  // 3. CREATE TRIGGER (sourceId = 3)
+  // 3. CREATE PHASE
   // ---------------------------------------------------------------------------
-  it("Should add trigger with threshold", async function () {
+  it("Should create a phase", async function () {
+    const tx = await trigger.createPhase("Preparedness", 1);
+    const receipt = await tx.wait();
+
+    const event = receipt!.logs
+      .map((log: any) => {
+        try {
+          return trigger.interface.parseLog(log);
+        } catch {
+          return null;
+        }
+      })
+      .find((e: any) => e?.name === "PhaseCreated");
+
+    phaseId = event?.args?.id;
+    expect(phaseId).to.not.be.undefined;
+
+    const p = await trigger.phases(phaseId);
+    expect(p.name).to.equal("Preparedness");
+
+    log(`✅ Phase created (phaseId: ${phaseId})`);
+  });
+
+  // ---------------------------------------------------------------------------
+  // 4. CREATE TRIGGER inside phase (sourceId = 3)
+  // ---------------------------------------------------------------------------
+  it("Should create trigger inside a phase", async function () {
     const sourceId = 3; // value = 30
     const threshold = 35;
 
-    const tx = await trigger.createTrigger(sourceId, threshold, "FloodAlert");
+    const tx = await trigger.createTrigger(
+      phaseId,
+      sourceId,
+      threshold,
+      "FloodAlert"
+    );
     const receipt = await tx.wait();
 
     const event = receipt!.logs
@@ -73,14 +105,18 @@ describe("Trigger Contract", async function () {
     expect(t.sourceId).to.equal(sourceId);
     expect(t.triggered).to.be.false;
 
-    log(`✅ Added trigger (triggerId: ${triggerId})`);
+    // phase should now contain this trigger id
+    const list = await trigger.getPhaseTriggerIds(phaseId);
+    expect(list.map((x: any) => x.toString())).to.include(triggerId.toString());
+
+    log(`✅ Trigger created (triggerId: ${triggerId}) in phase ${phaseId}`);
   });
 
   // ---------------------------------------------------------------------------
-  // 4. FAIL ACTIVATION (value lower than threshold)
+  // 5. FAIL ACTIVATION (value < threshold)
   // ---------------------------------------------------------------------------
   it("Should fail to activate trigger when source value is below threshold", async function () {
-    // sourceId=3 → value=30, threshold=35
+    // source = 30, threshold = 35
     await expect(trigger.activateTrigger(triggerId)).to.be.revertedWith(
       "threshold not reached"
     );
@@ -89,10 +125,10 @@ describe("Trigger Contract", async function () {
   });
 
   // ---------------------------------------------------------------------------
-  // 5. PASS ACTIVATION (value higher after update)
+  // 6. PASS ACTIVATION (value > threshold)
   // ---------------------------------------------------------------------------
   it("Should activate trigger when source value exceeds threshold", async function () {
-    // Update value above threshold
+    // update value from 30 → 40
     await oracle.updateSourceValue(3, 40);
 
     await expect(trigger.activateTrigger(triggerId))
@@ -106,7 +142,7 @@ describe("Trigger Contract", async function () {
   });
 
   // ---------------------------------------------------------------------------
-  // 6. PREVENT DOUBLE-TRIGGERING
+  // 7. PREVENT DOUBLE-TRIGGERING
   // ---------------------------------------------------------------------------
   it("Should not allow activating trigger twice", async function () {
     await expect(trigger.activateTrigger(triggerId)).to.be.revertedWith(
@@ -117,10 +153,10 @@ describe("Trigger Contract", async function () {
   });
 
   // ---------------------------------------------------------------------------
-  // 7. INVALID TRIGGER ID
+  // 8. INVALID TRIGGER ID
   // ---------------------------------------------------------------------------
   it("Should fail with invalid trigger ID", async function () {
-    const invalidId = 999;
+    const invalidId = 9999;
 
     await expect(trigger.activateTrigger(invalidId)).to.be.revertedWith(
       "trigger not found"
