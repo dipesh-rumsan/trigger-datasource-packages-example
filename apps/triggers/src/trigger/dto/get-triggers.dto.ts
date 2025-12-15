@@ -2,7 +2,17 @@ import { PartialType } from '@nestjs/swagger';
 import { PaginationDto } from 'src/common/dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { DataSource } from '@lib/database';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+export class findOneTriggerDto {
+  @ApiProperty({
+    example: 'trigger-id',
+    description: 'The UUID of the trigger to retrieve',
+  })
+  @IsString()
+  @IsNotEmpty()
+  uuid: string;
+}
 
 export class GetTriggersDto extends PartialType(PaginationDto) {
   @ApiProperty({

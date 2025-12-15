@@ -139,13 +139,29 @@ export class CreateTriggerDto {
   riverBasin?: string;
 }
 
-export class BulkCreateTriggerDto {
+export class CreateTriggerPayloadDto {
   @ApiProperty({
-    type: [CreateTriggerDto],
-    description: 'An array of triggers to be created',
+    description: 'User information',
+    required: false,
   })
+  @IsOptional()
+  user?: { name?: string };
+
+  @ApiProperty({
+    description: 'Application ID',
+    example: 'app-123',
+  })
+  @IsString()
+  appId: string;
+
+  @ApiProperty({
+    description: 'Array of triggers for bulk create',
+    type: [CreateTriggerDto],
+    required: false,
+  })
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateTriggerDto)
-  triggers: CreateTriggerDto[];
+  triggers?: CreateTriggerDto[];
 }

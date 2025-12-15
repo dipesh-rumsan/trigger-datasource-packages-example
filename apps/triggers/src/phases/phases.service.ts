@@ -744,7 +744,7 @@ export class PhasesService {
     for (const trigger of phase.Trigger) {
       const { repeatKey } = trigger;
       if (trigger.source === DataSource.MANUAL) {
-        await this.triggerService.create(
+        await this.triggerService.createTrigger(
           appId,
           {
             title: trigger.title,
@@ -756,7 +756,7 @@ export class PhasesService {
           trigger.createdBy,
         );
       } else {
-        await this.triggerService.create(
+        await this.triggerService.createTrigger(
           appId,
           {
             title: trigger.title,

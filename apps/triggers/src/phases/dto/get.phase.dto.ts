@@ -42,7 +42,6 @@ export class GetPhaseByName {
     example: Phases.PREPAREDNESS,
   })
   @IsEnum(Phases)
-  @IsNotEmpty()
   @IsOptional()
   phase?: Phases;
 
