@@ -393,24 +393,24 @@ describe('TriggerService', () => {
     });
   });
 
-  describe('getOne', () => {
+  describe('findOne', () => {
     const mockPayload = {
       uuid: 'trigger-uuid',
     };
 
-    it('should successfully get one trigger', async () => {
+    it('should successfully find one trigger', async () => {
       const mockTrigger = {
         uuid: 'trigger-uuid',
         title: 'Test Trigger',
       };
 
-      mockPrismaService.trigger.findFirst.mockResolvedValue(mockTrigger);
+      mockPrismaService.trigger.findUnique.mockResolvedValue(mockTrigger);
 
-      const result = await service.getOne(mockPayload);
+      const result = await service.findOne(mockPayload);
 
-      expect(mockPrismaService.trigger.findFirst).toHaveBeenCalledWith({
+      expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
         where: {
-          OR: [{ uuid: 'trigger-uuid' }, { repeatKey: undefined }],
+          uuid: 'trigger-uuid',
         },
         include: {
           phase: {
@@ -426,12 +426,12 @@ describe('TriggerService', () => {
 
   describe('remove', () => {
     const mockRemovePayload = {
-      repeatKey: 'repeat-key-123',
+      uuid: 'trigger-uuid',
     };
 
     it('should successfully remove trigger', async () => {
       const mockTrigger = {
-        repeatKey: 'repeat-key-123',
+        uuid: 'trigger-uuid',
         isDeleted: false,
         isTriggered: false,
         isMandatory: true,
@@ -451,7 +451,7 @@ describe('TriggerService', () => {
       } as any;
 
       const mockRemovedTrigger = {
-        repeatKey: 'repeat-key-123',
+        uuid: 'trigger-uuid',
         isDeleted: true,
       };
 
@@ -464,13 +464,13 @@ describe('TriggerService', () => {
 
       expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
         where: {
-          repeatKey: 'repeat-key-123',
+          uuid: 'trigger-uuid',
           isDeleted: false,
         },
         include: { phase: true },
       });
       expect(mockPrismaService.trigger.update).toHaveBeenCalledWith({
-        where: { repeatKey: 'repeat-key-123' },
+        where: { uuid: 'trigger-uuid' },
         data: { isDeleted: true },
       });
       expect(result).toEqual(mockRemovedTrigger);
@@ -486,7 +486,7 @@ describe('TriggerService', () => {
 
     it('should handle already triggered trigger', async () => {
       const mockTriggeredTrigger = {
-        repeatKey: 'repeat-key-123',
+        uuid: 'trigger-uuid',
         isDeleted: false,
         isTriggered: true,
       };
@@ -502,7 +502,7 @@ describe('TriggerService', () => {
 
     it('should throw error when trigger belongs to an active phase', async () => {
       const mockTrigger = {
-        repeatKey: 'repeat-key-123',
+        uuid: 'trigger-uuid',
         isDeleted: false,
         isTriggered: false,
         isMandatory: true,
@@ -520,7 +520,7 @@ describe('TriggerService', () => {
 
       expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
         where: {
-          repeatKey: 'repeat-key-123',
+          uuid: 'trigger-uuid',
           isDeleted: false,
         },
         include: { phase: true },

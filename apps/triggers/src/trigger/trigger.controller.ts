@@ -9,6 +9,7 @@ import {
   UpdateTriggerPayloadDto,
   GetByLocationPayloadDto,
   RemoveTriggerPayloadDto,
+  findOneTriggerDto,
 } from './dto';
 import { TriggerService } from './trigger.service';
 
@@ -22,7 +23,7 @@ export class TriggerController {
     cmd: MS_TRIGGERS_JOBS.TRIGGER.ADD,
   })
   async create(payload: CreateTriggerPayloadDto) {
-    return this.triggerService.create(payload as CreateTriggerPayloadDto);
+    return this.triggerService.create(payload);
   }
 
   @MessagePattern({
@@ -35,8 +36,8 @@ export class TriggerController {
   @MessagePattern({
     cmd: MS_TRIGGERS_JOBS.TRIGGER.GET_ONE,
   })
-  getOne(payload: any) {
-    return this.triggerService.getOne(payload);
+  getOne(payload: findOneTriggerDto) {
+    return this.triggerService.findOne(payload);
   }
 
   @MessagePattern({

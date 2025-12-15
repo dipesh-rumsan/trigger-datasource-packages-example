@@ -9,6 +9,7 @@ import {
   ActivateTriggerPayloadDto,
   CreateTriggerDto,
   CreateTriggerPayloadDto,
+  findOneTriggerDto,
   GetTriggersDto,
   RemoveTriggerPayloadDto,
   UpdateTriggerPayloadDto,
@@ -249,13 +250,13 @@ export class TriggerService {
     }
   }
 
-  async getOne(payload: any) {
-    const { repeatKey, uuid } = payload;
-    this.logger.log(`Getting trigger with repeatKey: ${repeatKey}`);
+  async findOne(payload: findOneTriggerDto) {
+    const { uuid } = payload;
+    this.logger.log(`Getting trigger with uuid: ${uuid}`);
     try {
-      return await this.prisma.trigger.findFirst({
+      return await this.prisma.trigger.findUnique({
         where: {
-          OR: [{ uuid: uuid }, { repeatKey: repeatKey }],
+          uuid,
         },
         include: {
           phase: {
@@ -310,38 +311,38 @@ export class TriggerService {
   }
 
   async remove(payload: RemoveTriggerPayloadDto) {
-    const { repeatKey } = payload;
+    const { uuid } = payload;
 
-    this.logger.log(`Removing trigger with repeatKey: ${repeatKey}`);
+    this.logger.log(`Removing trigger with uuid: ${uuid}`);
 
-    if (!repeatKey) {
-      throw new BadRequestException('repeatKey is required');
+    if (!uuid) {
+      throw new BadRequestException('Uuid is required');
     }
 
     try {
       const trigger = await this.prisma.trigger.findUnique({
         where: {
-          repeatKey: repeatKey,
+          uuid: uuid,
           isDeleted: false,
         },
         include: { phase: true },
       });
 
       if (!trigger) {
-        this.logger.error(`Trigger with id: ${repeatKey} not found.`);
-        throw new RpcException(`Trigger with id: ${repeatKey} not found.`);
+        this.logger.error(`Trigger with id: ${uuid} not found.`);
+        throw new RpcException(`Trigger with id: ${uuid} not found.`);
       }
 
       if (trigger.isTriggered) {
         this.logger.error(
-          `Trigger with id: ${repeatKey} is activated. Cannot remove an activated trigger.`,
+          `Trigger with id: ${uuid} is activated. Cannot remove an activated trigger.`,
         );
         throw new RpcException(`Cannot remove an activated trigger.`);
       }
 
       if (trigger.phase.isActive) {
         this.logger.error(
-          `Trigger with id: ${repeatKey} is in an active phase. Cannot remove triggers from an active phase.`,
+          `Trigger with id: ${uuid} is in an active phase. Cannot remove triggers from an active phase.`,
         );
         throw new RpcException(`Cannot remove triggers from an active phase.`);
       }
@@ -368,7 +369,7 @@ export class TriggerService {
 
       const updatedTrigger = await this.prisma.trigger.update({
         where: {
-          repeatKey: repeatKey,
+          uuid,
         },
         data: {
           isDeleted: true,
@@ -502,8 +503,8 @@ export class TriggerService {
     const { uuid, appId, ...payload } = data;
     this.logger.log(`Activating trigger with uuid: ${uuid}`);
 
-    if (!uuid && !payload.repeatKey) {
-      throw new BadRequestException('uuid or repeatKey is required');
+    if (!uuid) {
+      throw new BadRequestException('uuid is required');
     }
 
     try {
@@ -514,8 +515,7 @@ export class TriggerService {
 
       const trigger = await this.prisma.trigger.findUnique({
         where: {
-          ...(payload?.repeatKey && { repeatKey: payload?.repeatKey }),
-          ...(uuid && { uuid: uuid }),
+          uuid,
         },
         include: {
           phase: {

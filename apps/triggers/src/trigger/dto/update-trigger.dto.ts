@@ -25,8 +25,8 @@ export class UpdateTriggerTransactionDto {
 
 export class RemoveTriggerPayloadDto {
   @ApiProperty({
-    description: 'Trigger repeat key',
+    description: 'Trigger UUID',
   })
   @IsString()
-  repeatKey: string;
+  uuid: string;
 }

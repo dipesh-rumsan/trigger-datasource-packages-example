@@ -295,12 +295,12 @@ describe('TriggerController', () => {
       };
 
       jest
-        .spyOn(mockTriggerService, 'getOne')
+        .spyOn(mockTriggerService, 'findOne')
         .mockResolvedValue(mockTrigger as any);
 
       const result = await controller.getOne(mockPayload);
 
-      expect(mockTriggerService.getOne).toHaveBeenCalledWith(mockPayload);
+      expect(mockTriggerService.findOne).toHaveBeenCalledWith(mockPayload);
       expect(result).toEqual(mockTrigger);
     });
 
@@ -321,12 +321,12 @@ describe('TriggerController', () => {
       };
 
       jest
-        .spyOn(mockTriggerService, 'getOne')
+        .spyOn(mockTriggerService, 'findOne')
         .mockResolvedValue(mockTriggerWithPhase as any);
 
       const result = await controller.getOne(mockPayloadWithExtra);
 
-      expect(mockTriggerService.getOne).toHaveBeenCalledWith(
+      expect(mockTriggerService.findOne).toHaveBeenCalledWith(
         mockPayloadWithExtra,
       );
       expect(result).toEqual(mockTriggerWithPhase);
@@ -565,12 +565,12 @@ describe('TriggerController', () => {
 
   describe('remove', () => {
     const mockPayload = {
-      repeatKey: 'repeat-key-123',
+      uuid: 'trigger-uuid',
     };
 
     it('should successfully remove trigger', async () => {
       const mockRemovedTrigger = {
-        repeatKey: 'repeat-key-123',
+        uuid: 'trigger-uuid',
         isDeleted: true,
       };
 
@@ -584,13 +584,13 @@ describe('TriggerController', () => {
       expect(result).toEqual(mockRemovedTrigger);
     });
 
-    it('should handle remove with different repeat key', async () => {
+    it('should handle remove with different uuid', async () => {
       const mockPayloadWithDifferentKey = {
-        repeatKey: 'different-repeat-key-456',
+        uuid: 'different-trigger-uuid',
       };
 
       const mockRemovedTrigger = {
-        repeatKey: 'different-repeat-key-456',
+        uuid: 'different-trigger-uuid',
         isDeleted: true,
       };
 
