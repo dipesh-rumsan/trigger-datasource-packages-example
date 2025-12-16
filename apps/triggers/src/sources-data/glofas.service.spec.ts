@@ -120,88 +120,6 @@ describe('GlofasService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('criteriaCheck', () => {
-    const mockPayload: AddTriggerStatementDto = {
-      uuid: 'test-uuid',
-      dataSource: DataSource.GLOFAS,
-      riverBasin: 'test-basin',
-      isMandatory: true,
-      phaseId: 'phase-uuid',
-      triggerStatement: {
-        probability: 0.8,
-        maxLeadTimeDays: 3,
-      },
-    };
-
-    const mockTriggerData = {
-      uuid: 'test-uuid',
-      isTriggered: false,
-      repeatEvery: 'daily',
-      repeatKey: 'test-key',
-    };
-
-    const mockRecentData = {
-      id: 1,
-      info: {
-        returnPeriodTable: {
-          returnPeriodData: [['2023-01-01-1', '2023-01-02-2', '2023-01-03-3']],
-          returnPeriodHeaders: ['1', '2', '3'],
-        },
-      },
-    };
-
-    beforeEach(() => {
-      mockPrismaService.trigger.findUnique.mockResolvedValue(mockTriggerData);
-      mockPrismaService.sourcesData.findFirst.mockResolvedValue(mockRecentData);
-    });
-
-    it('should check criteria successfully', async () => {
-      await service.criteriaCheck(mockPayload);
-
-      expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
-        where: { uuid: mockPayload.uuid },
-      });
-
-      expect(mockPrismaService.sourcesData.findFirst).toHaveBeenCalledWith({
-        where: {
-          source: {
-            riverBasin: mockPayload.riverBasin,
-            source: {
-              has: DataSource.GLOFAS,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-    });
-
-    it('should return early if trigger is already triggered', async () => {
-      mockPrismaService.trigger.findUnique.mockResolvedValue({
-        ...mockTriggerData,
-        isTriggered: true,
-      });
-
-      await service.criteriaCheck(mockPayload);
-
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
-        'events.automated_triggered',
-        {
-          repeatKey: mockTriggerData.repeatKey,
-        },
-      );
-    });
-
-    it('should return early if no recent data found', async () => {
-      mockPrismaService.sourcesData.findFirst.mockResolvedValue(null);
-
-      await service.criteriaCheck(mockPayload);
-
-      expect(mockPrismaService.sourcesData.findFirst).toHaveBeenCalled();
-    });
-  });
-
   describe('getStationData', () => {
     const mockPayload = {
       station: 'test-station',
@@ -331,50 +249,6 @@ describe('GlofasService', () => {
       });
 
       expect(result).toEqual(mockWaterLevel);
-    });
-  });
-
-  describe('checkProbability', () => {
-    it('should return true when probability threshold is met', () => {
-      const indexRange = [0, 1, 2];
-      const latestForecastData = ['0.9', '0.8', '0.7'];
-      const probability = 0.8;
-
-      const result = service.checkProbability(
-        indexRange,
-        latestForecastData,
-        probability,
-      );
-
-      expect(result).toBe(true);
-    });
-
-    it('should return undefined when probability threshold is not met', () => {
-      const indexRange = [0, 1, 2];
-      const latestForecastData = ['0.5', '0.6', '0.7'];
-      const probability = 0.8;
-
-      const result = service.checkProbability(
-        indexRange,
-        latestForecastData,
-        probability,
-      );
-
-      expect(result).toBeUndefined();
-    });
-  });
-
-  describe('createRange', () => {
-    it('should create range correctly', () => {
-      const result = service.createRange(1, 5);
-
-      expect(result).toEqual([1, 2, 3, 4, 5]);
-    });
-
-    it('should handle single number range', () => {
-      const result = service.createRange(1, 1);
-
-      expect(result).toEqual([1]);
     });
   });
 

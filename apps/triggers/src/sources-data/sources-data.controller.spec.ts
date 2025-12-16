@@ -46,7 +46,6 @@ describe('SourcesDataController', () => {
     saveGlofasStationData: jest.fn(),
     getLatestWaterLevels: jest.fn(),
     findGlofasDataByDate: jest.fn(),
-    criteriaCheck: jest.fn(),
   };
 
   const mockSourceDataService = {
