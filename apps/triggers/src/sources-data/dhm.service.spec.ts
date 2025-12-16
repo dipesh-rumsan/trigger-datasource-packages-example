@@ -146,34 +146,6 @@ describe('DhmService', () => {
     });
   });
 
-  describe('getRiverStationData', () => {
-    const mockUrl = 'http://test-url.com';
-    const mockLocation = 'test-location';
-    const mockData = { station: 'data' };
-
-    beforeEach(() => {
-      mockHttpService.get.mockReturnValue(of({ data: mockData }));
-    });
-
-    it('should return river station data successfully', async () => {
-      mockHttpService.axiosRef.get.mockResolvedValue({ data: mockData });
-
-      const result = await service.getRiverStationData(mockUrl, mockLocation);
-
-      expect(mockHttpService.axiosRef.get).toHaveBeenCalled();
-      expect(result).toEqual({ data: mockData });
-    });
-
-    it('should throw RpcException when HTTP request fails', async () => {
-      const error = new Error('HTTP error');
-      mockHttpService.axiosRef.get.mockRejectedValue(error);
-
-      await expect(
-        service.getRiverStationData(mockUrl, mockLocation),
-      ).rejects.toThrow();
-    });
-  });
-
   describe('getData', () => {
     const mockUrl = 'http://test-url.com';
     const mockData = { data: 'test' };
@@ -196,98 +168,6 @@ describe('DhmService', () => {
       mockHttpService.axiosRef.get.mockRejectedValue(error);
 
       await expect(service.getData(mockUrl)).rejects.toThrow();
-    });
-  });
-
-  describe('getIntervals', () => {
-    it('should return correct intervals', () => {
-      const result = service.getIntervals();
-
-      expect(result).toHaveProperty('timeGT');
-      expect(result).toHaveProperty('timeLT');
-      expect(typeof result.timeGT).toBe('string');
-      expect(typeof result.timeLT).toBe('string');
-    });
-  });
-
-  describe('sortByDate', () => {
-    it('should sort data by date in descending order', () => {
-      const mockData = [
-        { waterLevelOn: '2023-01-01', value: 1 },
-        { waterLevelOn: '2023-01-03', value: 3 },
-        { waterLevelOn: '2023-01-02', value: 2 },
-      ] as any;
-
-      const result = service.sortByDate(mockData);
-
-      expect((result[0] as any).waterLevelOn).toBe('2023-01-03');
-      expect((result[1] as any).waterLevelOn).toBe('2023-01-02');
-      expect((result[2] as any).waterLevelOn).toBe('2023-01-01');
-    });
-  });
-
-  describe('saveDataInDhm', () => {
-    const mockType = SourceType.WATER_LEVEL;
-    const mockRiverBasin = 'test-basin';
-    const mockPayload = {
-      station: 'test-station',
-      history: [{ date: '2023-01-01', value: 100 }],
-    } as any;
-
-    beforeEach(() => {
-      mockPrismaService.source.findFirst.mockResolvedValue({ id: 1 });
-      mockPrismaService.sourcesData.create.mockResolvedValue({ id: 1 });
-    });
-
-    it('should save data successfully when source exists', async () => {
-      const mockTransaction = {
-        sourcesData: {
-          findFirst: jest.fn().mockResolvedValue(null),
-          create: jest.fn().mockResolvedValue({ id: 1 }),
-        },
-      };
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        return await callback(mockTransaction);
-      });
-
-      const result = await service.saveDataInDhm(
-        mockType,
-        mockRiverBasin,
-        mockPayload,
-      );
-
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
-      expect(result).toBeDefined();
-    });
-
-    it('should create source and save data when source does not exist', async () => {
-      const mockTransaction = {
-        sourcesData: {
-          findFirst: jest.fn().mockResolvedValue(null),
-          create: jest.fn().mockResolvedValue({ id: 1 }),
-        },
-      };
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        return await callback(mockTransaction);
-      });
-
-      const result = await service.saveDataInDhm(
-        mockType,
-        mockRiverBasin,
-        mockPayload,
-      );
-
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
-      expect(result).toBeDefined();
-    });
-
-    it('should throw error when saving fails', async () => {
-      const error = new Error('Database error');
-      mockPrismaService.$transaction.mockRejectedValue(error);
-
-      await expect(
-        service.saveDataInDhm(mockType, mockRiverBasin, mockPayload),
-      ).rejects.toThrow();
     });
   });
 

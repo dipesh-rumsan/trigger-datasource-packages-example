@@ -70,9 +70,7 @@ describe('SourcesDataService', () => {
 
   const mockDhmService = {
     getRiverStations: jest.fn(),
-    getRiverStationData: jest.fn(),
     getData: jest.fn(),
-    saveDataInDhm: jest.fn(),
     getDhmRiverWatchData: jest.fn(),
     getDhmRainfallWatchData: jest.fn(),
     normalizeDhmRiverAndRainfallWatchData: jest.fn(),
