@@ -2,7 +2,6 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { MS_TRIGGERS_JOBS } from 'src/constant';
 import { DhmService } from './dhm.service';
-import { GlofasService } from './glofas.service';
 import { GetSouceDataDto } from './dto/get-source-data';
 import { SourcesDataService } from './sources-data.service';
 import { GetSeriesDto } from './dto/get-series';
@@ -11,7 +10,6 @@ import { GetSeriesDto } from './dto/get-series';
 export class SourcesDataController {
   constructor(
     private readonly dhmService: DhmService,
-    private readonly glofasService: GlofasService,
     private readonly sourceDataService: SourcesDataService,
   ) {}
 

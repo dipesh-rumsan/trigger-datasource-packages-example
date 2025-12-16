@@ -4,14 +4,12 @@ import { PrismaService, DataSource } from '@lib/database';
 import { SourcesDataController } from './sources-data.controller';
 import { SourcesDataService } from './sources-data.service';
 import { DhmService } from './dhm.service';
-import { GlofasService } from './glofas.service';
 import { MS_TRIGGERS_JOBS } from 'src/constant';
 import { GetSouceDataDto } from './dto/get-source-data';
 
 describe('SourcesDataController', () => {
   let controller: SourcesDataController;
   let dhmService: DhmService;
-  let glofasService: GlofasService;
   let sourceDataService: SourcesDataService;
 
   const mockPrismaService = {
@@ -37,13 +35,6 @@ describe('SourcesDataController', () => {
     getDhmRiverWatchData: jest.fn(),
     getDhmRainfallWatchData: jest.fn(),
     normalizeDhmRiverAndRainfallWatchData: jest.fn(),
-  };
-
-  const mockGlofasService = {
-    getStationData: jest.fn(),
-    saveGlofasStationData: jest.fn(),
-    getLatestWaterLevels: jest.fn(),
-    findGlofasDataByDate: jest.fn(),
   };
 
   const mockSourceDataService = {
@@ -75,10 +66,6 @@ describe('SourcesDataController', () => {
           useValue: mockDhmService,
         },
         {
-          provide: GlofasService,
-          useValue: mockGlofasService,
-        },
-        {
           provide: HttpService,
           useValue: mockHttpService,
         },
@@ -87,7 +74,6 @@ describe('SourcesDataController', () => {
 
     controller = module.get<SourcesDataController>(SourcesDataController);
     dhmService = module.get<DhmService>(DhmService);
-    glofasService = module.get<GlofasService>(GlofasService);
     sourceDataService = module.get<SourcesDataService>(SourcesDataService);
   });
 
@@ -289,11 +275,6 @@ describe('SourcesDataController', () => {
     it('should inject DhmService correctly', () => {
       expect(dhmService).toBeDefined();
       expect(dhmService).toBe(mockDhmService);
-    });
-
-    it('should inject GlofasService correctly', () => {
-      expect(glofasService).toBeDefined();
-      expect(glofasService).toBe(mockGlofasService);
     });
 
     it('should inject SourcesDataService correctly', () => {

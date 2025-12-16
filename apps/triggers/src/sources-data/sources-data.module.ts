@@ -5,7 +5,6 @@ import { ScheduleSourcesDataService } from './schedule-sources-data.service';
 import { HttpModule } from '@nestjs/axios';
 import { DhmService } from './dhm.service';
 import { DhmModule, DhmService as DhmServiceLib } from '@lib/dhm-adapter';
-import { GlofasService } from './glofas.service';
 import { ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { BQUEUE } from 'src/constant';
@@ -32,7 +31,6 @@ import { GfhModule, GfhService } from '@lib/gfh-adapter';
     SourcesDataService,
     ScheduleSourcesDataService,
     DhmService,
-    GlofasService,
     GfhService,
     ConfigService,
     HealthCacheService,
@@ -60,7 +58,6 @@ import { GfhModule, GfhService } from '@lib/gfh-adapter';
     ScheduleSourcesDataService,
     DhmService,
     GfhService,
-    GlofasService,
   ],
 })
 export class SourcesDataModule {}
