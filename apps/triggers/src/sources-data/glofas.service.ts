@@ -16,13 +16,12 @@ import {
 
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BQUEUE, EVENTS, JOBS } from 'src/constant';
-import { AbstractSource } from './sources-data-abstract';
 import { SourcesDataService } from './sources-data.service';
 import { RpcException } from '@nestjs/microservices';
 import { DataSourceConfigValue } from 'src/types/datasource-config.type';
 
 @Injectable()
-export class GlofasService implements AbstractSource, OnApplicationBootstrap {
+export class GlofasService implements OnApplicationBootstrap {
   private readonly logger = new Logger(GlofasService.name);
   private baseUrl: string;
 

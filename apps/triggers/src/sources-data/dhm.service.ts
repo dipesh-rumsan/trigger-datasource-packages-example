@@ -11,7 +11,6 @@ import {
   DhmDataObject,
   DHMWaterLevelInfo,
 } from './dto';
-import { AbstractSource } from './sources-data-abstract';
 import { RpcException } from '@nestjs/microservices';
 import {
   InputItem,
@@ -30,7 +29,7 @@ import {
   DataSourceDHMConfig,
 } from 'src/types/datasource-config.type';
 @Injectable()
-export class DhmService implements AbstractSource, OnApplicationBootstrap {
+export class DhmService implements OnApplicationBootstrap {
   private readonly logger = new Logger(DhmService.name);
   private dhmRainfallWatchUrl: string = dhmRainfallWatchUrl;
   private dhmRiverWatchUrl: string = dhmRiverWatchUrl;
@@ -61,133 +60,6 @@ export class DhmService implements AbstractSource, OnApplicationBootstrap {
     )) as DataSourceConfigValue;
 
     return dataSourceConfig[DataSource.DHM] || null;
-  }
-
-  async criteriaCheck(payload: AddTriggerStatementDto) {
-    const {
-      uuid,
-      dataSource,
-      riverBasin,
-      isMandatory,
-      phaseId,
-      triggerStatement,
-    } = payload;
-
-    const triggerData = await this.prisma.trigger.findUnique({
-      where: {
-        uuid: uuid,
-      },
-      include: {
-        phase: true,
-      },
-    });
-
-    if (!triggerData || triggerData.isTriggered) return;
-
-    let waterLevelReached = false;
-
-    this.logger.log(`Criteria check for ${dataSource} started`);
-    const recentData = await this.prisma.sourcesData.findFirst({
-      where: {
-        type: SourceType.WATER_LEVEL,
-        source: {
-          riverBasin,
-          source: {
-            has: DataSource.DHM,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    if (!recentData) {
-      this.logger.error(`${dataSource}:${riverBasin} : data not available`);
-      return;
-    }
-
-    const recentWaterLevel = JSON.parse(
-      JSON.stringify(recentData.info),
-    ) as DHMWaterLevelInfo;
-
-    const currentLevel = recentWaterLevel.waterLevel.value;
-
-    this.logger.log('##### WATER LEVEL INFO ########');
-    this.logger.log('Latest water level: ', recentWaterLevel.waterLevel);
-    this.logger.log('##############################');
-
-    // If trigger statement is for READNESS, We will chek for the warningLevel
-    // If trigger statement is for ACTIVATION, We will chek for the dangerLevel
-
-    if (triggerData.phase.name === 'READINESS') {
-      waterLevelReached = this.compareWaterLevels(
-        currentLevel,
-        triggerStatement?.warningLevel,
-      );
-    }
-
-    if (triggerData.phase.name === 'ACTIVATION') {
-      waterLevelReached = this.compareWaterLevels(
-        currentLevel,
-        triggerStatement?.dangerLevel,
-      );
-    }
-
-    if (waterLevelReached === false) {
-      this.logger.log(
-        `${dataSource}: ${riverBasin}: Water is in a safe level.`,
-      );
-      return;
-    }
-
-    if (isMandatory) {
-      await this.prisma.phase.update({
-        where: {
-          uuid: phaseId,
-        },
-        data: {
-          receivedMandatoryTriggers: {
-            increment: 1,
-          },
-        },
-      });
-    } else {
-      await this.prisma.phase.update({
-        where: {
-          uuid: phaseId,
-        },
-        data: {
-          receivedOptionalTriggers: {
-            increment: 1,
-          },
-        },
-      });
-    }
-
-    await this.prisma.trigger.update({
-      where: {
-        uuid: uuid,
-      },
-      data: {
-        isTriggered: true,
-      },
-    });
-    this.triggerQueue.add(JOBS.TRIGGER.REACHED_THRESHOLD, payload, {
-      attempts: 3,
-      removeOnComplete: true,
-      backoff: {
-        type: 'exponential',
-        delay: 1000,
-      },
-    });
-  }
-
-  compareWaterLevels(currentLevel: number, threshold: number) {
-    if (currentLevel >= threshold) {
-      return true;
-    }
-    return false;
   }
 
   async getRiverStations() {

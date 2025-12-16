@@ -1,16 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
-import { InjectQueue } from '@nestjs/bull';
-import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DataSource, SourceType } from '@lib/database';
+import { SourceType } from '@lib/database';
 import { PrismaService } from '@lib/database';
 import type { Queue } from 'bull';
 import { DhmService } from './dhm.service';
 import { RpcException } from '@nestjs/microservices';
-import { AddTriggerStatementDto } from './dto';
 import { of } from 'rxjs';
-import { SettingsService } from '@lib/core';
 jest.mock('@lib/core', () => ({
   SettingsService: {
     get: jest.fn().mockReturnValue({
@@ -117,114 +113,6 @@ describe('DhmService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
-  });
-
-  describe('criteriaCheck', () => {
-    const mockPayload: AddTriggerStatementDto = {
-      uuid: 'test-uuid',
-      dataSource: DataSource.DHM,
-      riverBasin: 'test-basin',
-      isMandatory: true,
-      phaseId: 'phase-uuid',
-      triggerStatement: {
-        warningLevel: 100,
-        dangerLevel: 150,
-      },
-    };
-
-    const mockTriggerData = {
-      uuid: 'test-uuid',
-      isTriggered: false,
-      phase: {
-        name: 'READINESS',
-      },
-    };
-
-    const mockRecentData = {
-      id: 1,
-      info: {
-        waterLevel: {
-          value: 120,
-        },
-      },
-    };
-
-    beforeEach(() => {
-      mockPrismaService.trigger.findUnique.mockResolvedValue(mockTriggerData);
-      mockPrismaService.sourcesData.findFirst.mockResolvedValue(mockRecentData);
-    });
-
-    it('should check criteria successfully for READINESS phase', async () => {
-      await service.criteriaCheck(mockPayload);
-
-      expect(mockPrismaService.trigger.findUnique).toHaveBeenCalledWith({
-        where: { uuid: mockPayload.uuid },
-        include: { phase: true },
-      });
-
-      expect(mockPrismaService.sourcesData.findFirst).toHaveBeenCalledWith({
-        where: {
-          type: SourceType.WATER_LEVEL,
-          source: {
-            riverBasin: mockPayload.riverBasin,
-            source: {
-              has: DataSource.DHM,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-    });
-
-    it('should return early if trigger is already triggered', async () => {
-      mockPrismaService.trigger.findUnique.mockResolvedValue({
-        ...mockTriggerData,
-        isTriggered: true,
-      });
-
-      await service.criteriaCheck(mockPayload);
-
-      expect(mockPrismaService.sourcesData.findFirst).not.toHaveBeenCalled();
-    });
-
-    it('should return early if no recent data found', async () => {
-      mockPrismaService.sourcesData.findFirst.mockResolvedValue(null);
-
-      await service.criteriaCheck(mockPayload);
-
-      expect(mockPrismaService.sourcesData.findFirst).toHaveBeenCalled();
-    });
-
-    it('should check criteria for ACTIVATION phase', async () => {
-      mockPrismaService.trigger.findUnique.mockResolvedValue({
-        ...mockTriggerData,
-        phase: { name: 'ACTIVATION' },
-      });
-
-      await service.criteriaCheck(mockPayload);
-
-      expect(mockPrismaService.trigger.findUnique).toHaveBeenCalled();
-      expect(mockPrismaService.sourcesData.findFirst).toHaveBeenCalled();
-    });
-  });
-
-  describe('compareWaterLevels', () => {
-    it('should return true when current level is greater than threshold', () => {
-      const result = service.compareWaterLevels(120, 100);
-      expect(result).toBe(true);
-    });
-
-    it('should return false when current level is less than threshold', () => {
-      const result = service.compareWaterLevels(80, 100);
-      expect(result).toBe(false);
-    });
-
-    it('should return true when current level equals threshold', () => {
-      const result = service.compareWaterLevels(100, 100);
-      expect(result).toBe(true);
-    });
   });
 
   describe('getRiverStations', () => {
